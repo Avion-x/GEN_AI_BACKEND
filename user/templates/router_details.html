@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Router Details</title>
+    </head>
+    <body>
+        <h1>Router Details</h1>
+
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Model Number</th>
+                    <th>Maker</th>
+                    <th>Is Leaf</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for router in routers %}
+                
+                    <tr data-router-id="{{ router.id }}" class="router-row">
+                        <!-- <td><a href="/show_routers?parent_id={{router.id}} ">{{ router.id }}</a></td> -->
+                        <td><a href="{% if not router.is_leaf %}/show_routers?parent_id={{router.id}}{% else %} /show_routers?router_id={{router.id}}{% endif %}">{{ router.id }}</a></td>
+                        <td>{{ router.name }}</td>
+                        <td>{{ router.model_no }}</td>
+                        <td>{{ router.maker_name}}</td>
+                        <td> {{ router.is_leaf }}</td>
+                    </tr>
+                <!-- </a> -->
+                {% endfor %}
+            </tbody>
+
+        </table>
+        {% if routers|length == 1 %}
+            <textarea id="test_sentence" name="test_sentence"></textarea>
+            <button id="Clear" type="button" onclick="clearTextBox()">Clear</button>
+            <button id="submit" type="submit" name="submit">Submit</button>
+
+        {% endif %}
+    </body>
+
+    <script>
+        function clearTextBox() {
+            document.getElementById("test_sentence").value = '';
+        }
+
+
+        function submit(){
+            var inputData = document.getElementById('test_sentence').value;
+
+            var data = {
+                input_data: inputData
+            };
+
+            fetch('/api/generate_test_cases/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('API Response:', data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</html>
