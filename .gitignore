@@ -1,0 +1,16 @@
+# .gitignore for Django projects
+
+### Django ###
+*.log
+*.pot
+*.pyc
+user/__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media
+settings.py
+!.env
+
+# Ignore unwanted text files
+*engineering_req.txt
