@@ -1,0 +1,13 @@
+asgiref==3.7.2
+Django==5.0.1
+django-extensions==3.2.3
+django-filter @ git+https://github.com/carltongibson/django-filter.git@00e88652d9308c4c6c4e707c3e0d735dd6843dca
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.1
+mysqlclient==2.2.1
+pydotplus==2.0.2
+PyJWT==2.8.0
+pyparsing==3.1.1
+pytz==2023.3.post1
+sqlparse==0.4.4
+tzdata==2023.3
