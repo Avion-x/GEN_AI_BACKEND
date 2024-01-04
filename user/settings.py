@@ -68,6 +68,8 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
             ],
         },
+
+        
     },
 ]
 
@@ -77,12 +79,28 @@ WSGI_APPLICATION = 'user.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'GEN_AI',
+        'USER': 'admin',
+        'PASSWORD': 'DS-P0)!Cq)y9?CWR._j6FU7r<6G#',
+        'HOST': 'gen-ai.c54r5svdjqsu.us-west-2.rds.amazonaws.com',  # This is the endpoint of your RDS instance
+        'PORT': '3306',  # Default MySQL port
+        'OPTIONS': {
+            # 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
+
 
 
 # Password validation
