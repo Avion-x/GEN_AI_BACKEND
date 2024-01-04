@@ -73,22 +73,3 @@ class UserAccess(models.Model):
     def __str__(self):
         return f"{self.customer.code} - {self.user.username} - {self.access_type.access}"
 
-# class UserProfile(models.Model):
-#     user = models.OneToOneField(User, on_delete=models.CASCADE)
-#     token = models.OneToOneField(Token, on_delete=models.CASCADE)
-
-#     def __str__(self):
-#         return f"{self.user.username} - {self.token.key}"
-
-class RouterDetails(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    model_no = models.CharField(max_length=50)
-    maker_name = models.CharField(max_length=100)
-    is_leaf = models.BooleanField(default=False)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
-
-    def __str__(self):
-        return self.name
-
-
