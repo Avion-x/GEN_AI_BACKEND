@@ -132,3 +132,18 @@ class ProductPrompt(models.Model):
     def __str__(self):
         return f"{self.customer.code} - {self.product.product_code} - {self.prompt.prompt} - {self.sequence_no}"
 
+
+
+class TestCases(models.Model):
+    id = models.AutoField(primary_key=True)
+    test_type = models.ForeignKey(TestType, related_name = "test_cases",  on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, related_name = "test_cases",  on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name = "test_cases", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name = 'test_cases', on_delete=models.CASCADE)
+    data = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.product.product_code}-{self.test_type.code}({self.created_at})"
+    
