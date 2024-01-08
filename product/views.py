@@ -1,7 +1,11 @@
+from product.services.generic_services import get_prompts_for_device
 from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
+# import git
+import os
+from django.conf import settings
 
 from .models import TestType, ProductCategory, ProductSubCategory, Product
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
@@ -159,11 +163,15 @@ class GenerateTestCases(generics.ListAPIView):
             data = self.validate_mandatory_checks(request)
             device_name = data.get('device_name', "MX480")
             template_prompt = f"Creating detailed user stories, test cases, and test scripts for the {device_name} router. User stories for the {device_name} router focusing on high-performance networking, scalability, reliability, security features, and ease of configuration. Test cases should cover functionality, performance, security, and usability. Test scripts for each test case, including setup, execution, verification, and teardown. Detailed Python test scripts for the Security Test of the {device_name} router. Sample configuration file for a {device_name} router. User story for running a detailed test on the {device_name} router to verify configuration. Python test script for the router configuration verification user story. "
+            # template_prompt = get_prompts_for_device(device_name)
             response = {
                 "error": "",
                 "status": 200,
                 "response" : send_prompt(template_prompt)
             }
+
+            # push to git => push_to_git(response)
+
             return Response(response)
         
         except Exception as e:
@@ -185,3 +193,31 @@ class GenerateTestCases(generics.ListAPIView):
         
         except Exception as e:
             raise Exception(f"Validation of mandatory fields to request test cases failed, Error message is {str(e)}")
+        
+class FileUploadView(generics.ListAPIView):
+
+    def post(self, request, *args, **kwargs):
+        if not 'file' in request.FILES:
+            return JsonResponse('No File', safe= False)
+
+        # uploaded_file = request.FILES['file']
+        # try:
+        #     # Save the file to the server
+        #     # file_path = os.path.join(settings.BASE_DIR, 'uploads', uploaded_file.name)
+        #     # with open(file_path, 'wb+') as destination:
+        #     #     for chunk in uploaded_file.chunks():
+        #     #         destination.write(chunk)
+
+        #     # Commit and push changes to GitHub using GitPython
+        #     repo_path = os.path.join(settings.BASE_DIR, 'Avion-x/AI_GEN_TEST_CASES')
+        #     repo = git.Repo(repo_path)
+        #     repo.git.add('.')
+        #     repo.git.commit('-m', f'Add uploaded file: output.txt')
+        #     repo.git.push()
+
+        # except Exception as e:
+        #     return JsonResponse(f'Error updating GitHub: {e}', safe= False)
+
+        # return JsonResponse('File uploaded', safe= False)
+
+
