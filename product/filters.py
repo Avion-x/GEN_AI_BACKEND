@@ -24,16 +24,18 @@ class ProductSubCategoryFilter(django_filters.FilterSet):
 
     id = django_filters.NumberFilter(lookup_expr='exact')
     sub_category = django_filters.CharFilter(lookup_expr='icontains')
+    product_category = django_filters.NumberFilter(lookup_expr='exact')
 
     class Meta:
         model = ProductSubCategory
-        fields = ['id', 'sub_category']
+        fields = ['id', 'sub_category', 'product_category']
 
 class ProductFilter(django_filters.FilterSet):
 
     id = django_filters.NumberFilter(lookup_expr='exact')
     product_code = django_filters.CharFilter(lookup_expr='icontains')
+    product_sub_category = django_filters.NumberFilter(lookup_expr='excat')
 
     class Meta:
         model = Product
-        fields = ['id', 'product_code']
+        fields = ['id', 'product_code', 'product_sub_category']

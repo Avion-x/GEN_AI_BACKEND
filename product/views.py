@@ -19,6 +19,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
 
+from product.services.open_ai import send_prompt
 
 
 # Create your views here.
@@ -119,7 +120,6 @@ class ProductSubCategoryView(generics.ListAPIView):
         return JsonResponse(serializer.data)
     
 class ProductView(generics.ListAPIView):
-
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
@@ -149,3 +149,39 @@ class ProductView(generics.ListAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return JsonResponse(serializer.data)
+
+class GenerateTestCases(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    
+    def get(self, request):
+        try:
+            data = self.validate_mandatory_checks(request)
+            device_name = data.get('device_name', "MX480")
+            template_prompt = f"Creating detailed user stories, test cases, and test scripts for the {device_name} router. User stories for the {device_name} router focusing on high-performance networking, scalability, reliability, security features, and ease of configuration. Test cases should cover functionality, performance, security, and usability. Test scripts for each test case, including setup, execution, verification, and teardown. Detailed Python test scripts for the Security Test of the {device_name} router. Sample configuration file for a {device_name} router. User story for running a detailed test on the {device_name} router to verify configuration. Python test script for the router configuration verification user story. "
+            response = {
+                "error": "",
+                "status": 200,
+                "response" : send_prompt(template_prompt)
+            }
+            return Response(response)
+        
+        except Exception as e:
+            return Response({
+                "error" : f"{e}",
+                "status" : 400,
+                "response" : {}
+            })
+
+    def validate_mandatory_checks(self, request):
+        try:
+            data = {}
+            checks = ['device_name', 'test_type']
+            for check in checks:
+                data[check] = request.GET.get(check, None)
+                if data[check] is None:
+                    raise Exception(f"Please pass {check} in queryparams")
+            return data
+        
+        except Exception as e:
+            raise Exception(f"Validation of mandatory fields to request test cases failed, Error message is {str(e)}")

@@ -2,7 +2,6 @@ from django.db import models
 from user.models import User, Customer
 
 
-
 class TestType(models.Model):
     id = models.AutoField(primary_key=True)
     code = models.CharField(max_length=255)
@@ -104,7 +103,7 @@ class ProductCategoryPrompt(models.Model):
     product_category = models.ForeignKey(ProductCategory, related_name = "product_category_prompt",  on_delete=models.CASCADE)
     prompt = models.ForeignKey(Prompt, on_delete=models.CASCADE)
     sequence_no = models.IntegerField()
-    executable_prompt = models.BooleanField()
+    executable_prompt = models.CharField(max_length=500)
     status = models.BooleanField()
     valid_till = models.DateField(null=True, blank=True)
     comments = models.TextField()
@@ -121,7 +120,7 @@ class ProductPrompt(models.Model):
     product = models.ForeignKey(Product, related_name = "product_prompt", on_delete=models.CASCADE)
     prompt = models.ForeignKey(Prompt, related_name = "product_prompt", on_delete=models.CASCADE)
     sequence_no = models.IntegerField()
-    executable_prompt = models.BooleanField()
+    executable_prompt = models.CharField(max_length=500)
     status = models.BooleanField()
     valid_till = models.DateField(null=True, blank=True)
     comments = models.TextField()
@@ -140,6 +139,7 @@ class TestCases(models.Model):
     customer = models.ForeignKey(Customer, related_name = "test_cases",  on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name = "test_cases", on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, related_name = 'test_cases', on_delete=models.CASCADE)
+    data_url = models.URLField(blank=True, null=True)
     data = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
