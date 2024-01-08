@@ -2,6 +2,9 @@ from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
+import git
+import os
+from django.conf import settings
 
 from .models import TestType, ProductCategory, ProductSubCategory, Product
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
@@ -149,3 +152,29 @@ class ProductView(generics.ListAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return JsonResponse(serializer.data)
+
+class FileUploadView(generics.ListAPIView):
+
+    def post(self, request, *args, **kwargs):
+        if 'file' in request.FILES:
+            uploaded_file = request.FILES['file']
+            try:
+                # Save the file to the server
+                file_path = os.path.join(settings.BASE_DIR, 'uploads', uploaded_file.name)
+                with open(file_path, 'wb+') as destination:
+                    for chunk in uploaded_file.chunks():
+                        destination.write(chunk)
+
+                # Commit and push changes to GitHub using GitPython
+                repo_path = os.path.join(settings.BASE_DIR, 'Avion-x/AI_GEN_TEST_CASES')
+                repo = git.Repo(repo_path)
+                repo.git.add('.')
+                repo.git.commit('-m', f'Add uploaded file: {uploaded_file.name}')
+                repo.git.push()
+
+            except Exception as e:
+                return JsonResponse(f'Error updating GitHub: {e}', safe= False)
+
+            return JsonResponse('File uploaded', safe= False)
+
+        return JsonResponse('No File', safe= False)
