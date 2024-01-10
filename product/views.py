@@ -169,7 +169,8 @@ class GenerateTestCases(generics.ListAPIView):
                 "test_type_id" : {
                     "is_mandatory" : True,
                     "type" : list,
-                    "convert_type" : True
+                    "convert_type" : True,
+                    "convert_expression" : str
                 },
 
             }

@@ -27,7 +27,7 @@ def get_string_from_datetime(_timestamp=None):
     return _timestamp.strftime("%Y-%m-%d %H_%M_%S")
 
 
-def validate_mandatory_checks( input_data, checks = {}):
+def validate_mandatory_checks( input_data={}, checks = {}):
     try:
         data = {}
         for check, conditions in checks.items():
@@ -36,7 +36,7 @@ def validate_mandatory_checks( input_data, checks = {}):
                 raise Exception(f"Please pass {check} in queryparams")
             if not isinstance(data[check], conditions.get('type')) and conditions.get('convert_type'):
                 try:
-                    data[check] = conditions.get('type')(str(data[check]))
+                    data[check] = conditions.get('type')(conditions.get('convert_expression')(data[check])) if conditions.get('convert_expression') else conditions.get('type')(data[check])
                 except Exception as e:
                     raise Exception(f"{check} should be of type {conditions.get('type')} and you sent {data[check]},  cannot convert {data[check]} to {conditions.get('type')} ")
         return data
