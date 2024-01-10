@@ -1,3 +1,4 @@
+from user.models import CustomerConfig
 from product.services.custom_logger import logger
 from product.services.github_service import push_to_github
 from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, validate_mandatory_checks
@@ -179,9 +180,9 @@ class GenerateTestCases(generics.ListAPIView):
         try:
             data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
             data['prompts'] = get_prompts_for_device(**data)
-            file_name = get_string_from_datetime() + ".md"
-            response_data = self.generate_tests(prompts=data['prompts'], file_name = file_name)
-            data['new_file_url'] = push_to_github(data=response_data,file_path=f'data/{file_name}')
+            self.file_name = get_string_from_datetime() + ".md"
+            response_data = self.generate_tests(prompts=data['prompts'])
+            data['new_file_url'] = push_to_github(data=response_data, file_path=self.get_file_path(request))
             insert_test_case(request, data = data)
 
             return Response( {
@@ -196,12 +197,20 @@ class GenerateTestCases(generics.ListAPIView):
                 "status" : 400,
                 "response" : {}
             })
+        
+    def get_file_path(self, request):
+        
+        try:
+            path = CustomerConfig.objects.filter(config_type = 'repo_folder_path', customer=request.user.customer).first().config_value
+            return f"{path}/{self.file_name}"
+        except Exception as e:
+            return f"data/{request.user.customer.code}/{self.file_name}"
     
-    def generate_tests(self, prompts, file_name):
+    def generate_tests(self, prompts):
         try:
             response_data = ""
             for prompt in prompts:
-                prompt_data = send_prompt(prompt, output_file=file_name)
+                prompt_data = send_prompt(prompt, output_file=self.file_name)
                 response_data += prompt_data
                 break
             return response_data

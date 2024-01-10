@@ -5,7 +5,7 @@ from datetime import datetime
 
 g = Github('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')
 
-def push_to_github(branch='main', data = "", file_path = None, repo = 'Avion-x/AI_GEN_TEST_CASES', comment = None):
+def push_to_github(branch='main', data = "", file_path = None, repo = 'Avion-x/AI_GEN_TEST_CASES', comment = None,):
     if file_path is None:
         current_datetime = datetime.now()
         file_path = current_datetime.strftime("%Y-%m-%d %H:%M:%S") + ".md"
