@@ -25,12 +25,20 @@ SECRET_KEY = 'django-insecure-6tuli!ti5-7370+$j5!$!1+z++l3785o((n!5xgxdd%=mgaxl@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = '*'
+
+CORS_ALLOW_ALL_HEADERS = '*'
 
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'rest_framework.authtoken',
@@ -44,14 +52,25 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
+    # 'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:4200",
+# ]
+
+
+
+# Disable CSRF protection
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_SECURE = False  # Set to True if using HTTPS, False for development without HTTPS
 
 ROOT_URLCONF = 'user.urls'
 

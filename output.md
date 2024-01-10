@@ -97,3 +97,68 @@ log = os.system("show log")
 print("Configuration test results: ")
 print(log)
 ```
+
+
+# Unit Test Cases for Network MSeries Router MX480
+
+## Connectivity
+
+## Unit Test Cases for Network MSeries Router MX480
+
+### 1
+
+# Unit Test Cases for Network MSeries Router MX480
+
+## 1
+
+### Unit Test Cases for Network MSeries Router MX480
+
+#### Test Case 1: Power On Self-Test (POST)
+1. **Test Objective:** Verify that the router successfully passes the Power On Self-Test (POST) upon boot up.
+2. **Test Steps:**
+   - Power on the router.
+   - Observe the router's console output for any POST errors.
+   - Verify that the router boots up without any POST errors.
+3. **Expected Output:** The router should boot up successfully without any POST errors.
+
+#### Test Case 2: Interface Connectivity Test
+1. **Test Objective:** Validate the connectivity of various interfaces (e.g., Ethernet, Optical) on the router.
+2. **Test Steps:**
+   - Connect devices to various interfaces on the router.
+   - Send data packets through each interface.
+   - Verify that data packets are successfully transmitted and received without loss.
+3. **Expected Output:** Data packets should be successfully transmitted and received through all interfaces without loss.
+
+#### Test Case 3: Routing Protocol Functionality
+1. **Test Objective:** Ensure the proper functioning of routing protocols (e.g., OSPF, BGP) on the router.
+2. **Test Steps:**
+   - Configure and enable routing protocols on the router.
+   - Verify that routing tables are populated correctly.
+   - Send test traffic and ensure that it follows the expected routing paths.
+3. **Expected Output:** Routing tables should be populated correctly, and test traffic should follow the expected routing paths.
+
+#### Test Case 4: High Availability and Redundancy
+1. **Test Objective:** Test the high availability features and redundancy options of the router.
+2. **Test Steps:**
+   - Simulate a failure scenario (e.g., link failure, interface failure).
+   - Observe the router's behavior in response to the failure.
+   - Verify that the router fails over to redundant components and continues operation without disruption.
+3. **Expected Output:** The router should fail over to redundant components and continue operation without disruption in the event of a failure scenario.
+
+#### Test Case 5: Quality of Service (QoS) Configuration
+1. **Test Objective:** Validate the configuration and functionality of Quality of Service (QoS) settings on the router.
+2. **Test Steps:**
+   - Configure QoS policies and prioritize different types of traffic.
+   - Send test traffic and ensure that it is handled according to the QoS policies.
+3. **Expected Output:** Test traffic should be handled according to the configured QoS policies.
+
+```python
+# Sample Code Snippet for QoS Configuration Test
+qos_policy = {
+  "policy_name": "VoIP_Priority",
+  "traffic_type": "VoIP",
+  "priority_level": "High"
+}
+
+apply_qos_policy(interface="ethernet1/1", qos_policy)
+```

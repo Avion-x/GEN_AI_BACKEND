@@ -30,12 +30,11 @@ def get_request_body(request):
 class LoginView(generics.RetrieveAPIView):
     authentication_classes = (BasicAuthentication,)
 
+    @method_decorator(csrf_exempt)
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(request, username=username, password=password)
-        print(username, password)
-        print(user)
         if user is not None:
             login(request, user)
             token, created = Token.objects.get_or_create(user=request.user)

@@ -1,4 +1,5 @@
-from product.services.generic_services import get_prompts_for_device
+from product.services.github_service import push_to_github
+from product.services.generic_services import get_prompts_for_device, get_string_from_datetime
 from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
@@ -69,13 +70,14 @@ class ProductCategoryView(generics.ListAPIView):
     ordering = [] # for default orderings
 
     def get_queryset(self):
-        return ProductCategory.objects.filter()
+        return ProductCategory.objects.filter(customer_id = self.request.user.customer_id)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         print(queryset.query)
         serializer = ProductCategorySerializer(queryset, many=True)
-        return JsonResponse({'data':serializer.data}, safe=False)
+        # return JsonResponse({'data':serializer.data}, safe=False)
+        return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -101,7 +103,7 @@ class ProductSubCategoryView(generics.ListAPIView):
     ordering = [] # for default orderings
 
     def get_queryset(self):
-        return ProductSubCategory.objects.filter()
+        return ProductSubCategory.objects.filter(customer_id = self.request.user.customer_id)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -132,7 +134,7 @@ class ProductView(generics.ListAPIView):
     ordering = [] # for default orderings
 
     def get_queryset(self):
-        return Product.objects.filter()
+        return Product.objects.filter(customer_id = self.request.user.customer_id)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -162,16 +164,22 @@ class GenerateTestCases(generics.ListAPIView):
         try:
             data = self.validate_mandatory_checks(request)
             device_name = data.get('device_name', "MX480")
-            template_prompt = f"Creating detailed user stories, test cases, and test scripts for the {device_name} router. User stories for the {device_name} router focusing on high-performance networking, scalability, reliability, security features, and ease of configuration. Test cases should cover functionality, performance, security, and usability. Test scripts for each test case, including setup, execution, verification, and teardown. Detailed Python test scripts for the Security Test of the {device_name} router. Sample configuration file for a {device_name} router. User story for running a detailed test on the {device_name} router to verify configuration. Python test script for the router configuration verification user story. "
-            # template_prompt = get_prompts_for_device(device_name)
+            test_type = data.get('test_type', "unit test case")
+            template_prompts = get_prompts_for_device(device_name=device_name, test_type = test_type)
+            file_name = get_string_from_datetime() + ".md"
+            response_data = ""
+            for prompt in template_prompts:
+                prompt_data = send_prompt(prompt, output_file=file_name)
+                response_data += prompt_data
+
+            insert_into_table()
+            push_to_github(data=response_data,file_path=f'data/{file_name}')
+
             response = {
                 "error": "",
                 "status": 200,
-                "response" : send_prompt(template_prompt)
+                "response" : response_data
             }
-
-            # push to git => push_to_git(response)
-
             return Response(response)
         
         except Exception as e:
@@ -194,6 +202,10 @@ class GenerateTestCases(generics.ListAPIView):
         except Exception as e:
             raise Exception(f"Validation of mandatory fields to request test cases failed, Error message is {str(e)}")
         
+
+def insert_into_table():
+    pass
+
 class FileUploadView(generics.ListAPIView):
 
     def post(self, request, *args, **kwargs):

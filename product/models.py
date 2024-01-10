@@ -1,4 +1,5 @@
 from django.db import models
+from product.query_manager import CustomManager
 from user.models import User, Customer
 
 
@@ -45,6 +46,8 @@ class ProductCategory(models.Model):
     last_updated_at = models.DateTimeField(auto_now=True)
     last_updated_by = models.ForeignKey(User, on_delete=models.CASCADE)
     prompts = models.ManyToManyField(Prompt, blank=True, related_name = 'product_category', through='ProductCategoryPrompt')
+
+    # objects = CustomManager()
 
     def __str__(self):
         return f"{self.customer.code} - {self.category}"

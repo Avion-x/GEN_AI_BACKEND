@@ -34,7 +34,7 @@ class ProductFilter(django_filters.FilterSet):
 
     id = django_filters.NumberFilter(lookup_expr='exact')
     product_code = django_filters.CharFilter(lookup_expr='icontains')
-    product_sub_category = django_filters.NumberFilter(lookup_expr='excat')
+    product_sub_category = django_filters.NumberFilter(lookup_expr='exact')
 
     class Meta:
         model = Product
