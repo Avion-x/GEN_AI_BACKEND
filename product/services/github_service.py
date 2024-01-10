@@ -12,5 +12,6 @@ def push_to_github(branch='main', data = "", file_path = None, repo = 'Avion-x/A
     if comment is None:
         comment = f"{file_path} uploaded to Github using GEN_AI project"
     repo = g.get_repo(repo)
-    repo.create_file(file_path, comment, data, branch=branch)
+    new_file = repo.create_file(file_path, comment, data, branch=branch)
+    return new_file['content'].url
     return f"successfully uploaded file {file_path} to Github"

@@ -9,7 +9,7 @@ from rest_framework.response import Response
 import os
 from django.conf import settings
 
-from .models import TestType, ProductCategory, ProductSubCategory, Product
+from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter
 from django.contrib.auth import authenticate, login, logout
@@ -164,24 +164,17 @@ class GenerateTestCases(generics.ListAPIView):
     def get(self, request):
         try:
             data = self.validate_mandatory_checks(request)
-            device_name = data.get('device_name', "MX480")
-            test_type = data.get('test_type', "unit test case")
-            template_prompts = get_prompts_for_device(device_name=device_name, test_type = test_type)
+            data['prompts'] = get_prompts_for_device(**data)
             file_name = get_string_from_datetime() + ".md"
-            response_data = ""
-            for prompt in template_prompts:
-                prompt_data = send_prompt(prompt, output_file=file_name)
-                response_data += prompt_data
+            response_data = self.generate_tests(prompts=data['prompts'], file_name = file_name)
+            data['new_file_url'] = push_to_github(data=response_data,file_path=f'data/{file_name}')
+            insert_test_case(request, data = data)
 
-            insert_into_table()
-            push_to_github(data=response_data,file_path=f'data/{file_name}')
-
-            response = {
+            return Response( {
                 "error": "",
                 "status": 200,
                 "response" : response_data
-            }
-            return Response(response)
+            })
         
         except Exception as e:
             return Response({
@@ -189,11 +182,22 @@ class GenerateTestCases(generics.ListAPIView):
                 "status" : 400,
                 "response" : {}
             })
+    
+    def generate_tests(self, prompts, file_name):
+        try:
+            response_data = ""
+            for prompt in prompts:
+                prompt_data = send_prompt(prompt, output_file=file_name)
+                response_data += prompt_data
+                break
+            return response_data
+        except Exception as e:
+            raise e
 
     def validate_mandatory_checks(self, request):
         try:
             data = {}
-            checks = ['device_name', 'test_type']
+            checks = ['device_id', 'test_type_id']
             for check in checks:
                 data[check] = request.GET.get(check, None)
                 if data[check] is None:
@@ -204,5 +208,20 @@ class GenerateTestCases(generics.ListAPIView):
             raise Exception(f"Validation of mandatory fields to request test cases failed, Error message is {str(e)}")
         
 
-def insert_into_table():
-    logger.log("dummy message")
+def insert_test_case(request, data):
+    try:
+        record = {
+            "test_type_id": data.pop("test_type_id"),
+            "customer" : request.user.customer,
+            "product_id":data.pop("device_id"),
+            "created_by": request.user,
+            "data_url": data.pop("new_file_url"),
+            "data": data
+
+        }
+        return TestCases.objects.create(**record)
+    except Exception as e:
+        raise Exception(e)
+
+
+
