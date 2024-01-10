@@ -13,7 +13,8 @@ class ProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = '__all__'
+        # fields = '__all__'
+        exclude = ['prompts']
 
 class ProductSubCategorySerializer(serializers.ModelSerializer):
     product_count = serializers.SerializerMethodField()
