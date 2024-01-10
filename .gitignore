@@ -12,6 +12,8 @@ db.sqlite3-journal
 media
 settings.py
 !.env
+*.md
+*.log
 
 # Ignore unwanted text files
 *engineering_req.txt

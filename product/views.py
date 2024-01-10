@@ -1,5 +1,7 @@
+from user.models import CustomerConfig
+from product.services.custom_logger import logger
 from product.services.github_service import push_to_github
-from product.services.generic_services import get_prompts_for_device, get_string_from_datetime
+from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, validate_mandatory_checks
 from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
@@ -8,7 +10,7 @@ from rest_framework.response import Response
 import os
 from django.conf import settings
 
-from .models import TestType, ProductCategory, ProductSubCategory, Product
+from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter
 from django.contrib.auth import authenticate, login, logout
@@ -107,8 +109,8 @@ class ProductSubCategoryView(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        print(queryset.query)
         serializer = ProductSubCategorySerializer(queryset, many=True)
+        logger.log(level="INFO", message="Product Sub Categories api")
         return JsonResponse({'data':serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
@@ -159,28 +161,35 @@ class ProductView(generics.ListAPIView):
 class GenerateTestCases(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
+    validation_checks = {
+                "device_id" : {
+                    "is_mandatory" : True,
+                    "type" : str,
+                    "convert_type" : True,
+                },
+                "test_type_id" : {
+                    "is_mandatory" : True,
+                    "type" : list,
+                    "convert_type" : True,
+                    "convert_expression" : str
+                },
+
+            }
     
-    def get(self, request):
+    def post(self, request):
         try:
-            data = self.validate_mandatory_checks(request)
-            device_name = data.get('device_name', "MX480")
-            test_type = data.get('test_type', "unit test case")
-            template_prompts = get_prompts_for_device(device_name=device_name, test_type = test_type)
-            file_name = get_string_from_datetime() + ".md"
-            response_data = ""
-            for prompt in template_prompts:
-                prompt_data = send_prompt(prompt, output_file=file_name)
-                response_data += prompt_data
+            data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
+            data['prompts'] = get_prompts_for_device(**data)
+            self.file_name = get_string_from_datetime() + ".md"
+            response_data = self.generate_tests(prompts=data['prompts'])
+            data['new_file_url'] = push_to_github(data=response_data, file_path=self.get_file_path(request))
+            insert_test_case(request, data = data)
 
-            insert_into_table()
-            push_to_github(data=response_data,file_path=f'data/{file_name}')
-
-            response = {
+            return Response( {
                 "error": "",
                 "status": 200,
                 "response" : response_data
-            }
-            return Response(response)
+            })
         
         except Exception as e:
             return Response({
@@ -188,48 +197,41 @@ class GenerateTestCases(generics.ListAPIView):
                 "status" : 400,
                 "response" : {}
             })
-
-    def validate_mandatory_checks(self, request):
+        
+    def get_file_path(self, request):
+        
         try:
-            data = {}
-            checks = ['device_name', 'test_type']
-            for check in checks:
-                data[check] = request.GET.get(check, None)
-                if data[check] is None:
-                    raise Exception(f"Please pass {check} in queryparams")
-            return data
-        
+            path = CustomerConfig.objects.filter(config_type = 'repo_folder_path', customer=request.user.customer).first().config_value
+            return f"{path}/{self.file_name}"
         except Exception as e:
-            raise Exception(f"Validation of mandatory fields to request test cases failed, Error message is {str(e)}")
+            return f"data/{request.user.customer.code}/{self.file_name}"
+    
+    def generate_tests(self, prompts):
+        try:
+            response_data = ""
+            for prompt in prompts:
+                prompt_data = send_prompt(prompt, output_file=self.file_name)
+                response_data += prompt_data
+                break
+            return response_data
+        except Exception as e:
+            raise e
         
 
-def insert_into_table():
-    pass
+def insert_test_case(request, data):
+    try:
+        data['test_types'] = list(TestType.objects.filter(id__in=data.pop("test_type_id")).values('id', 'code'))
+        record = {
+            "customer" : request.user.customer,
+            "product_id":data.pop("device_id"),
+            "created_by": request.user,
+            "data_url": data.pop("new_file_url"),
+            "data": data
 
-class FileUploadView(generics.ListAPIView):
+        }
+        return TestCases.objects.create(**record)
+    except Exception as e:
+        raise Exception(e)
 
-    def post(self, request, *args, **kwargs):
-        if not 'file' in request.FILES:
-            return JsonResponse('No File', safe= False)
-
-        # uploaded_file = request.FILES['file']
-        # try:
-        #     # Save the file to the server
-        #     # file_path = os.path.join(settings.BASE_DIR, 'uploads', uploaded_file.name)
-        #     # with open(file_path, 'wb+') as destination:
-        #     #     for chunk in uploaded_file.chunks():
-        #     #         destination.write(chunk)
-
-        #     # Commit and push changes to GitHub using GitPython
-        #     repo_path = os.path.join(settings.BASE_DIR, 'Avion-x/AI_GEN_TEST_CASES')
-        #     repo = git.Repo(repo_path)
-        #     repo.git.add('.')
-        #     repo.git.commit('-m', f'Add uploaded file: output.txt')
-        #     repo.git.push()
-
-        # except Exception as e:
-        #     return JsonResponse(f'Error updating GitHub: {e}', safe= False)
-
-        # return JsonResponse('File uploaded', safe= False)
 
 

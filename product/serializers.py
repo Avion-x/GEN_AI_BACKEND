@@ -14,7 +14,8 @@ class ProductSerializer(serializers.ModelSerializer):
     customer_name = serializers.SerializerMethodField()
     class Meta:
         model = Product
-        fields = '__all__'
+        # fields = '__all__'
+        exclude = ['prompts']
 
     def get_sub_category_name(self, obj):
         return obj.product_sub_category.sub_category
