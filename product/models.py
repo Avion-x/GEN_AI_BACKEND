@@ -138,7 +138,6 @@ class ProductPrompt(models.Model):
 
 class TestCases(models.Model):
     id = models.AutoField(primary_key=True)
-    test_type = models.ForeignKey(TestType, related_name = "test_cases",  on_delete=models.CASCADE)
     customer = models.ForeignKey(Customer, related_name = "test_cases",  on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name = "test_cases", on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, related_name = 'test_cases', on_delete=models.CASCADE)

@@ -1,6 +1,6 @@
 from product.services.custom_logger import logger
 from product.services.github_service import push_to_github
-from product.services.generic_services import get_prompts_for_device, get_string_from_datetime
+from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, validate_mandatory_checks
 from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
@@ -160,10 +160,23 @@ class ProductView(generics.ListAPIView):
 class GenerateTestCases(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
+    validation_checks = {
+                "device_id" : {
+                    "is_mandatory" : True,
+                    "type" : str,
+                    "convert_type" : True,
+                },
+                "test_type_id" : {
+                    "is_mandatory" : True,
+                    "type" : list,
+                    "convert_type" : True
+                },
+
+            }
     
-    def get(self, request):
+    def post(self, request):
         try:
-            data = self.validate_mandatory_checks(request)
+            data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
             data['prompts'] = get_prompts_for_device(**data)
             file_name = get_string_from_datetime() + ".md"
             response_data = self.generate_tests(prompts=data['prompts'], file_name = file_name)
@@ -193,25 +206,12 @@ class GenerateTestCases(generics.ListAPIView):
             return response_data
         except Exception as e:
             raise e
-
-    def validate_mandatory_checks(self, request):
-        try:
-            data = {}
-            checks = ['device_id', 'test_type_id']
-            for check in checks:
-                data[check] = request.GET.get(check, None)
-                if data[check] is None:
-                    raise Exception(f"Please pass {check} in queryparams")
-            return data
-        
-        except Exception as e:
-            raise Exception(f"Validation of mandatory fields to request test cases failed, Error message is {str(e)}")
         
 
 def insert_test_case(request, data):
     try:
+        data['test_types'] = list(TestType.objects.filter(id__in=data.pop("test_type_id")).values('id', 'code'))
         record = {
-            "test_type_id": data.pop("test_type_id"),
             "customer" : request.user.customer,
             "product_id":data.pop("device_id"),
             "created_by": request.user,
