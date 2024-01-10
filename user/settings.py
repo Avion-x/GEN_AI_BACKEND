@@ -181,3 +181,24 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication'
     ],
 }
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': f'{BASE_DIR}/log/log_file.log',  # Provide the full path
+        },
+    },
+    'root': {
+        'handlers': ['file'], # 'console' add it if you want to see logs in console
+        'level': 'NOTSET',  # Accept log messages of all levels, You can Adjust the logging level as needed (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    },
+}

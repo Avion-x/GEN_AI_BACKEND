@@ -1,3 +1,4 @@
+from product.services.custom_logger import logger
 from product.services.github_service import push_to_github
 from product.services.generic_services import get_prompts_for_device, get_string_from_datetime
 from product.filters import TestTypeFilter, ProductCategoryFilter
@@ -107,8 +108,8 @@ class ProductSubCategoryView(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        print(queryset.query)
         serializer = ProductSubCategorySerializer(queryset, many=True)
+        logger.log(level="INFO", message="Product Sub Categories api")
         return JsonResponse({'data':serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
@@ -204,32 +205,4 @@ class GenerateTestCases(generics.ListAPIView):
         
 
 def insert_into_table():
-    pass
-
-class FileUploadView(generics.ListAPIView):
-
-    def post(self, request, *args, **kwargs):
-        if not 'file' in request.FILES:
-            return JsonResponse('No File', safe= False)
-
-        # uploaded_file = request.FILES['file']
-        # try:
-        #     # Save the file to the server
-        #     # file_path = os.path.join(settings.BASE_DIR, 'uploads', uploaded_file.name)
-        #     # with open(file_path, 'wb+') as destination:
-        #     #     for chunk in uploaded_file.chunks():
-        #     #         destination.write(chunk)
-
-        #     # Commit and push changes to GitHub using GitPython
-        #     repo_path = os.path.join(settings.BASE_DIR, 'Avion-x/AI_GEN_TEST_CASES')
-        #     repo = git.Repo(repo_path)
-        #     repo.git.add('.')
-        #     repo.git.commit('-m', f'Add uploaded file: output.txt')
-        #     repo.git.push()
-
-        # except Exception as e:
-        #     return JsonResponse(f'Error updating GitHub: {e}', safe= False)
-
-        # return JsonResponse('File uploaded', safe= False)
-
-
+    logger.log("dummy message")
