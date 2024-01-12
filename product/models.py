@@ -13,6 +13,7 @@ class TestType(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated_at = models.DateTimeField(auto_now=True)
     last_updated_by = models.CharField(max_length=255)
+    executable_codes = models.JSONField(default=dict())
 
     def __str__(self):
         return f"{self.code} - {self.description}"
@@ -140,6 +141,7 @@ class TestCases(models.Model):
     id = models.AutoField(primary_key=True)
     customer = models.ForeignKey(Customer, related_name = "test_cases",  on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name = "test_cases", on_delete=models.CASCADE)
+    test_type = models.ForeignKey(TestType, related_name = "test_cases", on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, related_name = 'test_cases', on_delete=models.CASCADE)
     data_url = models.URLField(blank=True, null=True)
     data = models.JSONField()

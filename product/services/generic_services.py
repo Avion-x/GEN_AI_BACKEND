@@ -1,5 +1,8 @@
 from product.models import ProductPrompt, TestType
 import datetime
+import os
+from user.settings import BASE_DIR
+
 
 def get_prompts_for_device(device_id=None, device_name=None, test_type_id=[], **kwargs):
     try:
@@ -10,14 +13,29 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_id=[], **
             filters['product_id'] = device_id
         elif device_name:
             filters['product__product_code'] = device_name
-        test_types = TestType.objects.filter(id__in=test_type_id).values_list('code', flat=True)
-        if not test_types:
-            raise Exception(f"Invalid test type passed to get prompts for device ")
-        
-        product_prompts = [ prompt.replace('${TestType}', test_type) for test_type in test_types for prompt in  ProductPrompt.objects.filter(**filters).values_list('executable_prompt', flat=True)]
 
-        print(product_prompts)
-        return product_prompts
+        prompts = ProductPrompt.objects.filter(**filters).values_list('executable_prompt', flat=True)
+        response = {}
+        for test_id in test_type_id:
+            test_type = TestType.objects.filter(id=test_id).first()
+            if test_type:
+                for test_code, test_code_details in test_type.executable_codes.items():
+                    test_prompts = [prompt.replace('${TestType}', test_code_details.get("code", test_code)) for prompt in  prompts] if test_code_details.get("code", None) else []
+                    test_prompts += test_code_details.get("default", [])
+                    if not len(test_prompts):
+                        continue
+                    if response.get(test_type.code):
+                        response[test_type.code][test_code] = test_prompts
+                    else:
+                        response[test_type.code] = {"test_type_id": test_type.id}
+                        response[test_type.code][test_code] = test_prompts
+        if not response:
+            raise Exception(f"Incorrect configuration of test types, Please verify once")
+        
+        # test_types = TestType.objects.filter(id__in=test_type_id).values_list('code', flat=True)
+        # if not test_types:
+        #     raise Exception(f"Invalid test type passed to get prompts for device ")
+        return response
     except Exception as e:
         raise e
     
@@ -43,3 +61,16 @@ def validate_mandatory_checks( input_data={}, checks = {}):
     
     except Exception as e:
         raise Exception(f"Validation of mandatory fields to request test cases failed, Error message is {str(e)}")
+    
+
+def write_file(file_path="data/output.md", mode="w", data= ""):
+    try:
+        directory_path, file_name = os.path.split(file_path)
+        directory_path = os.path.join(BASE_DIR, directory_path)
+        os.makedirs(directory_path, exist_ok=True)
+        os.chmod(directory_path, 0o777)
+
+        with open(os.path.join(directory_path, file_name), "a", encoding="utf-8") as file:
+            file.write(data)
+    except Exception as e:
+        raise e

@@ -1,3 +1,4 @@
+from datetime import date
 from user.models import CustomerConfig
 from product.services.custom_logger import logger
 from product.services.github_service import push_to_github
@@ -26,12 +27,11 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
 
-from product.services.open_ai import send_prompt
+from product.services.open_ai import CustomOpenAI
 
 
 # Create your views here.
 class TestTypeView(generics.ListAPIView):
-    
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
@@ -40,11 +40,13 @@ class TestTypeView(generics.ListAPIView):
     ordering = [] # for default orderings
 
     def get_queryset(self):
-        return TestType.objects.filter()
+        try:
+            return TestType.objects.filter()
+        except Exception as e:
+            logger.error(level='ERROR', message = "")
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        print(queryset.query)
         serializer = TestTypeSerializer(queryset, many=True)
         return JsonResponse({'data':serializer.data}, safe=False)
 
@@ -63,7 +65,6 @@ class TestTypeView(generics.ListAPIView):
         return JsonResponse(serializer.data)
 
 class ProductCategoryView(generics.ListAPIView):
-
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
@@ -96,7 +97,6 @@ class ProductCategoryView(generics.ListAPIView):
         return JsonResponse(serializer.data)
 
 class ProductSubCategoryView(generics.ListAPIView):
-
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
@@ -175,20 +175,26 @@ class GenerateTestCases(generics.ListAPIView):
                 },
 
             }
-    
+
+    def set_device(self, device_id):
+        try:
+            self.device = Product.objects.get(id=device_id, customer = self.request.user.customer, status=True, valid_till__gte = date.today())
+        except Exception as e:
+            raise e
+        
     def post(self, request):
         try:
+            response = {}
             data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
-            data['prompts'] = get_prompts_for_device(**data)
-            self.file_name = get_string_from_datetime() + ".md"
-            response_data = self.generate_tests(prompts=data['prompts'])
-            data['new_file_url'] = push_to_github(data=response_data, file_path=self.get_file_path(request))
-            insert_test_case(request, data = data)
+            self.set_device(data['device_id'])
+            prompts_data = get_prompts_for_device(**data)
+            for test, test_data in prompts_data.items(): 
+                response[test] = self.execute(request, test, test_data)
 
             return Response( {
                 "error": "",
                 "status": 200,
-                "response" : response_data
+                "response" : response
             })
         
         except Exception as e:
@@ -198,21 +204,36 @@ class GenerateTestCases(generics.ListAPIView):
                 "response" : {}
             })
         
-    def get_file_path(self, request):
-        
+    def execute(self, request, test_type, input_data):
         try:
-            path = CustomerConfig.objects.filter(config_type = 'repo_folder_path', customer=request.user.customer).first().config_value
-            return f"{path}/{self.file_name}"
+            response = {}
+            insert_data = {"test_type_id":input_data.pop("test_type_id",None), "device_id":self.device.id}
+            for test_code, propmts in input_data.items():
+                file_path = self.get_file_path(request, test_type, test_code)
+                open_ai = CustomOpenAI()
+                response[test_code] = self.generate_tests(prompts=propmts, open_ai_obj = open_ai)
+                insert_data['new_file_url'] = push_to_github(data=response[test_code], file_path=file_path)
+                insert_test_case(request, data = insert_data.copy())
+            return response
         except Exception as e:
-            return f"data/{request.user.customer.code}/{self.file_name}"
+            raise e
+        
+    def get_file_path(self, request, test_type, test_code):
+        try:
+            device_code = self.device.product_code
+            path = CustomerConfig.objects.filter(config_type = 'repo_folder_path', customer=request.user.customer).first().config_value
+            return path.replace("${device_code}", device_code) \
+                           .replace("${test_type}", test_type) \
+                           .replace("${test_code}", test_code)
+        except Exception as e:
+            return f"data/{request.user.customer.code}/{test_type}/{test_code}"
     
-    def generate_tests(self, prompts):
+    def generate_tests(self, prompts, open_ai_obj):
         try:
             response_data = ""
             for prompt in prompts:
-                prompt_data = send_prompt(prompt, output_file=self.file_name)
+                prompt_data = open_ai_obj.send_prompt(prompt,)
                 response_data += prompt_data
-                break
             return response_data
         except Exception as e:
             raise e
@@ -220,13 +241,13 @@ class GenerateTestCases(generics.ListAPIView):
 
 def insert_test_case(request, data):
     try:
-        data['test_types'] = list(TestType.objects.filter(id__in=data.pop("test_type_id")).values('id', 'code'))
         record = {
             "customer" : request.user.customer,
             "product_id":data.pop("device_id"),
             "created_by": request.user,
             "data_url": data.pop("new_file_url"),
-            "data": data
+            "test_type_id": data.pop("test_type_id"),
+            "data": data,
 
         }
         return TestCases.objects.create(**record)

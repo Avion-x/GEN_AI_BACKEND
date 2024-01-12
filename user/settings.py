@@ -111,7 +111,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'GEN_AI',
         'USER': 'admin',
-        'PASSWORD': 'DS-P0)!Cq)y9?CWR._j6FU7r<6G#',
+        'PASSWORD': '-Mj8[q{!6gWF%th~l#|Hrlyd0S-y',
         'HOST': 'gen-ai.c54r5svdjqsu.us-west-2.rds.amazonaws.com',  # This is the endpoint of your RDS instance
         'PORT': '3306',  # Default MySQL port
         'OPTIONS': {

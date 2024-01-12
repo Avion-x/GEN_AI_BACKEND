@@ -19,7 +19,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
 
 
-
 def get_request_body(request):
     try:
         return json.loads(request.body.encode('utf-8'))
