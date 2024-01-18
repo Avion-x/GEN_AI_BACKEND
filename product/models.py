@@ -3,9 +3,24 @@ from product.query_manager import CustomManager
 from user.models import User, Customer
 
 
+class FoundationalModel(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=500)
+    provider = models.CharField(max_length=255)
+    description = models.TextField()
+    status = models.BooleanField(default=True)
+    valid_till = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_updated_at = models.DateTimeField(auto_now=True)
+    data = models.JSONField(default={})
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
 class TestType(models.Model):
     id = models.AutoField(primary_key=True)
-    code = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=500)
     description = models.TextField()
     status = models.BooleanField()
     valid_till = models.DateField(null=True, blank=True)
@@ -17,6 +32,25 @@ class TestType(models.Model):
 
     def __str__(self):
         return f"{self.code} - {self.description}"
+    
+class TestCategories(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    number_of_test_cases = models.IntegerField()
+    description = models.TextField()
+    is_approved = models.BooleanField(default=False)
+    approved_by = models.ForeignKey(User, related_name = "test_category", on_delete=models.CASCADE)
+    status = models.BooleanField()
+    valid_till = models.DateField(null=True, blank=True)
+    customer = models.ForeignKey(Customer, related_name = "test_category", on_delete=models.CASCADE)
+    test_type = models.ForeignKey(TestType, related_name = "test_category", on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_updated_at = models.DateTimeField(auto_now=True)
+    last_updated_by = models.CharField(max_length=255)
+    executable_codes = models.JSONField(default=dict())
+
+    def __str__(self) -> str:
+        return f"{self.name}-{self.test_type.code}"
 
 class Prompt(models.Model):
     id = models.AutoField(primary_key=True)
@@ -29,7 +63,7 @@ class Prompt(models.Model):
     comments = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated_at = models.DateTimeField(auto_now=True)
-    last_updated_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    last_updated_by = models.ForeignKey(User, related_name = "prompt", on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.provider} - {self.foundation_model} - {self.prompt}"

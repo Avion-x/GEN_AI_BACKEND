@@ -1,4 +1,5 @@
 from datetime import date
+from product.services.aws_bedrock import AwsBedrock
 from user.models import CustomerConfig
 from product.services.custom_logger import logger
 from product.services.github_service import push_to_github
@@ -173,8 +174,17 @@ class GenerateTestCases(generics.ListAPIView):
                     "convert_type" : True,
                     "convert_expression" : str
                 },
+                "ai_model" : {
+                    "is_mandatory" : False,
+                    "type":str,
+                    "convert_type" : False,
+                },
 
             }
+    AiModels = {
+        "open_ai" : CustomOpenAI,
+        "titan_ai" : AwsBedrock
+    }
 
     def set_device(self, device_id):
         try:
@@ -182,10 +192,21 @@ class GenerateTestCases(generics.ListAPIView):
         except Exception as e:
             raise e
         
+    def get_ai_obj(self,data):
+        try:
+            model = data.get('ai_model', "open_ai")
+            ai_model = self.AiModels.get(model, None)
+            if not ai_model:
+                raise Exception(f"Please provide valid ai_model, Available models are {list(self.AiModels.keys())}")
+            return ai_model()
+        except Exception as e:
+            raise e
+        
     def post(self, request):
         try:
             response = {}
             data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
+            self.ai_obj = self.get_ai_obj(data)
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
             for test, test_data in prompts_data.items(): 
@@ -210,8 +231,7 @@ class GenerateTestCases(generics.ListAPIView):
             insert_data = {"test_type_id":input_data.pop("test_type_id",None), "device_id":self.device.id}
             for test_code, propmts in input_data.items():
                 file_path = self.get_file_path(request, test_type, test_code)
-                open_ai = CustomOpenAI()
-                response[test_code] = self.generate_tests(prompts=propmts, open_ai_obj = open_ai)
+                response[test_code] = self.generate_tests(prompts=propmts)
                 insert_data['new_file_url'] = push_to_github(data=response[test_code], file_path=file_path)
                 insert_test_case(request, data = insert_data.copy())
             return response
@@ -228,11 +248,11 @@ class GenerateTestCases(generics.ListAPIView):
         except Exception as e:
             return f"data/{request.user.customer.code}/{test_type}/{test_code}"
     
-    def generate_tests(self, prompts, open_ai_obj):
+    def generate_tests(self, prompts, **kwargs):
         try:
             response_data = ""
             for prompt in prompts:
-                prompt_data = open_ai_obj.send_prompt(prompt,)
+                prompt_data = self.ai_obj.send_prompt(prompt, **kwargs)
                 response_data += prompt_data
             return response_data
         except Exception as e:

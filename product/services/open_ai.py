@@ -5,7 +5,7 @@ from openai import OpenAI
 from user.settings import BASE_DIR
 
 # Set your OpenAI GPT-3 API key
-api_key = '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'
+api_key = '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'
 client = OpenAI(api_key=api_key)
 
 
@@ -38,7 +38,7 @@ class CustomOpenAI():
         except Exception as e:
             raise e
         
-    def send_prompt(self, prompt):
+    def send_prompt(self, prompt, **kwargs):
         response = client.chat.completions.create(
             messages=[
             {
@@ -46,7 +46,7 @@ class CustomOpenAI():
                 "content": prompt + self.append_prompt
             }
         ],
-        model="gpt-3.5-turbo-1106",
+        model=  "text-embedding-ada-002	"  # "gpt-3.5-turbo-1106",
         )
         output_text = "\n\n" + response.choices[0].message.content
         return output_text
