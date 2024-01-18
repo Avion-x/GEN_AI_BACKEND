@@ -37,9 +37,8 @@ class LoginView(generics.RetrieveAPIView):
         if user is not None:
             login(request, user)
             token, created = Token.objects.get_or_create(user=request.user)
-            return Response({'token': token.key})
-            serializer = UserRetriveSerializer(user)
-            return Response(serializer.data)
+            serializer = UserRetriveSerializer(user, many=True)
+            return Response({'token': token.key, 'user_details':serializer.data})
         else:
             # Authentication failed
             return Response({'error': 'Invalid credentials'})
