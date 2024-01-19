@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, ProductSubCategory, Prompt
+from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, ProductSubCategory, Prompt, TestCases, TestCategories
 from django.contrib.auth.hashers import make_password
 
 
@@ -56,3 +56,13 @@ class ProductCategorySerializer(serializers.ModelSerializer):
     
     def get_customer_name(self, obj):
         return obj.customer.name
+
+class TestCasesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TestCases
+        fields = '__all__'
+
+class TestCategoriesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TestCategories
+        fields = '__all__'
