@@ -330,9 +330,9 @@ class TestCategoriesView(generics.ListAPIView):
     ordering = [] # for default orderings
 
     def get_queryset(self):
-        return TestCategories.objects.filter(is_approved = 1, status = 1, valid_till__gt = date.today(), customer = self.request.user.customer, test_type_id = self.kwargs.get('test_type_id'))
+        return TestCategories.objects.filter(is_approved = 1, status = 1, valid_till__gt = date.today(), customer_id = self.request.user.customer_id, test_type_id = self.request.query_params.get('test_type_id'))
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = TestCasesSerializer(queryset, many=True)
+        serializer = TestCategoriesSerializer(queryset, many=True)
         return JsonResponse({'data':serializer.data}, safe=False)
