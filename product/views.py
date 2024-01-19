@@ -330,7 +330,7 @@ class TestCategoriesView(generics.ListAPIView):
     ordering = [] # for default orderings
 
     def get_queryset(self):
-        return TestCategories.objects.filter()
+        return TestCategories.objects.filter(is_approved = 1, status = 1, valid_till__gt = date.today(), customer = self.request.user.customer, test_type_id = self.kwargs.get('test_type_id'))
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
