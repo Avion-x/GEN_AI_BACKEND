@@ -129,7 +129,8 @@ class Product(models.Model):
     comments = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated_at = models.DateTimeField(auto_now=True)
-    last_updated_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    # created_by = models.ForeignKey(User, blank = True, related_name = 'product', on_delete=models.CASCADE)
+    last_updated_by = models.ForeignKey(User, related_name = 'product', on_delete=models.CASCADE)
     prompts = models.ManyToManyField(Prompt, blank=True, related_name = 'product', through='ProductPrompt')
 
     def __str__(self):
@@ -178,6 +179,7 @@ class TestCases(models.Model):
     test_type = models.ForeignKey(TestType, related_name = "test_cases", on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, related_name = 'test_cases', on_delete=models.CASCADE)
     data_url = models.URLField(blank=True, null=True)
+    sha = models.CharField(max_length=255, null=True, blank=True)
     data = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

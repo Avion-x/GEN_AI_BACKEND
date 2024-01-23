@@ -19,22 +19,19 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_id=[], **
         for test_id in test_type_id:
             test_type = TestType.objects.filter(id=test_id).first()
             if test_type:
-                for test_code, test_code_details in test_type.executable_codes.items():
-                    test_prompts = [prompt.replace('${TestType}', test_code_details.get("code", test_code)) for prompt in  prompts] if test_code_details.get("code", None) else []
-                    test_prompts += test_code_details.get("default", [])
-                    if not len(test_prompts):
-                        continue
-                    if response.get(test_type.code):
-                        response[test_type.code][test_code] = test_prompts
-                    else:
-                        response[test_type.code] = {"test_type_id": test_type.id}
-                        response[test_type.code][test_code] = test_prompts
+                for test_category in test_type.test_category.filter(status=1, is_approved=1).all():
+                    for test_code, test_code_details in test_category.executable_codes.items():
+                        test_prompts = [prompt.replace('${TestType}', test_code_details.get("code", test_code)) for prompt in  prompts] if test_code_details.get("code", None) else []
+                        test_prompts += test_code_details.get("default", [])
+                        if not len(test_prompts):
+                            continue
+                        if response.get(test_type.code):
+                            response[test_type.code][test_code] = test_prompts
+                        else:
+                            response[test_type.code] = {"test_type_id": test_type.id}
+                            response[test_type.code][test_code] = test_prompts
         if not response:
             raise Exception(f"Incorrect configuration of test types, Please verify once")
-        
-        # test_types = TestType.objects.filter(id__in=test_type_id).values_list('code', flat=True)
-        # if not test_types:
-        #     raise Exception(f"Invalid test type passed to get prompts for device ")
         return response
     except Exception as e:
         raise e

@@ -8,10 +8,6 @@ from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
-# import git
-import os
-from django.conf import settings
-
 from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter
@@ -27,7 +23,6 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
-
 from product.services.open_ai import CustomOpenAI
 
 
@@ -183,7 +178,9 @@ class GenerateTestCases(generics.ListAPIView):
             }
     AiModels = {
         "open_ai" : CustomOpenAI,
-        "titan_ai" : AwsBedrock
+        "anthropic.claude-v2:1" : AwsBedrock,
+        "anthropic.claude-v2" : AwsBedrock,
+        'amazon.titan-text-express-v1': AwsBedrock,
     }
 
     def set_device(self, device_id):
@@ -198,7 +195,7 @@ class GenerateTestCases(generics.ListAPIView):
             ai_model = self.AiModels.get(model, None)
             if not ai_model:
                 raise Exception(f"Please provide valid ai_model, Available models are {list(self.AiModels.keys())}")
-            return ai_model()
+            return ai_model(modelId=model)
         except Exception as e:
             raise e
         
@@ -210,6 +207,7 @@ class GenerateTestCases(generics.ListAPIView):
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
             for test, test_data in prompts_data.items(): 
+                print(test, test_data)
                 response[test] = self.execute(request, test, test_data)
 
             return Response( {
@@ -228,11 +226,11 @@ class GenerateTestCases(generics.ListAPIView):
     def execute(self, request, test_type, input_data):
         try:
             response = {}
-            insert_data = {"test_type_id":input_data.pop("test_type_id",None), "device_id":self.device.id}
+            insert_data = {"test_type_id":input_data.pop("test_type_id",None), "device_id":self.device.id, "prompts":input_data}
             for test_code, propmts in input_data.items():
                 file_path = self.get_file_path(request, test_type, test_code)
                 response[test_code] = self.generate_tests(prompts=propmts)
-                insert_data['new_file_url'] = push_to_github(data=response[test_code], file_path=file_path)
+                insert_data['git_data'] = push_to_github(data=response[test_code], file_path=file_path)
                 insert_test_case(request, data = insert_data.copy())
             return response
         except Exception as e:
@@ -252,7 +250,8 @@ class GenerateTestCases(generics.ListAPIView):
         try:
             response_data = ""
             for prompt in prompts:
-                prompt_data = self.ai_obj.send_prompt(prompt, **kwargs)
+                kwargs['prompt']=prompt
+                prompt_data = self.ai_obj.send_prompt(**kwargs)
                 response_data += prompt_data
             return response_data
         except Exception as e:
@@ -265,7 +264,8 @@ def insert_test_case(request, data):
             "customer" : request.user.customer,
             "product_id":data.pop("device_id"),
             "created_by": request.user,
-            "data_url": data.pop("new_file_url"),
+            "data_url": data.get('git_data').get("url"),
+            "sha": data.get('git_data').get("sha"),
             "test_type_id": data.pop("test_type_id"),
             "data": data,
 

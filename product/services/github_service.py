@@ -30,5 +30,10 @@ def push_to_github(branch='main', data = "", file_path = None, repo = 'Avion-x/A
             content=data,
             branch=branch
         )
-    return file['content'].url
+    return {
+        "git_url" : file['content'].git_url,
+        "download_url" : file['content'].download_url,
+        "sha" : file['content'].sha,
+        "url" : file['content'].url
+    }
     return f"successfully uploaded file {file_path} to Github"
