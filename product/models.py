@@ -46,7 +46,7 @@ class TestCategories(models.Model):
     test_type = models.ForeignKey(TestType, related_name = "test_category", on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated_at = models.DateTimeField(auto_now=True)
-    last_updated_by = models.CharField(max_length=255)
+    last_updated_by = models.ForeignKey(User, related_name="test_category_last_updated", on_delete=models.CASCADE)
     executable_codes = models.JSONField(default=dict())
 
     def __str__(self) -> str:
@@ -176,7 +176,7 @@ class TestCases(models.Model):
     id = models.AutoField(primary_key=True)
     customer = models.ForeignKey(Customer, related_name = "test_cases",  on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name = "test_cases", on_delete=models.CASCADE)
-    test_type = models.ForeignKey(TestType, related_name = "test_cases", on_delete=models.CASCADE)
+    test_category = models.ForeignKey(TestCategories, related_name = "test_cases", on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, related_name = 'test_cases', on_delete=models.CASCADE)
     data_url = models.URLField(blank=True, null=True)
     sha = models.CharField(max_length=255, null=True, blank=True)

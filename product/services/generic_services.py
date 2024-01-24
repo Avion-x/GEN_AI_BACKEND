@@ -19,17 +19,18 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_id=[], **
         for test_id in test_type_id:
             test_type = TestType.objects.filter(id=test_id).first()
             if test_type:
-                for test_category in test_type.test_category.filter(status=1, is_approved=1).all():
+                response[test_type.code] = {}
+                for test_category in test_type.test_category.filter(status=1, is_approved=1).all()[:1]:
                     for test_code, test_code_details in test_category.executable_codes.items():
                         test_prompts = [prompt.replace('${TestType}', test_code_details.get("code", test_code)) for prompt in  prompts] if test_code_details.get("code", None) else []
                         test_prompts += test_code_details.get("default", [])
                         if not len(test_prompts):
                             continue
                         if response.get(test_type.code):
-                            response[test_type.code][test_code] = test_prompts
+                            response[test_type.code][test_category.name][test_code] = test_prompts
                         else:
-                            response[test_type.code] = {"test_type_id": test_type.id}
-                            response[test_type.code][test_code] = test_prompts
+                            response[test_type.code][test_category.name] = {"test_category_id": test_category.id}
+                            response[test_type.code][test_category.name][test_code] = test_prompts
         if not response:
             raise Exception(f"Incorrect configuration of test types, Please verify once")
         return response

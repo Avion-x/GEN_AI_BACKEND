@@ -215,8 +215,9 @@ class GenerateTestCases(generics.ListAPIView):
             self.ai_obj = self.get_ai_obj(data)
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
-            for test, test_data in prompts_data.items():
-                response[test] = self.execute(request, test, test_data)
+            for test_type, tests in prompts_data.items():
+                for test, test_data in tests.items():
+                    response[test] = self.execute(request, test_type, test, test_data)
 
             return Response( {
                 "error": "",
@@ -231,12 +232,12 @@ class GenerateTestCases(generics.ListAPIView):
                 "response" : {}
             })
         
-    def execute(self, request, test_type, input_data):
+    def execute(self, request, test_type, test_category, input_data):
         try:
             response = {}
-            insert_data = {"test_type_id":input_data.pop("test_type_id",None), "device_id":self.device.id, "prompts":input_data}
+            insert_data = {"test_category_id":input_data.pop("test_category_id",None), "device_id":self.device.id, "prompts":input_data}
             for test_code, propmts in input_data.items():
-                file_path = self.get_file_path(request, test_type, test_code)
+                file_path = self.get_file_path(request, test_type, test_category, test_code)
                 response[test_code] = self.generate_tests(prompts=propmts)
                 insert_data['git_data'] = push_to_github(data=response[test_code], file_path=file_path)
                 insert_test_case(request, data = insert_data.copy())
@@ -244,12 +245,13 @@ class GenerateTestCases(generics.ListAPIView):
         except Exception as e:
             raise e
 
-    def get_file_path(self, request, test_type, test_code):
+    def get_file_path(self, request, test_type, test_category, test_code):
         try:
             device_code = self.device.product_code
             path = CustomerConfig.objects.filter(config_type = 'repo_folder_path', customer=request.user.customer).first().config_value
             return path.replace("${device_code}", device_code) \
                            .replace("${test_type}", test_type) \
+                           .replace("${test_category}", test_category) \
                            .replace("${test_code}", test_code)
         except Exception as e:
             return f"data/{request.user.customer.code}/{test_type}/{test_code}"
@@ -274,7 +276,7 @@ def insert_test_case(request, data):
             "created_by": request.user,
             "data_url": data.get('git_data').get("url"),
             "sha": data.get('git_data').get("sha"),
-            "test_type_id": data.pop("test_type_id"),
+            "test_category_id": data.pop("test_category_id"),
             "data": data,
 
         }
