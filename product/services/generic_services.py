@@ -1,4 +1,6 @@
-from product.models import ProductPrompt, TestType
+
+from product.models import ProductPrompt, TestType, ProductSubCategory, Customer, ProductCategoryPromptCode, Prompt, ProductCategoryPrompt
+from product.serializers import ProductSubCategorySerializer #, CustomerSerializer, PromptSerializer
 import datetime
 import os
 from user.settings import BASE_DIR
@@ -72,3 +74,56 @@ def write_file(file_path="data/output.md", mode="w", data= ""):
             file.write(data)
     except Exception as e:
         raise e
+
+
+# def trigger_product_prompt_data(customer_id, product_sub_category_id, product_code, product_id):
+
+#     # get sub_category name using customer_id, prodcut_sub_category_id
+#     prod_sub_cate = ProductSubCategory.objects.filter(id=product_sub_category_id, customer=customer_id, status=1)
+#     serializer = ProductSubCategorySerializer(prod_sub_cate, many=True)
+#     print(serializer.data[0]['sub_category'])
+#     sub_category = serializer.data[0]['sub_category']
+#     product_category_id = serializer.data[0]['product_category_id']
+
+#     # get customer code and name
+#     cust_name = Customer.objects.filter(id=customer_id).values('name', 'code')
+#     print(cust_name)
+#     serializer_cust = CustomerSerializer(cust_name, many=True)
+#     customer_name = serializer_cust.data[0]['name']
+#     prouduct_category_prompt_code = customer_name + ' ' + sub_category
+#     print(prouduct_category_prompt_code)
+
+#     # here save product_category_prompt_code in product category prompt code table using prompt code, customer_id, product_sub_category_id
+#     new_productcategorypromptcode = ProductCategoryPromptCode(product_sub_category=prouduct_category_prompt_code,
+#                                                               customer_id=customer_id, status=1,
+#                                                               product_sub_category_id=product_sub_category_id)
+
+#     new_productcategorypromptcode.save()
+
+
+#     # get prompts from prompt table
+#     get_prompts = Prompt.objects.filter().values('provider', 'foundation_model', 'prompt', 'id')
+#     prompts = PromptSerializer(get_prompts, many=True).data
+
+#     for prompt1 in prompts:
+#         prompt = prompt1['prompt']
+#         id = prompt1['id']
+#         print('1', prompt)
+#         if '${ReplaceWithProductCategoryPromptCode}' in prompt:
+#             prompt = prompt.replace('${ReplaceWithProductCategoryPromptCode}', prouduct_category_prompt_code)
+#             print('2', prompt)
+
+#         # insert into product_category_prompt
+#         product_category_prompt_obj = ProductCategoryPromptCode(prompt_code=prompt, prompt_id=id, product_sub_category_id=product_sub_category_id, customer_id=customer_id, status=1)
+
+#         product_category_prompt_obj.save()
+
+#         if '{ReplaceWithProductCode}' in prompt:
+#             prompt = prompt.replace('{ReplaceWithProductCode}', product_code)
+#             print('4', prompt)
+
+#         # insert into product_prompt table
+#         product_prompt_obj = ProductPrompt(executable_prompt=prompt, status=1, customer_id=customer_id,
+#                                            product_id=product_id, prompt_id=id, product_category_id=product_category_id)
+
+#         product_prompt_obj.save()
