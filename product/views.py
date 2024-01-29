@@ -218,7 +218,7 @@ class GenerateTestCases(generics.ListAPIView):
             for test_type, tests in prompts_data.items():
                 response[test_type] = []
                 for test, test_data in tests.items():
-                    response[test_type][test] = self.execute(request, test_type, test, test_data)
+                    response[test_type].append({test:self.execute(request, test_type, test, test_data)})
 
             return Response( {
                 "error": "",
