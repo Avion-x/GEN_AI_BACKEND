@@ -32,7 +32,8 @@ class AwsBedrock():
     def __init__(self, **kwargs):
         self.bedrock_runtime = boto3.client('bedrock-runtime',
             aws_access_key_id='AKIA3MUTZS7BNCEROH24',
-            aws_secret_access_key='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')
+            aws_secret_access_key='tShLXp76HaJ+IL3ymWEnE5aPEQvnwAVPATCU0239',
+            region_name='us-west-2')
         
         self.models_body_registry = {
             "anthropic.claude-v2:1" : {
