@@ -218,7 +218,7 @@ class GenerateTestCases(generics.ListAPIView):
             for test_type, tests in prompts_data.items():
                 response[test_type] = []
                 for test, test_data in tests.items():
-                    response[test_type].append({test:self.execute(request, test_type, test, test_data)})
+                    response[test_type].append(self.execute(request, test_type, test, test_data))
 
             return Response( {
                 "error": "",
@@ -242,6 +242,7 @@ class GenerateTestCases(generics.ListAPIView):
                 response[test_code] = self.generate_tests(prompts=propmts)
                 insert_data['git_data'] = push_to_github(data=response[test_code], file_path=file_path)
                 insert_test_case(request, data = insert_data.copy())
+            response['test_category'] = test_category
             return response
         except Exception as e:
             raise e
