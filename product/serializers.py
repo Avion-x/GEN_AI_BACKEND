@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, ProductSubCategory, Prompt, TestCases, TestCategories
+from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, ProductSubCategory, Prompt, TestCases, TestCategories, Customer
 from django.contrib.auth.hashers import make_password
 
 
@@ -66,3 +66,30 @@ class TestCategoriesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestCategories
         fields = '__all__'
+
+
+class PromptSerializer(serializers.ModelSerializer):
+    prompt_pro = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Prompt
+        fields = ['prompt', 'id']
+        # exclude = ['provider', 'foundation_model', 'rag']
+
+    def prompt_pro(self, obj):
+        return obj.Prompt.prompt
+
+    def prompt_pro_id(self, obj):
+        return obj.Prompt.id
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['name', 'code', 'id']
+
+class ProductCategoryPromptCodeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProductCategoryPromptCode
+        fields = '_all_'

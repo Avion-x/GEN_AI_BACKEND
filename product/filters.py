@@ -73,3 +73,12 @@ class TestCategoriesFilter(django_filters.FilterSet):
                 },
             },
         }
+
+
+class PromptFilter(django_filters.FilterSet):
+    id = django_filters.NumberFilter(lookup_expr='exact')
+    prompt = django_filters.CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = Prompt
+        fields = ['id', 'prompt']
