@@ -200,6 +200,8 @@ class TestScriptExecResults(models.Model):
     execution_result_details = models.JSONField(default={})
     test_script_number = models.CharField(max_length=255)
     status = models.BooleanField(default=True)
+    test_type = models.ForeignKey(TestType, related_name="test_script_exec_results", on_delete=models.CASCADE)
+    product_sub_category = models.ForeignKey(ProductSubCategory, related_name="test_script_exec_results", on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.test_script_number}-{self.product.product_code}({self.created_at})"

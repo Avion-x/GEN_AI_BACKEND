@@ -2,13 +2,15 @@ from datetime import date
 from product.services.aws_bedrock import AwsBedrock
 from user.models import CustomerConfig
 from product.services.custom_logger import logger
-from product.services.github_service import push_to_github, get_commits_for_file, get_changes_in_file, get_files_in_commit
-from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, validate_mandatory_checks
+from product.services.github_service import push_to_github, get_commits_for_file, get_changes_in_file, \
+    get_files_in_commit
+from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, \
+    validate_mandatory_checks
 from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
-from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product
+from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestScriptExecResults
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter
 # import git
@@ -16,8 +18,10 @@ import os
 from django.conf import settings
 
 from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories
-from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, TestCasesSerializer, TestCategoriesSerializer
-from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, TestCasesFilter, TestCategoriesFilter
+from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, \
+    TestCasesSerializer, TestCategoriesSerializer, TestScriptExecResultsSerializer
+from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, TestCasesFilter, \
+    TestCategoriesFilter, TestExecutionResultsFilter
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
@@ -42,18 +46,18 @@ class TestTypeView(generics.ListAPIView):
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = TestTypeFilter
     ordering_fields = ['id', 'created_at', 'last_updated_at']
-    ordering = [] # for default orderings
+    ordering = []  # for default orderings
 
     def get_queryset(self):
         try:
             return TestType.objects.filter()
         except Exception as e:
-            logger.error(level='ERROR', message = "")
+            logger.error(level='ERROR', message="")
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = TestTypeSerializer(queryset, many=True)
-        return JsonResponse({'data':serializer.data}, safe=False)
+        return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -69,13 +73,14 @@ class TestTypeView(generics.ListAPIView):
         serializer.save()
         return JsonResponse(serializer.data)
 
+
 class ProductCategoryView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = ProductCategoryFilter
     ordering_fields = ['id', 'created_at', 'last_updated_at']
-    ordering = [] # for default orderings
+    ordering = []  # for default orderings
 
     def get_queryset(self):
         return ProductCategory.objects.filter(customer_id = self.request.user.customer_id, status = 1, valid_till__gt = date.today())
@@ -100,6 +105,7 @@ class ProductCategoryView(generics.ListAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return JsonResponse(serializer.data)
+
 
 class ProductSubCategoryView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
@@ -141,13 +147,13 @@ class ProductView(generics.ListAPIView):
     ordering = [] # for default orderings
 
     def get_queryset(self):
-        return Product.objects.filter(customer_id = self.request.user.customer_id, status = 1, valid_till__gt = date.today())
+        return Product.objects.filter(customer_id=self.request.user.customer_id, status=1, valid_till__gt=date.today())
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         print(queryset.query)
         serializer = ProductSerializer(queryset, many=True)
-        return JsonResponse({'data':serializer.data}, safe=False)
+        return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -162,6 +168,7 @@ class ProductView(generics.ListAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return JsonResponse(serializer.data)
+
 
 class GenerateTestCases(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
@@ -220,7 +227,7 @@ class GenerateTestCases(generics.ListAPIView):
                 for test, test_data in tests.items():
                     response[test_type].append(self.execute(request, test_type, test, test_data))
 
-            return Response( {
+            return Response({
                 "error": "",
                 "status": 200,
                 "response" : response
@@ -306,43 +313,68 @@ class TestCasesView(generics.ListAPIView):
 class GetFileCommitsView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
+
     def get(self, request):
         file_path = request.query_params.get('file_path')
         repo = request.query_params.get('repo')
-        response_data = get_commits_for_file(file_path = file_path, repo = repo)
+        response_data = get_commits_for_file(file_path=file_path, repo=repo)
         return JsonResponse(response_data, safe=False)
+
 
 class GetFileChangesView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
+
     def get(self, request):
         file_path = request.query_params.get('file_path')
         repo = request.query_params.get('repo')
         commit_sha = request.query_params.get('commit_sha')
-        response_data = get_changes_in_file(file_path = file_path, repo = repo, commit_sha = commit_sha)
+        response_data = get_changes_in_file(file_path=file_path, repo=repo, commit_sha=commit_sha)
         return HttpResponse(response_data, content_type='text/plain')
+
 
 class GetCommitsView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
+
     def get(self, request):
         repo = request.query_params.get('repo')
         branch_name = request.query_params.get('branch_name')
-        response_data = get_files_in_commit(repo = repo, branch_name = branch_name)
+        response_data = get_files_in_commit(repo=repo, branch_name=branch_name)
         return JsonResponse(response_data, safe=False)
 
+
 class TestCategoriesView(generics.ListAPIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    # permission_classes = (IsAuthenticated,)
+    # authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = TestCategoriesFilter
     ordering_fields = ['id', 'created_at', 'last_updated_at']
-    ordering = [] # for default orderings
+    ordering = []  # for default orderings
 
     def get_queryset(self):
-        return TestCategories.objects.filter(is_approved = 1, status = 1, valid_till__gt = date.today(), customer_id = self.request.user.customer_id, test_type_id = self.request.query_params.get('test_type_id'))
+        return TestCategories.objects.filter(is_approved=1, status=1, valid_till__gt=date.today(),
+                                             customer_id=self.request.user.customer_id,
+                                             test_type_id=self.request.query_params.get('test_type_id'))
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = TestCategoriesSerializer(queryset, many=True)
-        return JsonResponse({'data':serializer.data}, safe=False)
+        return JsonResponse({'data': serializer.data}, safe=False)
+
+
+class TestScriptExecResultsView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend,)
+    filterset_class = TestExecutionResultsFilter
+    ordering_fields = ['id', 'created_at']
+    ordering = []
+
+    def get_queryset(self):
+        return TestScriptExecResults.objects.filter(status=1, test_script_number=self.request.data.get('test_script_number'))
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = TestScriptExecResultsSerializer(queryset, many=True)
+        return JsonResponse({'data': serializer.data}, safe=False)
