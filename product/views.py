@@ -45,6 +45,7 @@ class TestTypeView(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = TestTypeFilter
+    serializer_class = TestTypeSerializer
     ordering_fields = ['id', 'created_at', 'last_updated_at']
     ordering = []  # for default orderings
 
@@ -79,11 +80,13 @@ class ProductCategoryView(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = ProductCategoryFilter
+    serializer_class = ProductCategorySerializer
     ordering_fields = ['id', 'created_at', 'last_updated_at']
     ordering = []  # for default orderings
 
     def get_queryset(self):
-        return ProductCategory.objects.filter(customer_id = self.request.user.customer_id, status = 1, valid_till__gt = date.today())
+        return ProductCategory.objects.filter(customer_id=self.request.user.customer_id, status=1,
+                                              valid_till__gt=date.today())
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -106,23 +109,31 @@ class ProductCategoryView(generics.ListAPIView):
         serializer.save()
         return JsonResponse(serializer.data)
 
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.status = 0
+        instance.save()
+        return Response(status=204)
+
 
 class ProductSubCategoryView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = ProductSubCategoryFilter
+    serializer_class = ProductSubCategorySerializer
     ordering_fields = ['id', 'created_at', 'last_updated_at']
-    ordering = [] # for default orderings
+    ordering = []  # for default orderings
 
     def get_queryset(self):
-        return ProductSubCategory.objects.filter(customer_id = self.request.user.customer_id, status = 1, valid_till__gt = date.today())
+        return ProductSubCategory.objects.filter(customer_id=self.request.user.customer_id, status=1,
+                                                 valid_till__gt=date.today())
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = ProductSubCategorySerializer(queryset, many=True)
         logger.log(level="INFO", message="Product Sub Categories api")
-        return JsonResponse({'data':serializer.data}, safe=False)
+        return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -137,14 +148,22 @@ class ProductSubCategoryView(generics.ListAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return JsonResponse(serializer.data)
-    
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.status = 0
+        instance.save()
+        return Response(status=204)
+
+
 class ProductView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = ProductFilter
+    serializer_class = ProductSerializer
     ordering_fields = ['id', 'created_at', 'last_updated_at']
-    ordering = [] # for default orderings
+    ordering = []  # for default orderings
 
     def get_queryset(self):
         return Product.objects.filter(customer_id=self.request.user.customer_id, status=1, valid_till__gt=date.today())
@@ -169,43 +188,50 @@ class ProductView(generics.ListAPIView):
         serializer.save()
         return JsonResponse(serializer.data)
 
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.status = 0
+        instance.save()
+        return Response(status=204)
+
 
 class GenerateTestCases(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     validation_checks = {
-                "device_id" : {
-                    "is_mandatory" : True,
-                    "type" : str,
-                    "convert_type" : True,
-                },
-                "test_type_id" : {
-                    "is_mandatory" : True,
-                    "type" : list,
-                    "convert_type" : True,
-                    "convert_expression" : str
-                },
-                "ai_model" : {
-                    "is_mandatory" : False,
-                    "type":str,
-                    "convert_type" : False,
-                },
+        "device_id": {
+            "is_mandatory": True,
+            "type": str,
+            "convert_type": True,
+        },
+        "test_type_id": {
+            "is_mandatory": True,
+            "type": list,
+            "convert_type": True,
+            "convert_expression": str
+        },
+        "ai_model": {
+            "is_mandatory": False,
+            "type": str,
+            "convert_type": False,
+        },
 
-            }
+    }
     AiModels = {
-        "open_ai" : CustomOpenAI,
-        "anthropic.claude-v2:1" : AwsBedrock,
-        "anthropic.claude-v2" : AwsBedrock,
+        "open_ai": CustomOpenAI,
+        "anthropic.claude-v2:1": AwsBedrock,
+        "anthropic.claude-v2": AwsBedrock,
         'amazon.titan-text-express-v1': AwsBedrock,
     }
 
     def set_device(self, device_id):
         try:
-            self.device = Product.objects.get(id=device_id, customer = self.request.user.customer, status=True, valid_till__gte = date.today())
+            self.device = Product.objects.get(id=device_id, customer=self.request.user.customer, status=True,
+                                              valid_till__gte=date.today())
         except Exception as e:
             raise e
 
-    def get_ai_obj(self,data):
+    def get_ai_obj(self, data):
         try:
             model = data.get('ai_model', "open_ai")
             ai_model = self.AiModels.get(model, None)
@@ -230,25 +256,26 @@ class GenerateTestCases(generics.ListAPIView):
             return Response({
                 "error": "",
                 "status": 200,
-                "response" : response
+                "response": response
             })
-        
+
         except Exception as e:
             return Response({
-                "error" : f"{e}",
-                "status" : 400,
-                "response" : {}
+                "error": f"{e}",
+                "status": 400,
+                "response": {}
             })
-        
+
     def execute(self, request, test_type, test_category, input_data):
         try:
             response = {}
-            insert_data = {"test_category_id":input_data.pop("test_category_id",None), "device_id":self.device.id, "prompts":input_data}
+            insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
+                           "prompts": input_data}
             for test_code, propmts in input_data.items():
                 file_path = self.get_file_path(request, test_type, test_category, test_code)
                 response[test_code] = self.generate_tests(prompts=propmts)
                 insert_data['git_data'] = push_to_github(data=response[test_code], file_path=file_path)
-                insert_test_case(request, data = insert_data.copy())
+                insert_test_case(request, data=insert_data.copy())
             response['test_category'] = test_category
             return response
         except Exception as e:
@@ -257,31 +284,32 @@ class GenerateTestCases(generics.ListAPIView):
     def get_file_path(self, request, test_type, test_category, test_code):
         try:
             device_code = self.device.product_code
-            path = CustomerConfig.objects.filter(config_type = 'repo_folder_path', customer=request.user.customer).first().config_value
+            path = CustomerConfig.objects.filter(config_type='repo_folder_path',
+                                                 customer=request.user.customer).first().config_value
             return path.replace("${device_code}", device_code) \
-                           .replace("${test_type}", test_type) \
-                           .replace("${test_category}", test_category) \
-                           .replace("${test_code}", test_code)
+                .replace("${test_type}", test_type) \
+                .replace("${test_category}", test_category) \
+                .replace("${test_code}", test_code)
         except Exception as e:
             return f"data/{request.user.customer.code}/{test_type}/{test_code}"
-    
+
     def generate_tests(self, prompts, **kwargs):
         try:
             response_data = ""
             for prompt in prompts:
-                kwargs['prompt']=prompt
+                kwargs['prompt'] = prompt
                 prompt_data = self.ai_obj.send_prompt(**kwargs)
                 response_data += prompt_data
             return response_data
         except Exception as e:
             raise e
-        
+
 
 def insert_test_case(request, data):
     try:
         record = {
-            "customer" : request.user.customer,
-            "product_id":data.pop("device_id"),
+            "customer": request.user.customer,
+            "product_id": data.pop("device_id"),
             "created_by": request.user,
             "data_url": data.get('git_data').get("url"),
             "sha": data.get('git_data').get("sha"),
@@ -300,15 +328,18 @@ class TestCasesView(generics.ListAPIView):
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = TestCasesFilter
     ordering_fields = ['id', 'created_at', 'updated_at']
-    ordering = [] # for default orderings
+    ordering = []  # for default orderings
 
     def get_queryset(self):
-        return TestCases.objects.filter()
+        product_id = self.request.query_params.get('product_id')
+        created_by_id = self.request.query_params.get('created_by_id')
+        return TestCases.objects.filter(product_id = product_id, created_by_id = created_by_id)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = TestCasesSerializer(queryset, many=True)
-        return JsonResponse({'data':serializer.data}, safe=False)
+        return JsonResponse({'data': serializer.data}, safe=False)
+
 
 class GetFileCommitsView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
@@ -349,6 +380,7 @@ class TestCategoriesView(generics.ListAPIView):
     # authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = TestCategoriesFilter
+    serializer_class = TestCategoriesSerializer
     ordering_fields = ['id', 'created_at', 'last_updated_at']
     ordering = []  # for default orderings
 
@@ -359,8 +391,50 @@ class TestCategoriesView(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = TestCategoriesSerializer(queryset, many=True)
+        serializer = self.get_serializer(queryset, many=True)
         return JsonResponse({'data': serializer.data}, safe=False)
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        if data:
+            test_type_name = TestType.objects.get(id=data['test_type']).code
+            data['executable_codes'] = {"TestCases": {"code": f"{test_type_name} with category {data['name']}"},
+                                        "TestScripts": {
+                                            "code": f"python script in seperate file for each {test_type_name} for {data['name']}"}}
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return JsonResponse(serializer.data, status=201)
+
+    def put(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return JsonResponse(serializer.data)
+
+
+class ApproveTestCategoryView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend,)
+    filterset_class = TestCategoriesFilter
+    serializer_class = TestCategoriesSerializer
+    ordering_fields = ['id', 'created_at', 'last_updated_at']
+    ordering = []  # for default orderings
+
+    def put(self, request, category_id, *args, **kwargs):
+        updated_rows = TestCategories.objects.filter(id=category_id, is_approved=0).update(
+            approved_by=request.user_id,
+            is_approved=1
+        )
+        if updated_rows == 0:
+            return Response({"detail": "Test category is already approved"}, status=201)
+
+        test_category = get_object_or_404(TestCategories, id=category_id)
+        serializer = TestCategoriesSerializer(test_category)
+        return Response(serializer.data, status=201)
 
 
 class TestScriptExecResultsView(generics.ListAPIView):
@@ -372,7 +446,8 @@ class TestScriptExecResultsView(generics.ListAPIView):
     ordering = []
 
     def get_queryset(self):
-        return TestScriptExecResults.objects.filter(status=1, test_script_number=self.request.data.get('test_script_number'))
+        return TestScriptExecResults.objects.filter(status=1,
+                                                    test_script_number=self.request.data.get('test_script_number'))
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
