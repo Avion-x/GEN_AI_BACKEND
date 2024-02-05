@@ -331,9 +331,7 @@ class TestCasesView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self):
-        product_id = self.request.query_params.get('product_id')
-        created_by_id = self.request.query_params.get('created_by_id')
-        return TestCases.objects.filter(product_id = product_id, created_by_id = created_by_id)
+        return TestCases.objects.filter()
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
