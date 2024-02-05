@@ -186,4 +186,23 @@ class TestCases(models.Model):
 
     def __str__(self):
         return f"{self.product.product_code}-{self.test_type.code}({self.created_at})"
+
+class TestScriptExecResults(models.Model):
+    id = models.AutoField(primary_key=True)
+    customer = models.ForeignKey(Customer, related_name="test_script_exec_results", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="test_script_exec_results", on_delete=models.CASCADE)
+    test_category = models.ForeignKey(TestCategories, related_name="test_script_exec_results", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    pass_count = models.IntegerField()
+    fail_count = models.IntegerField()
+    comments = models.TextField()
+    execution_result_details = models.JSONField(default={})
+    test_script_number = models.CharField(max_length=255)
+    status = models.BooleanField(default=True)
+    test_type = models.ForeignKey(TestType, related_name="test_script_exec_results", on_delete=models.CASCADE)
+    product_sub_category = models.ForeignKey(ProductSubCategory, related_name="test_script_exec_results", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.test_script_number}-{self.product.product_code}({self.created_at})"
     

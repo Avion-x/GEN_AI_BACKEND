@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, ProductSubCategory, Prompt, TestCases, TestCategories
+from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, ProductSubCategory, Prompt, TestCases, TestCategories, Customer, TestScriptExecResults
 from django.contrib.auth.hashers import make_password
 
 
@@ -12,6 +12,7 @@ class ProductSerializer(serializers.ModelSerializer):
     sub_category_name = serializers.SerializerMethodField()
     category_name = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
         # fields = '__all__'
@@ -30,9 +31,11 @@ class ProductSubCategorySerializer(serializers.ModelSerializer):
     product_count = serializers.SerializerMethodField()
     category_name = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductSubCategory
         fields = '__all__'
+
 
     def get_product_count(self, obj):
         return obj.product.count()
@@ -66,3 +69,55 @@ class TestCategoriesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestCategories
         fields = '__all__'
+
+
+class PromptSerializer(serializers.ModelSerializer):
+    prompt_pro = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Prompt
+        fields = ['prompt', 'id']
+        # exclude = ['provider', 'foundation_model', 'rag']
+
+    def prompt_pro(self, obj):
+        return obj.Prompt.prompt
+
+    def prompt_pro_id(self, obj):
+        return obj.Prompt.id
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['name', 'code', 'id']
+
+class ProductCategoryPromptCodeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProductCategoryPromptCode
+        fields = '_all_'
+
+
+class TestScriptExecResultsSerializer(serializers.ModelSerializer):
+
+    product = serializers.SerializerMethodField()
+    customer = serializers.SerializerMethodField()
+    test_type = serializers.SerializerMethodField()
+    test_category = serializers.SerializerMethodField()
+    executed_by = serializers.SerializerMethodField()
+
+    def get_product(self,obj):
+        return obj.product.product_code
+    def get_customer(self,obj):
+        return obj.customer.code
+    def get_test_type(self,obj):
+        return obj.test_type.code
+    def get_test_category(self,obj):
+        return obj.test_category.name
+    def get_executed_by(self,obj):
+        return obj.created_by.username
+
+    class Meta:
+        model = TestScriptExecResults
+        fields = ['test_script_number', 'execution_result_details', 'product','customer','test_type','test_category', 'executed_by']
+

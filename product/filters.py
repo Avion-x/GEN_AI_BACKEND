@@ -1,7 +1,7 @@
 import django_filters
 from django.db import models
 from rest_framework import filters
-from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, ProductSubCategory, Prompt, TestCases, TestCategories
+from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, ProductSubCategory, Prompt, TestCases, TestCategories, TestScriptExecResults
 
 class TestTypeFilter(django_filters.FilterSet):
 
@@ -68,6 +68,30 @@ class TestCategoriesFilter(django_filters.FilterSet):
     class Meta:
         model = TestCategories
         fields = '__all__'
+        filter_overrides = {
+            models.JSONField: {
+                'filter_class': django_filters.CharFilter,
+                'extra': lambda f: {
+                    'lookup_expr': 'exact',
+                },
+            },
+        }
+
+
+class PromptFilter(django_filters.FilterSet):
+    id = django_filters.NumberFilter(lookup_expr='exact')
+    prompt = django_filters.CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = Prompt
+        fields = ['id', 'prompt']
+
+class TestExecutionResultsFilter(django_filters.FilterSet):
+    test_script_number = django_filters.NumberFilter(lookup_expr='exact')
+
+    class Meta:
+        model = TestScriptExecResults
+        fields = ['id', 'test_script_number', 'created_by']
         filter_overrides = {
             models.JSONField: {
                 'filter_class': django_filters.CharFilter,
