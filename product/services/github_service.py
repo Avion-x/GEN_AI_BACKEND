@@ -54,32 +54,23 @@ def get_commits_for_file(file_path = None, repo = 'Avion-x/AI_GEN_TEST_CASES'):
         commit_list.append(commit_info)
     return commit_list
 
-def get_changes_in_file(file_path = None, repo = 'Avion-x/AI_GEN_TEST_CASES',  commit_sha = ''):
+def get_changes_in_file(file_name, commit_sha):
+    repo = 'Avion-x/AI_GEN_TEST_CASES'
     repo = g.get_repo(repo)
-    file_content = repo.get_contents(file_path, ref=commit_sha)
+    file_content = repo.get_contents(file_name, ref=commit_sha)
     raw_url = file_content._download_url.value
     response = requests.get(raw_url)
     return response.text
 
-def get_files_in_commit(repo = 'Avion-x/AI_GEN_TEST_CASES', branch_name = 'main'):
+def get_files_in_commit(commit_sha):
+    repo = 'Avion-x/AI_GEN_TEST_CASES'
     repo = g.get_repo(repo)
-    branch = repo.get_branch(branch_name)
-    commits = repo.get_commits(sha=branch.commit.sha)
-    commit_list = []
-    for commit in commits:
-            # Get the files associated with each commit
-            files = []
-            commit_files = commit.files
+    # Get the commit by SHA
+    commit = repo.get_commit(sha=commit_sha)
 
-            for file in commit_files:
-                files.append(file.filename)
+    # Get the list of files in the commit
+    files = commit.files
 
-            commit_list.append({
-                'sha': commit.sha,
-                'author': commit.author.login if commit.author else "Unknown",
-                'date': commit.commit.author.date.strftime('%Y-%m-%d %H:%M:%S'),
-                'message': commit.commit.message,
-                'url': commit.html_url,
-                'files': files,
-            })
-    return commit_list
+    # Prepare a list of file names
+    file_names = [file.filename for file in files]
+    return file_names

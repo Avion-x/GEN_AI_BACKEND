@@ -417,21 +417,19 @@ class GetFileChangesView(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
-        file_path = request.query_params.get('file_path')
-        repo = request.query_params.get('repo')
-        commit_sha = request.query_params.get('commit_sha')
-        response_data = get_changes_in_file(file_path=file_path, repo=repo, commit_sha=commit_sha)
+        file_name = request.query_params.get('file_name')
+        sha = request.query_params.get('sha')
+        response_data = get_changes_in_file(file_name = file_name, commit_sha = sha)
         return HttpResponse(response_data, content_type='text/plain')
 
 
-class GetCommitsView(generics.ListAPIView):
+class GetFilesInCommitView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
-        repo = request.query_params.get('repo')
-        branch_name = request.query_params.get('branch_name')
-        response_data = get_files_in_commit(repo=repo, branch_name=branch_name)
+        sha = request.query_params.get('sha')
+        response_data = get_files_in_commit(sha)
         return JsonResponse(response_data, safe=False)
 
 
