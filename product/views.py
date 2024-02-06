@@ -284,7 +284,7 @@ class GenerateTestCases(generics.ListAPIView):
         
     def store_parsed_tests(self, request, data, test_type, test_category, test_category_id):
         for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
-            name = test_case.pop('testname', test_case.pop('name', "")).replace(" ", "_").lower()
+            name = test_case.get('testname', test_case.get('name', "")).replace(" ", "_").lower()
             test_id = f"{request.user.customer.name}_{test_type}_{test_category}_{self.device.product_code}_{name}".replace(" ", "_").lower()
             _test_case = {
                 "test_id": test_id,
