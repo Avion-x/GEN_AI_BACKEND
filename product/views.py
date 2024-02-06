@@ -4,13 +4,13 @@ from user.models import CustomerConfig
 from product.services.custom_logger import logger
 from product.services.github_service import push_to_github, get_commits_for_file, get_changes_in_file, \
     get_files_in_commit
-from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, \
+from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, parseModelDataToList, \
     validate_mandatory_checks
 from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
-from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestScriptExecResults
+from .models import StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestScriptExecResults
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter
 # import git
@@ -249,9 +249,9 @@ class GenerateTestCases(generics.ListAPIView):
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
             for test_type, tests in prompts_data.items():
-                response[test_type] = []
+                response[test_type] = {}
                 for test, test_data in tests.items():
-                    response[test_type].append(self.execute(request, test_type, test, test_data))
+                    response[test_type][test]=self.execute(request, test_type, test, test_data)
 
             return Response({
                 "error": "",
@@ -274,12 +274,54 @@ class GenerateTestCases(generics.ListAPIView):
             for test_code, propmts in input_data.items():
                 file_path = self.get_file_path(request, test_type, test_category, test_code)
                 response[test_code] = self.generate_tests(prompts=propmts)
-                insert_data['git_data'] = push_to_github(data=response[test_code], file_path=file_path)
+                self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
+                insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
                 insert_test_case(request, data=insert_data.copy())
-            response['test_category'] = test_category
+            # response['test_category'] = test_category
             return response
         except Exception as e:
             raise e
+        
+    def store_parsed_tests(self, request, data, test_type, test_category, test_category_id):
+        for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
+            name = test_case.pop('testname', test_case.pop('name', "")).replace(" ", "_").lower()
+            test_id = f"{request.user.customer.name}_{test_type}_{test_category}_{self.device.product_code}_{name}".replace(" ", "_").lower()
+            _test_case = {
+                "test_id": test_id,
+                "test_name" : f"{name}",
+                "objective" : test_case.get("objective", ""),
+                "data" : test_case,
+                "type" : "TESTCASE",
+                "test_category_id" : test_category_id,
+                "product" : self.device,
+                "customer" : request.user.customer
+            }
+
+            _test_script = {
+                "test_id": test_id,
+                "test_name" : f"{name}",
+                "objective" : test_script.get("objective", ""),
+                "data" : test_script,
+                "type" : "TESTSCRIPT",
+                "test_category_id" : test_category_id,
+                "product" : self.device,
+                "customer" : request.user.customer
+            }
+
+            StructuredTestCases.objects.create(**_test_case)
+            StructuredTestCases.objects.create(**_test_script)
+        return True
+      
+        
+    # def store_in_github(self, data, file_path ):
+    #     response = []
+    #     registry = {
+    #         'raw' : "raw.md",
+    #         'test_cases': "TestCases.md",
+    #         'test_scripts': "TestScripts.py",
+    #     }
+    #     for key, file_name in registry.items():
+    #         pass
 
     def get_file_path(self, request, test_type, test_category, test_code):
         try:
@@ -295,15 +337,35 @@ class GenerateTestCases(generics.ListAPIView):
 
     def generate_tests(self, prompts, **kwargs):
         try:
-            response_data = ""
+            response_text = ""
             for prompt in prompts:
                 kwargs['prompt'] = prompt
                 prompt_data = self.ai_obj.send_prompt(**kwargs)
-                response_data += prompt_data
-            return response_data
+                response_text += prompt_data
+            return self.get_test_data(response_text)
         except Exception as e:
             raise e
 
+        
+    def get_test_data(self, text_data):
+        result = {"raw_text": text_data, "test_cases": [], "test_scripts":[]}
+        data = parseModelDataToList(text_data)
+        for _test in data:
+            test_case = _test.get('testcase',None)
+            test_scripts = _test.get('testscript',None)
+            if test_case and test_scripts:
+                if isinstance(test_case, list):
+                    result['test_cases'] += test_case
+                else:
+                    result['test_cases'].append(test_case)
+                
+                if isinstance(test_scripts, list):
+                    result['test_scripts'] += test_scripts
+                else:
+                    result['test_scripts'].append(test_scripts)
+        return result
+
+        
 
 def insert_test_case(request, data):
     try:
@@ -328,12 +390,10 @@ class TestCasesView(generics.ListAPIView):
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = TestCasesFilter
     ordering_fields = ['id', 'created_at', 'updated_at']
-    ordering = []  # for default orderings
+    # ordering = []  # for default orderings
 
     def get_queryset(self):
-        product_id = self.request.query_params.get('product_id')
-        created_by_id = self.request.query_params.get('created_by_id')
-        return TestCases.objects.filter(product_id = product_id, created_by_id = created_by_id)
+        return TestCases.objects.filter()
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())

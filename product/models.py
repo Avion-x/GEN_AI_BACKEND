@@ -186,7 +186,6 @@ class TestCases(models.Model):
 
     def __str__(self):
         return f"{self.product.product_code}-{self.test_type.code}({self.created_at})"
-
 class TestScriptExecResults(models.Model):
     id = models.AutoField(primary_key=True)
     customer = models.ForeignKey(Customer, related_name="test_script_exec_results", on_delete=models.CASCADE)
@@ -206,3 +205,21 @@ class TestScriptExecResults(models.Model):
     def __str__(self):
         return f"{self.test_script_number}-{self.product.product_code}({self.created_at})"
     
+
+class StructuredTestCases(models.Model):
+    id = models.AutoField(primary_key=True)
+    test_id = models.CharField(max_length=100, null=False, blank=False, db_index=True)
+    test_name = models.CharField(max_length=255)
+    objective = models.CharField(max_length=500)
+    customer = models.ForeignKey(Customer, related_name="structured_test_cases", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="structured_test_cases", on_delete=models.CASCADE)
+    data=models.JSONField()
+    test_category = models.ForeignKey(TestCategories, related_name="structured_test_cases", on_delete=models.CASCADE)
+    type = models.CharField(max_length=20)
+    # request_id = models.ForeignKey(RequestTracking)
+
+    def __str__(self):
+        return f"{self.test_id}"
+    
+
+

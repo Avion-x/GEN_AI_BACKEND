@@ -34,11 +34,19 @@ class AwsBedrock():
             aws_access_key_id='AKIA3MUTZS7BNCEROH24',
             aws_secret_access_key='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',
             region_name='us-west-2')
+
+        self.default_prompt_suffix = """
+             . Each testcase and testscript should be encapsulated within its own separate JSON object, and it is an object under the "testname" key. All these JSON objects should be assembled within a Python list, resulting in [{ "testname":"", "testcase":{}, "testscript":{}}] Each test case should include a testname, objective, steps (list of expected results), relevant test data. Make sure each test script JSON object includes the following fields: 'testname', 'objective', 'file_name', 'init_scripts'. The 'init_scripts' field should contain pip install commands for all required packages, 'script' (given in triple quotes), 'run_command' (a command to execute the python file) and 'expected_result'. The Python list with the JSON objects should not include any unrelated context or information. Find the starting delimiter as ###STARTLIST### and the ending delimiter as ###ENDLIST###
+        """
+
+        # self.default_prompt_suffix = """
+        #      . Each script should be encapsulated within its own JSON object, and all these JSON objects should be assembled within a Python list. Make sure each JSON object includes the following fields: 'name' (test case name), 'objective', 'file_name', 'script' (give me in triple quotes), 'expected_result', 'run_command' (a command to execute the python file), and 'init_scripts'. The 'init_scripts' field should contain pip install commands for all required packages. The Python list with the JSON objects should not include any unrelated context or information. give me a delimitor to find the starting as ###STARTLIST### and ending of the list as ###ENDLIST###
+        # """
         
         self.models_body_registry = {
             "anthropic.claude-v2:1" : {
                 "input_body": {
-                    "prompt": "'\\n\\nHuman:'+self.prompt+' Provide the output in markdown format.'+'\\n\\nAssistant:'",
+                    "prompt": "'\\n\\nHuman:'+self.prompt+'\\n\\nAssistant:'",
                     "max_tokens_to_sample": "self.max_tokens or 2048",
                     "temperature" : "self.temperature or 1",
                     "top_k" : "self.top_k or 250",
@@ -76,7 +84,7 @@ class AwsBedrock():
 
     def set_default_values(self):
         try:
-            self.prompt = self.kwargs.get("prompt", "")
+            self.prompt = self.kwargs.get("prompt", "") + self.default_prompt_suffix
             self.temperature = self.kwargs.get("temperature", None)
             self.top_p = self.kwargs.get("top_p", None)
             self.top_k = self.kwargs.get("top_k", None)
@@ -115,6 +123,7 @@ class AwsBedrock():
             if not self.modelId:
                 raise Exception(f"Please send a valid model id. Available model Ids are {list(self.models_body_registry.keys())}")
             body = self.get_body()
+            print(body)
             params = {
                 "modelId": self.modelId,
                 "accept": kwargs.get('accept', '*/*'),

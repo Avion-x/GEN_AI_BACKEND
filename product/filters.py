@@ -48,9 +48,6 @@ class ProductFilter(django_filters.FilterSet):
         fields = ['id', 'product_code', 'product_sub_category', 'status', 'valid_till']
 
 class TestCasesFilter(django_filters.FilterSet):
-    product_id = django_filters.NumberFilter(lookup_expr='exact')
-    created_by_id = django_filters.NumberFilter(lookup_expr='exact')
-    
     class Meta:
         model = TestCases
         fields = '__all__'
