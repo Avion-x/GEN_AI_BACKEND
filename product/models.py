@@ -1,6 +1,6 @@
 from django.db import models
 from product.query_manager import CustomManager
-from user.models import User, Customer
+from user.models import RequestTracking, User, Customer
 
 
 class FoundationalModel(models.Model):
@@ -183,6 +183,9 @@ class TestCases(models.Model):
     data = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    request = models.ForeignKey(RequestTracking, to_field="request_id", on_delete=models.CASCADE, related_name="test_cases")
+    status = models.BooleanField(default=True)
+    valid_till = models.DateField()
 
     def __str__(self):
         return f"{self.product.product_code}-{self.test_type.code}({self.created_at})"
@@ -216,7 +219,9 @@ class StructuredTestCases(models.Model):
     data=models.JSONField()
     test_category = models.ForeignKey(TestCategories, related_name="structured_test_cases", on_delete=models.CASCADE)
     type = models.CharField(max_length=20)
-    # request_id = models.ForeignKey(RequestTracking)
+    request = models.ForeignKey(RequestTracking, to_field="request_id", on_delete=models.CASCADE, related_name="structured_test_cases")
+    status = models.BooleanField(default=True)
+    valid_till = models.DateField()
 
     def __str__(self):
         return f"{self.test_id}"

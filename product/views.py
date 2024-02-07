@@ -16,7 +16,8 @@ from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductS
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter
 # import git
 import os
-from django.conf import settings
+from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, When
+from django.db.models.functions import Cast
 
 from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, \
@@ -243,7 +244,6 @@ class GenerateTestCases(generics.ListAPIView):
 
     def post(self, request):
         try:
-            request.request_id = ""
             data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
             self.ai_obj = self.get_ai_obj(data)
             self.set_device(data['device_id'])
@@ -311,7 +311,8 @@ class GenerateTestCases(generics.ListAPIView):
                 "type" : "TESTCASE",
                 "test_category_id" : test_category_id,
                 "product" : self.device,
-                "customer" : request.user.customer
+                "customer" : request.user.customer,
+                "request_id" : self.request.request_id
             }
 
             _test_script = {
@@ -322,7 +323,8 @@ class GenerateTestCases(generics.ListAPIView):
                 "type" : "TESTSCRIPT",
                 "test_category_id" : test_category_id,
                 "product" : self.device,
-                "customer" : request.user.customer
+                "customer" : request.user.customer,
+                "request_id" : self.request.request_id
             }
 
             StructuredTestCases.objects.create(**_test_case)
@@ -393,12 +395,78 @@ def insert_test_case(request, data):
             "sha": data.get('git_data').get("sha"),
             "test_category_id": data.pop("test_category_id"),
             "data": data,
+            "request_id" : request.request_id
 
         }
         return TestCases.objects.create(**record)
     except Exception as e:
         raise Exception(e)
 
+
+class TestCasesAndScripts(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend,)
+    # filterset_class = TestCasesFilter
+    ordering_fields = ['id', 'created_at', 'updated_at']
+
+    def get_queryset(self, filters = {}):
+        return StructuredTestCases.objects.filter(**filters)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            request_id = request.GET.get("request_id", None)
+            if not request_id:
+                raise Exception("Please pass request_id to get test cases")
+            filters = {
+                "status":1,
+                "customer":request.user.customer,
+                "request_id" : request_id,
+            }
+            test_category_id = request.GET.get("test_category_id", None)
+            if not test_category_id:
+                queryset = self.get_queryset(filters).values("test_category_id").annotate(count = Count(F("test_category_id"))).values("test_category_id", "request_id", name=F("test_category__name"))
+                return Response({"data" : list(queryset)})
+            else:
+                filters['test_category_id'] = test_category_id
+                data = self.get_consolidated_data_of_test_category(self.get_queryset(filters))
+                return Response({"data" : data})
+        except Exception as e:
+            raise e
+        
+    def get_consolidated_data_of_test_category(self, queryset):
+
+        if not len(queryset):
+            return {}
+
+        # queryset = queryset.values('test_id').annotate(
+        #     data=Case(
+        #         When(type='TESTCASE', then=ExpressionWrapper(F('data'), output_field=JSONField())),
+        #         When(type='TESTSCRIPT', then=Value({'TESTSCRIPT': F('data')}, output_field=JSONField())),
+        #         default=Value({}, output_field=JSONField())
+        #     )
+        # )        
+        
+        category_name = queryset.first().test_category.name
+
+        test_cases = queryset.filter(type='TESTCASE').order_by('test_id').values('id', 'test_id', 'test_name', 'objective', 'data', 'status', 'valid_till', 'product_id', product_name = F("product__product_code"))
+
+        test_scripts = queryset.filter(type='TESTSCRIPT').order_by('test_id').values('id', 'test_id', 'test_name', 'objective', 'data', 'status', 'valid_till', 'product_id', product_name = F("product__product_code"), )
+
+        serialized_data = {"test_cases":[], "test_scripts":[], "test_category":category_name }
+
+        for test_case, test_script in zip(test_cases, test_scripts):
+            _case = test_case['data']
+            _script = test_script['data']
+            for key in ['id', 'test_id', 'status', 'valid_till', 'product_id', 'product_name']:
+                _case[key] = test_case[key]
+                _script[key] = test_script[key]
+            serialized_data['test_cases'].append(_case)
+            serialized_data['test_scripts'].append(_script)
+            
+        return serialized_data
+
+    
 
 class TestCasesView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)

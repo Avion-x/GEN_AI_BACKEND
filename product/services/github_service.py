@@ -33,7 +33,7 @@ def push_to_github(branch='main', data = "", file_path = None, repo = 'Avion-x/A
         )
     files = file['commit'].files or [file]
     return {
-        "git_url" : file['commit'].url,
+        "url" : file['commit'].url,
         "html_url" : file['commit'].html_url,
         "sha" : file['commit'].sha,
         "file": [{

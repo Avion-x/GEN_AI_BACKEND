@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib import admin
-from .views import TestTypeView, ProductCategoryView, ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView
+from .views import TestCasesAndScripts, TestTypeView, ProductCategoryView, ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -9,6 +9,7 @@ urlpatterns = [
     path('productsubcategory/', ProductSubCategoryView.as_view(), name='product-sub-category'),
     path('product/', ProductView.as_view(), name='product'),
     path("generate_test_cases/", GenerateTestCases.as_view(), name='generate-test-cases'),
+    path("structured_test_cases_and_scripts/", TestCasesAndScripts.as_view(), name='structured_test_cases_and_scripts'),
     path('test_cases/', TestCasesView.as_view(), name='test_cases'),
     path('file_commits/', GetFileCommitsView.as_view(), name='file_commits'),
     path('file_changes/', GetFileChangesView.as_view(), name='file_changes'),
