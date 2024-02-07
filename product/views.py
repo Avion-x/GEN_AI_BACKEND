@@ -1,5 +1,6 @@
 import asyncio
 from datetime import date
+import threading
 from product.services.aws_bedrock import AwsBedrock
 from user.models import CustomerConfig
 from product.services.custom_logger import logger
@@ -249,12 +250,13 @@ class GenerateTestCases(generics.ListAPIView):
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
 
-            # asyncio.create_task(self.process_request(request, prompts_data))
-            response = self.process_request(request, prompts_data)
-            # response = {
-            #     "request_id": request.request_id,
-            #     "Message": "Processing request will take some time Please come here in 5 mins",
-            # }
+            thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
+            thread.start()
+            
+            response = {
+                "request_id": request.request_id,
+                "Message": "Processing request will take some time Please come here in 5 mins",
+            }
 
             return Response({
                 "error": "",
@@ -278,7 +280,7 @@ class GenerateTestCases(generics.ListAPIView):
             for test_type, tests in prompts_data.items():
                 response[test_type] = {}
                 for test, test_data in tests.items():
-                    response[test_type][test]=self.execute(request, test_type, test, test_data)
+                    response[test_type][test]= self.execute(request, test_type, test, test_data)
             return response
         except Exception as e:
             raise e
