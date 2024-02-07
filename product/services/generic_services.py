@@ -2,7 +2,7 @@
 from product.models import ProductPrompt, TestType, ProductSubCategory, Customer, ProductCategoryPromptCode, Prompt, ProductCategoryPrompt
 from product.serializers import ProductSubCategorySerializer, CustomerSerializer, PromptSerializer
 import datetime
-import os
+import os, re, json
 from user.settings import BASE_DIR
 
 
@@ -16,7 +16,7 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_id=[], **
         elif device_name:
             filters['product__product_code'] = device_name
 
-        prompts = ProductPrompt.objects.filter(**filters).values_list('executable_prompt', flat=True)
+        prompts = ProductPrompt.objects.filter(**filters, status=1).values_list('executable_prompt', flat=True)
         response = {}
         for test_id in test_type_id:
             test_type = TestType.objects.filter(id=test_id).first()
@@ -74,6 +74,18 @@ def write_file(file_path="data/output.md", mode="w", data= ""):
             file.write(data)
     except Exception as e:
         raise e
+
+
+def parseModelDataToList(text):
+    # text = re.search(r"###STARTLIST###(.+)###ENDLIST###", text, re.DOTALL).group(1)
+    list_occurences = re.findall(r"###STARTLIST###(.+?)###ENDLIST###", text, re.DOTALL)
+    data = []
+    for each_list in  list_occurences:
+        try:
+            data += eval(each_list)
+        except Exception as e:
+            print(e)
+    return data
 
 
 # def trigger_product_prompt_data(customer_id, product_sub_category_id, product_code, product_id):

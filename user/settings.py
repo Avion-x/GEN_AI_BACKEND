@@ -118,7 +118,18 @@ DATABASES = {
         'OPTIONS': {
             # 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
-    }
+    },
+    # 'default': {
+    # 'ENGINE': 'django.db.backends.mysql',
+    # 'NAME': 'GenAI',
+    # 'USER': 'Admin',
+    # 'PASSWORD': 'L4e1-#5L6zT)Nc',
+    # 'HOST': 'genai-database-dev-1.cluster-c54r5svdjqsu.us-west-2.rds.amazonaws.com',  # This is the endpoint of your RDS instance
+    # 'PORT': '3306',  # Default MySQL port
+    # 'OPTIONS': {
+    #     # 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+    #     },
+    # }
 }
 
 

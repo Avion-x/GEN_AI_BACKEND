@@ -49,7 +49,9 @@ class LogoutView(generics.RetrieveAPIView):
 
     def get(self, request):
         logout(request)
-        return redirect('login')
+        return Response({"Action":'success', "Message":'User logged out successfully'})
+    
+
 
 class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticated,)

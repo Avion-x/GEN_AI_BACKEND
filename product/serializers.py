@@ -61,9 +61,34 @@ class ProductCategorySerializer(serializers.ModelSerializer):
         return obj.customer.name
 
 class TestCasesSerializer(serializers.ModelSerializer):
+    test_type_name = serializers.SerializerMethodField()
+    test_category_name = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    sub_category_name = serializers.SerializerMethodField()
+    category_name = serializers.SerializerMethodField()
+    username = serializers.SerializerMethodField()
+
     class Meta:
         model = TestCases
         fields = '__all__'
+
+    def get_test_type_name(self, obj):
+        return obj.test_category.test_type.code
+
+    def get_test_category_name(self, obj):
+        return obj.test_category.name
+    
+    def get_product(self,obj):
+        return obj.product.product_code
+    
+    def get_sub_category_name(self, obj):
+        return obj.product.product_sub_category.sub_category
+    
+    def get_category_name(self, obj):
+        return obj.product.product_sub_category.product_category.category
+    
+    def get_username(self, obj):
+        return obj.created_by.username
 
 class TestCategoriesSerializer(serializers.ModelSerializer):
     class Meta:
