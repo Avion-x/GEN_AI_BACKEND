@@ -312,7 +312,8 @@ class GenerateTestCases(generics.ListAPIView):
                 "test_category_id" : test_category_id,
                 "product" : self.device,
                 "customer" : request.user.customer,
-                "request_id" : self.request.request_id
+                "request_id" : self.request.request_id,
+                "created_by" : request.user
             }
 
             _test_script = {
@@ -324,7 +325,8 @@ class GenerateTestCases(generics.ListAPIView):
                 "test_category_id" : test_category_id,
                 "product" : self.device,
                 "customer" : request.user.customer,
-                "request_id" : self.request.request_id
+                "request_id" : self.request.request_id,
+                "created_by" : request.user
             }
 
             StructuredTestCases.objects.create(**_test_case)
@@ -449,16 +451,16 @@ class TestCasesAndScripts(generics.ListAPIView):
         
         category_name = queryset.first().test_category.name
 
-        test_cases = queryset.filter(type='TESTCASE').order_by('test_id').values('id', 'test_id', 'test_name', 'objective', 'data', 'status', 'valid_till', 'product_id', product_name = F("product__product_code"))
+        test_cases = queryset.filter(type='TESTCASE').order_by('test_id').values('id', 'test_id', 'test_name', 'objective', 'data', 'status', 'valid_till', 'product_id', product_name = F("product__product_code"), user_id = F("created_by_id"), user_name = F("created_by__username"))
 
-        test_scripts = queryset.filter(type='TESTSCRIPT').order_by('test_id').values('id', 'test_id', 'test_name', 'objective', 'data', 'status', 'valid_till', 'product_id', product_name = F("product__product_code"), )
+        test_scripts = queryset.filter(type='TESTSCRIPT').order_by('test_id').values('id', 'test_id', 'test_name', 'objective', 'data', 'status', 'valid_till', 'product_id', product_name = F("product__product_code"), user_id = F("created_by_id"), user_name = F("created_by__username") )
 
         serialized_data = {"test_cases":[], "test_scripts":[], "test_category":category_name }
 
         for test_case, test_script in zip(test_cases, test_scripts):
             _case = test_case['data']
             _script = test_script['data']
-            for key in ['id', 'test_id', 'status', 'valid_till', 'product_id', 'product_name']:
+            for key in ['id', 'test_id', 'status', 'valid_till', 'product_id', 'product_name', 'user_id', 'user_name']:
                 _case[key] = test_case[key]
                 _script[key] = test_script[key]
             serialized_data['test_cases'].append(_case)

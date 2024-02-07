@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta
 from django.db import models
+import pytz
 from product.query_manager import CustomManager
 from user.models import RequestTracking, User, Customer
 
@@ -185,7 +187,7 @@ class TestCases(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     request = models.ForeignKey(RequestTracking, to_field="request_id", on_delete=models.CASCADE, related_name="test_cases")
     status = models.BooleanField(default=True)
-    valid_till = models.DateField()
+    valid_till = models.DateField(default=datetime.now(pytz.utc)+timedelta(days=365))
 
     def __str__(self):
         return f"{self.product.product_code}-{self.test_type.code}({self.created_at})"
@@ -217,11 +219,12 @@ class StructuredTestCases(models.Model):
     customer = models.ForeignKey(Customer, related_name="structured_test_cases", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name="structured_test_cases", on_delete=models.CASCADE)
     data=models.JSONField()
-    test_category = models.ForeignKey(TestCategories, related_name="structured_test_cases", on_delete=models.CASCADE)
+    test_category = models.ForeignKey(TestCategories, related_name="structured_test_cases", on_delete=models.CASCADE, db_index=True)
     type = models.CharField(max_length=20)
-    request = models.ForeignKey(RequestTracking, to_field="request_id", on_delete=models.CASCADE, related_name="structured_test_cases")
+    request = models.ForeignKey(RequestTracking, to_field="request_id", on_delete=models.CASCADE, related_name="structured_test_cases", db_index=True)
     status = models.BooleanField(default=True)
-    valid_till = models.DateField()
+    valid_till = models.DateField(default=datetime.now(pytz.utc)+timedelta(days=365))
+    created_by = models.ForeignKey(User, related_name="structured_test_cases", on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.test_id}"
