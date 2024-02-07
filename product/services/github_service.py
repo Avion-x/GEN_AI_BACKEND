@@ -31,11 +31,17 @@ def push_to_github(branch='main', data = "", file_path = None, repo = 'Avion-x/A
             content=data,
             branch=branch
         )
+    files = file['commit'].files or [file]
     return {
-        "git_url" : file['content'].git_url,
-        "download_url" : file['content'].download_url,
-        "sha" : file['content'].sha,
-        "url" : file['content'].url
+        "git_url" : file['commit'].url,
+        "html_url" : file['commit'].html_url,
+        "sha" : file['commit'].sha,
+        "file": [{
+            "git_url" : _file['content'].git_url,
+            "download_url" : _file['content'].download_url,
+            "sha" : _file['content'].sha,
+            "url" : _file['content'].url
+            } for _file in files]
     }
     return f"successfully uploaded file {file_path} to Github"
 

@@ -1,3 +1,4 @@
+import asyncio
 from datetime import date
 from product.services.aws_bedrock import AwsBedrock
 from user.models import CustomerConfig
@@ -170,7 +171,6 @@ class ProductView(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        print(queryset.query)
         serializer = ProductSerializer(queryset, many=True)
         return JsonResponse({'data': serializer.data}, safe=False)
 
@@ -243,15 +243,18 @@ class GenerateTestCases(generics.ListAPIView):
 
     def post(self, request):
         try:
-            response = {}
+            request.request_id = ""
             data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
             self.ai_obj = self.get_ai_obj(data)
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
-            for test_type, tests in prompts_data.items():
-                response[test_type] = {}
-                for test, test_data in tests.items():
-                    response[test_type][test]=self.execute(request, test_type, test, test_data)
+
+            # asyncio.create_task(self.process_request(request, prompts_data))
+            response = self.process_request(request, prompts_data)
+            # response = {
+            #     "request_id": request.request_id,
+            #     "Message": "Processing request will take some time Please come here in 5 mins",
+            # }
 
             return Response({
                 "error": "",
@@ -260,11 +263,25 @@ class GenerateTestCases(generics.ListAPIView):
             })
 
         except Exception as e:
+            # request.request_tracking.status_code = 400
+            # request.request_tracking.error_message = str(e)
+            # request.request_tracking.save()
             return Response({
                 "error": f"{e}",
                 "status": 400,
                 "response": {}
             })
+        
+    def process_request(self, request, prompts_data):
+        try:
+            response = {}
+            for test_type, tests in prompts_data.items():
+                response[test_type] = {}
+                for test, test_data in tests.items():
+                    response[test_type][test]=self.execute(request, test_type, test, test_data)
+            return response
+        except Exception as e:
+            raise e
 
     def execute(self, request, test_type, test_category, input_data):
         try:
@@ -365,7 +382,6 @@ class GenerateTestCases(generics.ListAPIView):
                     result['test_scripts'].append(test_scripts)
         return result
 
-        
 
 def insert_test_case(request, data):
     try:

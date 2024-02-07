@@ -38,10 +38,6 @@ class AwsBedrock():
         self.default_prompt_suffix = """
              . Each testcase and testscript should be encapsulated within its own separate JSON object, and it is an object under the "testname" key. All these JSON objects should be assembled within a Python list, resulting in [{ "testname":"", "testcase":{}, "testscript":{}}] Each test case should include a testname, objective, steps (list of expected results), relevant test data. Make sure each test script JSON object includes the following fields: 'testname', 'objective', 'file_name', 'init_scripts'. The 'init_scripts' field should contain pip install commands for all required packages, 'script' (given in triple quotes), 'run_command' (a command to execute the python file) and 'expected_result'. The Python list with the JSON objects should not include any unrelated context or information. Find the starting delimiter as ###STARTLIST### and the ending delimiter as ###ENDLIST###
         """
-
-        # self.default_prompt_suffix = """
-        #      . Each script should be encapsulated within its own JSON object, and all these JSON objects should be assembled within a Python list. Make sure each JSON object includes the following fields: 'name' (test case name), 'objective', 'file_name', 'script' (give me in triple quotes), 'expected_result', 'run_command' (a command to execute the python file), and 'init_scripts'. The 'init_scripts' field should contain pip install commands for all required packages. The Python list with the JSON objects should not include any unrelated context or information. give me a delimitor to find the starting as ###STARTLIST### and ending of the list as ###ENDLIST###
-        # """
         
         self.models_body_registry = {
             "anthropic.claude-v2:1" : {
@@ -57,7 +53,7 @@ class AwsBedrock():
             },
             "anthropic.claude-v2" : {
                 "input_body": {
-                    "prompt": "'\\n\\nHuman:'+self.prompt+' Provide the output in markdown format.'+'\\n\\nAssistant:'",
+                    "prompt": "'\\n\\nHuman:'+self.prompt+'\\n\\nAssistant:'",
                     "max_tokens_to_sample": "self.max_tokens or 2048",
                     "temperature" : "self.temperature or 1",
                     "top_k" : "self.top_k or 250",
