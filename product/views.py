@@ -436,7 +436,7 @@ class GetFileChangesView(generics.ListAPIView):
         file_name = request.query_params.get('file_name')
         sha = request.query_params.get('sha')
         response_data = get_changes_in_file(file_name = file_name, commit_sha = sha)
-        return HttpResponse(response_data, content_type='text/plain')
+        return JsonResponse({"data":response_data}, safe=False)
 
 
 class GetFilesInCommitView(generics.ListAPIView):
