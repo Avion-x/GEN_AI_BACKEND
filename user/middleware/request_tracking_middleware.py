@@ -47,7 +47,7 @@ class RequestIDMiddleware(MiddlewareMixin):
 
             request_tracking.status = status_code
             request_tracking.error_message = error_message
-            request_tracking.created_by = request.user
+            # request_tracking.created_by = request.user
             request_tracking.save()
 
         return response
