@@ -24,8 +24,9 @@ class RequestIDMiddleware(MiddlewareMixin):
             payload=request_body,
             api=request.path,
             request_method=request.method,
-            created_by = request.user
         )
+        if request.user.is_authenticated():
+            request_tracking.created_by = request.user
         request_tracking.save()
         request.request_tracking = request_tracking
         return None
