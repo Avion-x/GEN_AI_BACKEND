@@ -58,9 +58,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'user.middleware.request_tracking_middleware.RequestIDMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'user.middleware.request_tracking_middleware.RequestIDMiddleware',
 ]
 
 # CORS_ALLOWED_ORIGINS = [
@@ -108,28 +108,28 @@ WSGI_APPLICATION = 'user.wsgi.application'
 
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'GEN_AI',
-        'USER': 'admin',
-        'PASSWORD': '-Mj8[q{!6gWF%th~l#|Hrlyd0S-y',
-        'HOST': 'gen-ai.c54r5svdjqsu.us-west-2.rds.amazonaws.com',  # This is the endpoint of your RDS instance
-        'PORT': '3306',  # Default MySQL port
-        'OPTIONS': {
-            # 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
-    },
     # 'default': {
-    # 'ENGINE': 'django.db.backends.mysql',
-    # 'NAME': 'GenAI',
-    # 'USER': 'Admin',
-    # 'PASSWORD': 'L4e1-#5L6zT)Nc',
-    # 'HOST': 'genai-database-dev-1.cluster-c54r5svdjqsu.us-west-2.rds.amazonaws.com',  # This is the endpoint of your RDS instance
-    # 'PORT': '3306',  # Default MySQL port
-    # 'OPTIONS': {
-    #     # 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': 'GEN_AI',
+    #     'USER': 'admin',
+    #     'PASSWORD': '-Mj8[q{!6gWF%th~l#|Hrlyd0S-y',
+    #     'HOST': 'gen-ai.c54r5svdjqsu.us-west-2.rds.amazonaws.com',  # This is the endpoint of your RDS instance
+    #     'PORT': '3306',  # Default MySQL port
+    #     'OPTIONS': {
+    #         # 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
     #     },
-    # }
+    # },
+    'default': {
+    'ENGINE': 'django.db.backends.mysql',
+    'NAME': 'GenAI',
+    'USER': 'Admin',
+    'PASSWORD': 'L4e1-#5L6zT)Nc',
+    'HOST': 'genai-database-dev-1.cluster-c54r5svdjqsu.us-west-2.rds.amazonaws.com',  # This is the endpoint of your RDS instance
+    'PORT': '3306',  # Default MySQL port
+    'OPTIONS': {
+        # 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
+    }
 }
 
 
