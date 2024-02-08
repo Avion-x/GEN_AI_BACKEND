@@ -32,7 +32,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
-from datetime import date
 import json
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -99,6 +98,8 @@ class ProductCategoryView(generics.ListAPIView):
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
+        request.data['customer'] = self.request.user.customer_id
+        request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -107,6 +108,8 @@ class ProductCategoryView(generics.ListAPIView):
     def put(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
+        request.data['customer'] = self.request.user.customer_id
+        request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -139,6 +142,8 @@ class ProductSubCategoryView(generics.ListAPIView):
         return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
+        request.data['customer'] = self.request.user.customer_id
+        request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -147,6 +152,8 @@ class ProductSubCategoryView(generics.ListAPIView):
     def put(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
+        request.data['customer'] = self.request.user.customer_id
+        request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -177,6 +184,8 @@ class ProductView(generics.ListAPIView):
         return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
+        request.data['customer'] = self.request.user.customer_id
+        request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -185,6 +194,8 @@ class ProductView(generics.ListAPIView):
     def put(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
+        request.data['customer'] = self.request.user.customer_id
+        request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -532,8 +543,7 @@ class TestCategoriesView(generics.ListAPIView):
 
     def get_queryset(self):
         return TestCategories.objects.filter(is_approved=1, status=1, valid_till__gt=date.today(),
-                                             customer_id=self.request.user.customer_id,
-                                             test_type_id=self.request.query_params.get('test_type_id'))
+                                             customer_id=self.request.user.customer_id)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
