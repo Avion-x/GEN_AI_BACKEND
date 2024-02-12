@@ -220,6 +220,7 @@ class StructuredTestCases(models.Model):
     product = models.ForeignKey(Product, related_name="structured_test_cases", on_delete=models.CASCADE)
     data=models.JSONField()
     test_category = models.ForeignKey(TestCategories, related_name="structured_test_cases", on_delete=models.CASCADE, db_index=True)
+    test_type = models.ForeignKey(TestType, related_name="structured_test_cases", on_delete=models.CASCADE, db_index=True)
     type = models.CharField(max_length=20)
     request = models.ForeignKey(RequestTracking, to_field="request_id", on_delete=models.CASCADE, related_name="structured_test_cases", db_index=True)
     status = models.BooleanField(default=True)

@@ -3,6 +3,7 @@ from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, P
     ProductSubCategory, Prompt, TestCases, TestCategories, Customer, TestScriptExecResults
 from django.contrib.auth.hashers import make_password
 
+from django.db.models import F
 
 class TestTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,11 +17,16 @@ class ProductSerializer(serializers.ModelSerializer):
     main_category_name = serializers.SerializerMethodField()
     sub_category_name = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
+    test_types = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         # fields = '__all__'
         exclude = ['prompts']
+    
+    def get_test_types(self,obj):
+        data = obj.structured_test_cases.values("test_type_id", name = F("test_type__code")).distinct()
+        return list(data)
 
     def get_main_category_id(self, obj):
         return obj.product_sub_category.product_category.id

@@ -1,4 +1,5 @@
 import asyncio
+from collections import defaultdict
 from datetime import date
 import threading
 from product.services.aws_bedrock import AwsBedrock
@@ -14,7 +15,7 @@ from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from .models import StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestScriptExecResults
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
-from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter
+from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, LatestTestTypesWithCategoriesOfProductFilter
 # import git
 import os
 from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, When
@@ -440,14 +441,31 @@ class TestCasesAndScripts(generics.ListAPIView):
             }
             test_category_id = request.GET.get("test_category_id", None)
             if not test_category_id:
-                queryset = self.get_queryset(filters).values("test_category_id").annotate(count = Count(F("test_category_id"))).values("test_category_id", "request_id", name=F("test_category__name"))
-                return Response({"data" : list(queryset)})
+                data = self.get_test_types_with_categories(filters)
             else:
                 filters['test_category_id'] = test_category_id
                 data = self.get_consolidated_data_of_test_category(self.get_queryset(filters))
-                return Response({"data" : data})
+            return Response({"data" : data})
         except Exception as e:
             raise e
+    
+    def get_test_types_with_categories(self, filters):
+        queryset = self.get_queryset(filters).values("test_category_id").annotate(count = Count(F("test_category_id"))).values("test_category_id", "request_id", test_id = F("test_type_id"), test_name = F("test_type__code"), category_name=F("test_category__name")).order_by("test_type")
+
+        test_data = {}
+        for item in list(queryset):
+            test_id = item.pop('test_id')
+            test_name = item.pop("test_name")
+            try:
+                test_data[test_id]["categories"].append(item)
+            except:
+                test_data[test_id] = {
+                    "test_id": test_id,
+                    "test_name": test_name,
+                    "categories":[item]
+                }
+
+        return list(test_data.values())
         
     def get_consolidated_data_of_test_category(self, queryset):
 
@@ -480,7 +498,33 @@ class TestCasesAndScripts(generics.ListAPIView):
             serialized_data['test_scripts'].append(_script)
             
         return serialized_data
+    
+class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend,)
+    filterset_class = LatestTestTypesWithCategoriesOfProductFilter
+    ordering_fields = ['id', 'created_at', 'updated_at']
 
+    def get_queryset(self, filters = {}):
+        return StructuredTestCases.objects.filter(**filters)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            product_id = request.GET.get("product_id", None)
+            if not product_id:
+                raise Exception("Please pass product_id to get test cases")
+            filters = {
+                "status":1,
+                "customer":request.user.customer,
+                "product_id" : product_id,
+            }
+            queryset = self.get_queryset(filters=filters)
+            latest_test_type_ids = queryset.annotate(latest = Max(F"test_type")).values_list(Max(F('id')), flat=True)
+            print(latest_test_type_ids)
+        except Exception as e:
+            logger.log(level='Error', message=f"{e}")
+            raise e 
     
 
 class TestCasesView(generics.ListAPIView):
