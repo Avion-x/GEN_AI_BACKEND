@@ -5,6 +5,14 @@ from django.contrib.auth.models import User
 from django.utils.deprecation import MiddlewareMixin
 from user.models import RequestTracking
 import json
+import threading
+
+
+# Using thread-local storage to store the request object
+_thread_locals = threading.local()
+
+def get_current_request():
+    return getattr(_thread_locals, 'request', None)
 
 class RequestIDMiddleware(MiddlewareMixin):
     def process_request(self, request):
@@ -29,8 +37,10 @@ class RequestIDMiddleware(MiddlewareMixin):
             request_tracking.created_by = request.user
         request_tracking.save()
         request.request_tracking = request_tracking
+        
+        _thread_locals.request = request
         return None
-
+        
     def process_response(self, request, response):
         request_tracking = getattr(request, 'request_tracking', None)
         if request_tracking:
@@ -45,7 +55,7 @@ class RequestIDMiddleware(MiddlewareMixin):
             except Exception as e:
                 print(f"Error extracting status code from response body: {e}")
 
-            request_tracking.status = status_code
+            request_tracking.status_code = status_code
             request_tracking.error_message = error_message
             # request_tracking.created_by = request.user
             request_tracking.save()

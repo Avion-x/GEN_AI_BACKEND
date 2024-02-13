@@ -88,8 +88,7 @@ class ProductCategoryView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self):
-        return ProductCategory.objects.filter(customer=self.request.user.customer, status=1,
-                                              valid_till__gt=date.today())
+        return ProductCategory.objects.all()
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -133,8 +132,7 @@ class ProductSubCategoryView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self):
-        return ProductSubCategory.objects.filter(customer_id=self.request.user.customer_id, status=1,
-                                                 valid_till__gt=date.today())
+        return ProductSubCategory.objects.filter()
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
