@@ -175,7 +175,7 @@ class ProductView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self):
-        return Product.objects.filter(customer_id=self.request.user.customer_id, status=1, valid_till__gt=date.today())
+        return Product.objects.filter()
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -238,8 +238,7 @@ class GenerateTestCases(generics.ListAPIView):
 
     def set_device(self, device_id):
         try:
-            self.device = Product.objects.get(id=device_id, customer=self.request.user.customer, status=True,
-                                              valid_till__gte=date.today())
+            self.device = Product.objects.get(id=device_id)
         except Exception as e:
             raise e
 
@@ -433,8 +432,6 @@ class TestCasesAndScripts(generics.ListAPIView):
             if not request_id:
                 raise Exception("Please pass request_id to get test cases")
             filters = {
-                "status":1,
-                "customer":request.user.customer,
                 "request_id" : request_id,
             }
             test_category_id = request.GET.get("test_category_id", None)
@@ -513,8 +510,6 @@ class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
             if not product_id:
                 raise Exception("Please pass product_id to get test cases")
             filters = {
-                "status":1,
-                "customer":request.user.customer,
                 "product_id" : product_id,
             }
             queryset = self.get_queryset(filters=filters)
@@ -584,8 +579,7 @@ class TestCategoriesView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self):
-        return TestCategories.objects.filter(is_approved=1, status=1, valid_till__gt=date.today(),
-                                             customer_id=self.request.user.customer_id)
+        return TestCategories.objects.filter(is_approved=1)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
