@@ -216,7 +216,7 @@ class GenerateTestCases(generics.ListAPIView):
             "type": str,
             "convert_type": True,
         },
-        "test_type_id": {
+        "test_type_data": {
             "is_mandatory": True,
             "type": list,
             "convert_type": True,
@@ -247,7 +247,9 @@ class GenerateTestCases(generics.ListAPIView):
             model = data.get('ai_model', "open_ai")
             ai_model = self.AiModels.get(model, None)
             if not ai_model:
-                raise Exception(f"Please provide valid ai_model, Available models are {list(self.AiModels.keys())}")
+                message = f"Please provide valid ai_model, Available models are {list(self.AiModels.keys())}"
+                logger.log(level="ERROR", message=message)
+                raise Exception(message)
             return ai_model(modelId=model)
         except Exception as e:
             raise e
@@ -259,8 +261,10 @@ class GenerateTestCases(generics.ListAPIView):
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
 
-            thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
-            thread.start()
+            # thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
+            # thread.start()
+
+            self.process_request(request, prompts_data)
             
             response = {
                 "request_id": request.request_id,

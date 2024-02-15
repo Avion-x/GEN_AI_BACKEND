@@ -16,7 +16,6 @@ class CustomManager(Manager):
             Override get_queryset to filter tenants based on the tenant associated with the login user.
             """
             from user.middleware.request_tracking_middleware import get_current_request
-
             request = get_current_request()
             if request and request.user.is_authenticated:
                 filters = {
