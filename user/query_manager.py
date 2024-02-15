@@ -54,7 +54,17 @@ class UserManager(Manager):
 
             request = get_current_request()
             if request and request.user.is_authenticated:
-                return super().get_queryset().filter(customer=request.user.customer, is_active=1,valid_till__gt=date.today())
+                filters = {
+                    "valid_till__gt" : date.today(),
+                    "status" : True,
+                }
+                if hasattr(self.model, "customer"):
+                    if request.user.customer.code == "AvionX":
+                        from user.models import Customer
+                        filters["customer_id__in"] = list(Customer.objects.values_list('id', flat=True))
+                    else:
+                        filters["customer"] = request.user.customer
+                return super().get_queryset().filter(**filters)
             else:
                 return super().get_queryset()
         except CustomManagerException as e:
