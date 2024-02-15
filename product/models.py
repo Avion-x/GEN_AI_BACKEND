@@ -202,6 +202,10 @@ class StructuredTestCases(DefaultModel, models.Model):
     created_by = models.ForeignKey(User, related_name="structured_test_cases", on_delete=models.CASCADE)
 
     objects = CustomManager()
+
+    def save(self,*args, **kwargs):
+        self.test_type = self.test_category.test_type
+        return super().save()
     
     def __str__(self):
         return f"{self.test_id}"

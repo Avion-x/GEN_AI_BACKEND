@@ -518,7 +518,6 @@ class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
             }
             queryset = self.get_queryset(filters=filters)
             latest_test_type_ids = queryset.annotate(latest = Max(F"test_type")).values_list(Max(F('id')), flat=True)
-            print(latest_test_type_ids)
         except Exception as e:
             logger.log(level='Error', message=f"{e}")
             raise e 
