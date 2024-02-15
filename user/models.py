@@ -55,6 +55,7 @@ class User(DefaultModel, AbstractUser):
     customer = models.ForeignKey(Customer, related_name = "user", on_delete=models.CASCADE, default=1)
     comments = models.TextField()
     last_updated_by = models.CharField(max_length=255)
+    role_name = models.CharField(max_length=255, default = "user")
 
     objects = UserManager()
 
