@@ -270,7 +270,6 @@ class GenerateTestCases(generics.ListAPIView):
                 "request_id": request.request_id,
                 "Message": "Processing request will take some time Please come here in 5 mins",
             }
-
             return Response({
                 "error": "",
                 "status": 200,
