@@ -500,6 +500,35 @@ class TestCasesAndScripts(generics.ListAPIView):
 
         return serialized_data
 
+
+class GeneratedTestCategoriesView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend,)
+    ordering_fields = []
+    ordering = []
+
+    def get(self, request, *args, **kwargs):
+        try:
+            test_type_id = request.GET.get('test_type_id', None)
+            if not test_type_id:
+                raise Exception("Please pass test_type_id")
+            test_categories = TestCategories.objects.filter(test_type_id = test_type_id)
+            categories = []
+            for category in test_categories:
+                result = {
+                    "id": category.id,
+                    "name": category.name
+                }
+                exists = StructuredTestCases.objects.filter(test_category_id = category.id).exists()
+                result['is_generated'] = exists
+                categories.append(result)
+            return JsonResponse({'data': categories}, safe=False)
+        except Exception as e:
+            logger.log(level='Error', message=f"{e}")
+            raise e    
+
+
 class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
