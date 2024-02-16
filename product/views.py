@@ -265,7 +265,7 @@ class GenerateTestCases(generics.ListAPIView):
             thread.start()
 
             # self.process_request(request, prompts_data)
-            
+
             response = {
                 "request_id": request.request_id,
                 "Message": "Processing request will take some time Please come here in 5 mins",
@@ -285,7 +285,7 @@ class GenerateTestCases(generics.ListAPIView):
                 "status": 400,
                 "response": {}
             })
-        
+
     def process_request(self, request, prompts_data):
         try:
             response = {}
@@ -312,7 +312,7 @@ class GenerateTestCases(generics.ListAPIView):
             return response
         except Exception as e:
             raise e
-        
+
     def store_parsed_tests(self, request, data, test_type, test_category, test_category_id):
         for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
             name = test_case.get('testname', test_case.get('name', "")).replace(" ", "_").lower()
@@ -346,8 +346,8 @@ class GenerateTestCases(generics.ListAPIView):
             StructuredTestCases.objects.create(**_test_case)
             StructuredTestCases.objects.create(**_test_script)
         return True
-      
-        
+
+
     # def store_in_github(self, data, file_path ):
     #     response = []
     #     registry = {
@@ -381,7 +381,7 @@ class GenerateTestCases(generics.ListAPIView):
         except Exception as e:
             raise e
 
-        
+
     def get_test_data(self, text_data):
         result = {"raw_text": text_data, "test_cases": [], "test_scripts":[]}
         data = parseModelDataToList(text_data)
@@ -393,7 +393,7 @@ class GenerateTestCases(generics.ListAPIView):
                     result['test_cases'] += test_case
                 else:
                     result['test_cases'].append(test_case)
-                
+
                 if isinstance(test_scripts, list):
                     result['test_scripts'] += test_scripts
                 else:
@@ -431,12 +431,15 @@ class TestCasesAndScripts(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            request_id = request.GET.get("request_id", None)
-            if not request_id:
-                raise Exception("Please pass request_id to get test cases")
+            test_type_id = request.GET.get("test_type_id", None)
+            if not test_type_id:
+                raise Exception("Please pass test_type_id to get test cases")
             filters = {
-                "request_id" : request_id,
+                "test_type_id": test_type_id,
             }
+            product_id = request.GET.get("product_id", None)
+            if product_id:
+                filters['product_id'] = product_id
             test_category_id = request.GET.get("test_category_id", None)
             if not test_category_id:
                 data = self.get_test_types_with_categories(filters)
@@ -446,7 +449,7 @@ class TestCasesAndScripts(generics.ListAPIView):
             return Response({"data" : data})
         except Exception as e:
             raise e
-    
+
     def get_test_types_with_categories(self, filters):
         queryset = self.get_queryset(filters).values("test_category_id").annotate(count = Count(F("test_category_id"))).values("test_category_id", "request_id", test_id = F("test_type_id"), test_name = F("test_type__code"), category_name=F("test_category__name")).order_by("test_type")
 
@@ -464,7 +467,7 @@ class TestCasesAndScripts(generics.ListAPIView):
                 }
 
         return list(test_data.values())
-        
+
     def get_consolidated_data_of_test_category(self, queryset):
 
         if not len(queryset):
@@ -476,8 +479,8 @@ class TestCasesAndScripts(generics.ListAPIView):
         #         When(type='TESTSCRIPT', then=Value({'TESTSCRIPT': F('data')}, output_field=JSONField())),
         #         default=Value({}, output_field=JSONField())
         #     )
-        # )        
-        
+        # )
+
         category_name = queryset.first().test_category.name
 
         test_cases = queryset.filter(type='TESTCASE').order_by('test_id').values('id', 'test_id', 'test_name', 'objective', 'data', 'status', 'valid_till', 'product_id', product_name = F("product__product_code"), user_id = F("created_by_id"), user_name = F("created_by__username"))
@@ -494,9 +497,9 @@ class TestCasesAndScripts(generics.ListAPIView):
                 _script[key] = test_script[key]
             serialized_data['test_cases'].append(_case)
             serialized_data['test_scripts'].append(_script)
-            
+
         return serialized_data
-    
+
 class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
@@ -519,8 +522,8 @@ class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
             latest_test_type_ids = queryset.annotate(latest = Max(F"test_type")).values_list(Max(F('id')), flat=True)
         except Exception as e:
             logger.log(level='Error', message=f"{e}")
-            raise e 
-    
+            raise e
+
 
 class TestCasesView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
