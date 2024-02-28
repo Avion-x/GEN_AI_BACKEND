@@ -1,9 +1,10 @@
-from rest_framework import generics, viewsets, filters as rest_filters
+from rest_framework import generics, viewsets,permissions, authentication, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
-
+from django.db import IntegrityError
+from django.contrib.auth.models import Group, Permission
 from user.filters import CustomUserFilter
-from .models import User, Customer, CustomerConfig, AccessType
+from .models import User, Customer, CustomerConfig, AccessType, Roles
 from product.models import TestType
 from .serializers import UserRetriveSerializer, UserSerializer, CustomerSerializer, CustomerConfigSerializer, TestTypeSerializer, AccessTypeSerializer
 from django.contrib.auth import authenticate, login, logout
@@ -12,6 +13,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
+from user.permissions import get_user_permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.decorators import api_view, permission_classes
@@ -36,9 +38,11 @@ class LoginView(generics.RetrieveAPIView):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+            permissions_json = get_user_permissions(username)
+            print(permissions_json)
             token, created = Token.objects.get_or_create(user=request.user)
             serializer = UserRetriveSerializer(user)
-            return Response({'token': token.key, 'user_details':serializer.data})
+            return Response({'token': token.key, 'user_details':serializer.data, 'permissions': permissions_json})
         else:
             # Authentication failed
             return Response({'error': 'Invalid credentials'})
@@ -92,3 +96,16 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         return Response(status=204)
 
 
+class CreateRoleWithGroupsAPIView(generics.CreateAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend,)
+
+    def post(self, request, *args, **kwargs):
+            role_name = request.data.get('role_name')
+            group_names = request.data.get('group_names', [])
+            role, created = Role.objects.get_or_create(name=role_name)
+            groups = Group.objects.filter(name__in=group_names)
+            role.groups.add(group) 
+            role.save()  
+            return Response({"message": "Groups assigned to role successfully"})

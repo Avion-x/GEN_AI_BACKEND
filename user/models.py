@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
 import pytz
 from rest_framework.authtoken.models import Token
 
@@ -51,12 +51,20 @@ class AccessType(DefaultModel, models.Model):
     def __str__(self):
         return f"{self.access} - {self.description}"
 
+class Roles(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, unique=True)
+    group = models.ManyToManyField(Group, related_name='roles')
+
+    def __str__(self):
+        return self.name
+
 class User(DefaultModel, AbstractUser):
     customer = models.ForeignKey(Customer, related_name = "user", on_delete=models.CASCADE, default=1)
     comments = models.TextField()
     last_updated_by = models.CharField(max_length=255)
     role_name = models.CharField(max_length=255, default = "user")
-
+    role = models.ForeignKey(Roles, related_name="users", on_delete=models.CASCADE, null=True)
     objects = UserManager()
 
     def __str__(self):
