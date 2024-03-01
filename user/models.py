@@ -22,6 +22,7 @@ class Customer(DefaultModel, models.Model):
     address = models.TextField()
     comments = models.TextField()
     last_updated_by = models.CharField(max_length=255)
+    logo = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.code} - {self.name}"
@@ -64,7 +65,9 @@ class User(DefaultModel, AbstractUser):
     comments = models.TextField()
     last_updated_by = models.CharField(max_length=255)
     role_name = models.CharField(max_length=255, default = "user")
-    role = models.ForeignKey(Roles, related_name="users", on_delete=models.CASCADE)
+    role = models.ForeignKey(Roles, related_name = "user", on_delete=models.CASCADE)
+    avatar = models.URLField(blank=True, null=True)
+
     objects = UserManager()
 
     def __str__(self):

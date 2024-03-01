@@ -142,6 +142,8 @@ class CheckUsernameExistsView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         username = request.GET.get('username', None)
         return Response({"does_exist": User.objects.filter(username = username).exists()})
+
+    
 class CreateRoleWithGroupsAPIView(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
