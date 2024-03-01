@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from django.db import models
-from django.contrib.auth.models import AbstractUser, Group
+from django.contrib.auth.models import AbstractUser, Group, Permission
 import pytz
 from rest_framework.authtoken.models import Token
 
@@ -64,7 +64,7 @@ class User(DefaultModel, AbstractUser):
     comments = models.TextField()
     last_updated_by = models.CharField(max_length=255)
     role_name = models.CharField(max_length=255, default = "user")
-    role = models.ForeignKey(Roles, related_name="users", on_delete=models.CASCADE, null=True)
+    role = models.ForeignKey(Roles, related_name="users", on_delete=models.CASCADE)
     objects = UserManager()
 
     def __str__(self):
