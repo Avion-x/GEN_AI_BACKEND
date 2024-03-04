@@ -1,24 +1,13 @@
-from django.contrib.auth.models import Group, Permission
-from .models import Roles, User
+from django.contrib.auth.models import User, Permission
+from .models import Roles
 import json
 
 def get_user_permissions(username):
-    # Retrieve user object
-    user = User.objects.get(username=username)
-
-    # Retrieve user's roles
-    user_roles = Roles.objects.filter(group__user=user)
-
-    # Retrieve groups associated with the user's roles
-    user_groups = Group.objects.filter(role__in=user_roles)
-
-    # Retrieve permissions associated with the user's roles and groups
-    permissions = Permission.objects.filter(group__in=user_groups)
-
-    # Extract permission names
-    permission_names = [permission.name for permission in permissions]
-
-    # Serialize permissions to JSON
-    permissions_json = json.dumps(permission_names)
-
+    user_permissions = (
+        Permission.objects
+        .filter(group__roles__group__user__username=username)
+        .values_list('name', flat=True)
+        .distinct()
+    )
+    permissions_json = json.dumps(list(user_permissions))
     return permissions_json
