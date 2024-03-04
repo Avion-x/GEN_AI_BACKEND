@@ -7,7 +7,7 @@ def get_user_permissions(username):
     user = User.objects.get(username=username)
 
     # Retrieve user's roles
-    user_roles = Role.objects.filter(group__user=user)
+    user_roles = Roles.objects.filter(group__user=user)
 
     # Retrieve groups associated with the user's roles
     user_groups = Group.objects.filter(role__in=user_roles)
