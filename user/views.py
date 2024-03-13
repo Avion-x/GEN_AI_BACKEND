@@ -67,6 +67,9 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
     ordering_fields = ['id', 'date_joined', 'last_login'] #for ordering or sorting replace with '__all__' for all fields 
     ordering = [] # for default orderings
 
+    def get_role_instance(self, role_name):
+        return Roles.objects.get(name=role_name)
+
     def get_queryset(self):
         return User.objects.filter()
 
@@ -78,6 +81,11 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        role_name = request.data.get('role_name')
+        role_instance = self.get_role_instance(role_name)
+        if role_instance is None:
+            return Response({"error": "Role with the provided name does not exist"})
+        serializer.validated_data['role'] = role_instance
         serializer.save()
         return Response(serializer.data, status=201)
 
@@ -86,6 +94,11 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
+        role_name = request.data.get('role_name')
+        role_instance = self.get_role_instance(role_name)
+        if role_instance is None:
+            return Response({"error": "Role with the provided name does not exist"})
+        serializer.validated_data['role'] = role_instance
         serializer.save()
         return Response(serializer.data)
 
