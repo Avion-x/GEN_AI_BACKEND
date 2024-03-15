@@ -67,27 +67,27 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
     ordering_fields = ['id', 'date_joined', 'last_login'] #for ordering or sorting replace with '__all__' for all fields 
     ordering = [] # for default orderings
 
-    def get_role_instance(self, role_name):
-        return Roles.objects.get(name=role_name)
+    def get_role_id(self, role_name):
+        return Roles.objects.get(name=role_name).id
 
     def get_queryset(self):
         return User.objects.filter()
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.filter_queryset(self.get_queryset().order_by('first_name'))
         serializer = UserRetriveSerializer(queryset, many=True)
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
         request.data['customer']=request.user.customer.id
         request.data['last_updated_by']=request.user.id
+        role_name = request.data.get('role_name')
+        role_id = self.get_role_id(role_name)
+        if role_id is None:
+            return Response({"error": "Role with the provided name does not exist"})
+        request.data['role'] = role_id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        role_name = request.data.get('role_name')
-        role_instance = self.get_role_instance(role_name)
-        if role_instance is None:
-            return Response({"error": "Role with the provided name does not exist"})
-        serializer.validated_data['role'] = role_instance
         serializer.save()
         return Response({"message": "User created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
 
@@ -96,13 +96,13 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         request.data['last_updated_by']=request.user.id
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
+        role_name = request.data.get('role_name')
+        role_id = self.get_role_id(role_name)
+        if role_id is None:
+            return Response({"error": "Role with the provided name does not exist"})
+        request.data['role'] = role_id
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        role_name = request.data.get('role_name')
-        role_instance = self.get_role_instance(role_name)
-        if role_instance is None:
-            return Response({"error": "Role with the provided name does not exist"})
-        serializer.validated_data['role'] = role_instance
         serializer.save()
         return Response({"message": "User updated successfully", "data": serializer.data})
 
