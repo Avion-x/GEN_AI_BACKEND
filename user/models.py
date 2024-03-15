@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 import pytz
 from rest_framework.authtoken.models import Token
 
-from user.query_manager import CustomManager, UserManager
+from user.query_manager import CustomManager, FullAccessManager, UserManager
 
 class DefaultModel(models.Model):
     status = models.BooleanField(default=True)
@@ -69,6 +69,7 @@ class User(DefaultModel, AbstractUser):
     avatar = models.URLField(blank=True, null=True)
 
     objects = UserManager()
+    all_objects = FullAccessManager()
 
     def __str__(self):
         return f"{self.customer.code} - {self.username}"

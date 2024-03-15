@@ -79,6 +79,8 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
+        request.data['customer']=request.user.customer.id
+        request.data['last_updated_by']=request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         role_name = request.data.get('role_name')
@@ -90,6 +92,8 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         return Response({"message": "User created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
 
     def put(self, request, *args, **kwargs):
+        request.data['customer']=request.user.customer.id
+        request.data['last_updated_by']=request.user.id
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -154,7 +158,7 @@ class CheckUsernameExistsView(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         username = request.GET.get('username', None)
-        return Response({"does_exist": User.objects.filter(username = username).exists()})
+        return Response({"does_exist": User.all_objects.filter(username = username).exists()})
 
     
 class CreateRoleWithGroupsAPIView(generics.CreateAPIView):

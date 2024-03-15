@@ -69,3 +69,15 @@ class UserManager(Manager):
                 return super().get_queryset()
         except CustomManagerException as e:
             raise CustomManagerException(message=f"Request Not Found to filter customer, Error is {e}")
+        
+
+class FullAccessManager(Manager):
+    
+    def get_queryset(self) -> QuerySet:
+        try:
+            """
+            Override get_queryset to filter tenants based on the tenant associated with the login user.
+            """
+            return super().get_queryset()
+        except CustomManagerException as e:
+            raise CustomManagerException(message=f"Request Not Found to filter customer, Error is {e}")
