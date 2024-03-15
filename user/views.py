@@ -1,4 +1,4 @@
-from rest_framework import generics, viewsets,permissions, authentication, filters as rest_filters
+from rest_framework import generics, viewsets,permissions, authentication, filters as rest_filters, status
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from django.db import IntegrityError
@@ -87,7 +87,7 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
             return Response({"error": "Role with the provided name does not exist"})
         serializer.validated_data['role'] = role_instance
         serializer.save()
-        return Response(serializer.data, status=201)
+        return Response({"message": "User created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
 
     def put(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -100,7 +100,7 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
             return Response({"error": "Role with the provided name does not exist"})
         serializer.validated_data['role'] = role_instance
         serializer.save()
-        return Response(serializer.data)
+        return Response({"message": "User updated successfully", "data": serializer.data})
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
