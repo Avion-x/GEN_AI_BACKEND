@@ -159,6 +159,16 @@ class CheckUsernameExistsView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         username = request.GET.get('username', None)
         return Response({"does_exist": User.all_objects.filter(username = username).exists()})
+    
+
+class CheckEmailExistsView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend, rest_filters.OrderingFilter)
+
+    def get(self, request, *args, **kwargs):
+        email = request.GET.get('email', None)
+        return Response({"does_exist": User.all_objects.filter(email = email).exists()})
 
     
 class CreateRoleWithGroupsAPIView(generics.CreateAPIView):
