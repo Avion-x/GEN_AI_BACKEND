@@ -119,7 +119,7 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         instance = self.get_queryset({"id":user_id}).first()
         instance.is_active = False
         instance.status = False
-        instance.last_updated_by = self.request.user
+        instance.last_updated_by = self.request.user.username
         instance.save()
         return Response({"message":"User deleted Succesfully", "status":200})
 
