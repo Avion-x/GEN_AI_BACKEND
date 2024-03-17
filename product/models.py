@@ -115,6 +115,7 @@ class Product(DefaultModel, models.Model):
     last_updated_by = models.ForeignKey(User, related_name = 'product', on_delete=models.CASCADE)
     prompts = models.ManyToManyField(Prompt, blank=True, related_name = 'product', through='ProductPrompt')
     product_name = models.CharField(max_length=255)
+    product_category = models.ForeignKey(ProductCategory, related_name = "product", on_delete=models.CASCADE)
 
     objects = CustomManager()
 
