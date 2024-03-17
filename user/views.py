@@ -70,8 +70,8 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
     def get_role_id(self, role_name):
         return Roles.objects.get(name=role_name).id
 
-    def get_queryset(self):
-        return User.objects.filter()
+    def get_queryset(self, filters={}):
+        return User.objects.filter(**filters)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset().order_by('first_name'))
@@ -106,14 +106,22 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         serializer.save()
         return Response({"message": "User updated successfully", "data": serializer.data})
 
+    # def delete(self, request, *args, **kwargs):
+    #     instance = self.get_object()
+    #     instance.is_active = False
+    #     instance.save()
+    #     return Response(status=204)
+
     def delete(self, request, *args, **kwargs):
-        user_id = request.data.get('user_id', None)
+        user_id = request.GET.get('user_id', None)
         if not user_id:
             return Response({"message":"Please pass user_id to delete user", "status":400})
-        instance = self.get_queryset({"id":user_id})
+        instance = self.get_queryset({"id":user_id}).first()
         instance.is_active = False
+        instance.status = False
+        instance.last_updated_by = self.request.user
         instance.save()
-        return Response(status=204)
+        return Response({"message":"User deleted Succesfully", "status":200})
 
 
 class CustomerOrEnterpriseView(generics.ListCreateAPIView):
