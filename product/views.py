@@ -61,14 +61,14 @@ class TestTypeView(generics.ListAPIView):
         return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
-        request.data['last_updated_by'] = self.request.user.id
+        request.data['last_updated_by'] = self.request.user.username
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return JsonResponse({"message":"Test Type created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
-        request.data['last_updated_by'] = self.request.user.id
+        request.data['last_updated_by'] = self.request.user.username
         partial = kwargs.pop('partial', False)
         id = request.data.get('id')
         print("id:",id)
@@ -683,7 +683,7 @@ class TestCategoriesView(generics.ListAPIView):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Test Category created successfully", "data": serializer.data, "status": 200})
+        return JsonResponse({"message": "Test Category created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
         request.data['customer']=request.user.customer.id
@@ -698,7 +698,7 @@ class TestCategoriesView(generics.ListAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Test Category updated successfully", "data": serializer.data, "status": 200})
+        return JsonResponse({"message": "Test Category updated successfully", "data": serializer.data, "status": 200})
     
     def delete(self, request, *args, **kwargs):
         id = request.GET.get('id')

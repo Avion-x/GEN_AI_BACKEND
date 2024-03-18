@@ -2,22 +2,47 @@ from rest_framework import serializers
 from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, \
     ProductSubCategory, Prompt, TestCases, TestCategories, Customer, TestScriptExecResults
 from django.contrib.auth.hashers import make_password
-
 from django.db.models import F
+import pytz
 
-class TestTypeSerializer(serializers.ModelSerializer):
+
+class ISTTimestamp:
+    def get_ist_timestamp(self, timestamp):
+        utc_timestamp = timestamp.astimezone(pytz.utc)
+        ist_timestamp = utc_timestamp.astimezone(pytz.timezone('Asia/Kolkata'))
+        formatted_timestamp = ist_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        return formatted_timestamp
+
+
+class TestTypeSerializer(serializers.ModelSerializer, ISTTimestamp):
+    created_at = serializers.SerializerMethodField()
+    last_updated_at = serializers.SerializerMethodField()
+
     class Meta:
         model = TestType
         fields = '__all__'
 
+    def get_created_at(self,obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_at(self,obj):
+        timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
 
-class ProductSerializer(serializers.ModelSerializer):
+
+class ProductSerializer(serializers.ModelSerializer, ISTTimestamp):
     main_category_id = serializers.SerializerMethodField()
     # sub_category_id = serializers.IntegerField(source='product_sub_category')
     main_category_name = serializers.SerializerMethodField()
     sub_category_name = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
     test_types = serializers.SerializerMethodField()
+    created_at = serializers.SerializerMethodField()
+    last_updated_at = serializers.SerializerMethodField()
+    last_updated_by = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -39,13 +64,29 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_customer_name(self, obj):
         return obj.customer.name
+    
+    def get_created_at(self,obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_at(self,obj):
+        timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_by(self, obj):
+        return obj.last_updated_by.username
 
 
-class ProductSubCategorySerializer(serializers.ModelSerializer):
+class ProductSubCategorySerializer(serializers.ModelSerializer, ISTTimestamp):
     product_count = serializers.SerializerMethodField()
     main_category_id = serializers.SerializerMethodField()
     main_category_name = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
+    created_at = serializers.SerializerMethodField()
+    last_updated_at = serializers.SerializerMethodField()
+    last_updated_by = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductSubCategory
@@ -62,11 +103,27 @@ class ProductSubCategorySerializer(serializers.ModelSerializer):
 
     def get_customer_name(self, obj):
         return obj.customer.name
+    
+    def get_created_at(self,obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_at(self,obj):
+        timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_by(self, obj):
+        return obj.last_updated_by.username
 
 
-class ProductCategorySerializer(serializers.ModelSerializer):
+class ProductCategorySerializer(serializers.ModelSerializer, ISTTimestamp):
     sub_category_count = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
+    created_at = serializers.SerializerMethodField()
+    last_updated_at = serializers.SerializerMethodField()
+    last_updated_by = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductCategory
@@ -78,15 +135,30 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
     def get_customer_name(self, obj):
         return obj.customer.name
+    
+    def get_created_at(self,obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_at(self,obj):
+        timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_by(self, obj):
+        return obj.last_updated_by.username
 
 
-class TestCasesSerializer(serializers.ModelSerializer):
+class TestCasesSerializer(serializers.ModelSerializer, ISTTimestamp):
     test_type_name = serializers.SerializerMethodField()
     test_category_name = serializers.SerializerMethodField()
     product_code = serializers.SerializerMethodField()
     sub_category_name = serializers.SerializerMethodField()
     main_category_name = serializers.SerializerMethodField()
     username = serializers.SerializerMethodField()
+    created_at = serializers.SerializerMethodField()
+    last_updated_at = serializers.SerializerMethodField()
 
     class Meta:
         model = TestCases
@@ -109,9 +181,23 @@ class TestCasesSerializer(serializers.ModelSerializer):
 
     def get_username(self, obj):
         return obj.created_by.username
+    
+    def get_created_at(self,obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_at(self,obj):
+        timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
 
 
-class TestCategoriesSerializer(serializers.ModelSerializer):
+class TestCategoriesSerializer(serializers.ModelSerializer, ISTTimestamp):
+    created_at = serializers.SerializerMethodField()
+    last_updated_at = serializers.SerializerMethodField()
+    last_updated_by = serializers.SerializerMethodField()
+
     class Meta:
         model = TestCategories
         fields = '__all__'
@@ -122,6 +208,19 @@ class TestCategoriesSerializer(serializers.ModelSerializer):
         if 'is_approved' in data and not data.get('is_approved', False):
             data['approved_by'] = None
         return data
+    
+    def get_created_at(self,obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_at(self,obj):
+        timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_by(self, obj):
+        return obj.last_updated_by.username
 
 
 class PromptSerializer(serializers.ModelSerializer):
@@ -151,12 +250,14 @@ class ProductCategoryPromptCodeSerializer(serializers.ModelSerializer):
         fields = '_all_'
 
 
-class TestScriptExecResultsSerializer(serializers.ModelSerializer):
+class TestScriptExecResultsSerializer(serializers.ModelSerializer, ISTTimestamp):
     product = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
     test_type = serializers.SerializerMethodField()
     test_category = serializers.SerializerMethodField()
     executed_by = serializers.SerializerMethodField()
+    created_at = serializers.SerializerMethodField()
+    last_updated_at = serializers.SerializerMethodField()
 
     def get_product(self, obj):
         return obj.product.product_code
@@ -172,7 +273,17 @@ class TestScriptExecResultsSerializer(serializers.ModelSerializer):
 
     def get_executed_by(self, obj):
         return obj.created_by.username
-
+    
+    def get_created_at(self,obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_last_updated_at(self,obj):
+        timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
     class Meta:
         model = TestScriptExecResults
         fields = ['test_script_number', 'execution_result_details', 'product', 'customer', 'test_type', 'test_category',
