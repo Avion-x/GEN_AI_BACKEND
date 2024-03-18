@@ -17,12 +17,13 @@ class FoundationalModel(DefaultModel, models.Model):
     def __str__(self) -> str:
         return f"{self.name}"
 
+
 class TestType(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=500)
-    description = models.TextField()
-    comments = models.TextField()
+    description = models.TextField(blank = True, null = True)
+    comments = models.TextField(blank = True, null = True)
     last_updated_by = models.CharField(max_length=255)
     executable_codes = models.JSONField(default=dict())
 
@@ -30,14 +31,15 @@ class TestType(DefaultModel, models.Model):
 
     def __str__(self):
         return f"{self.code} - {self.description}"
-    
+
+
 class TestCategories(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     number_of_test_cases = models.IntegerField()
-    description = models.TextField()
+    description = models.TextField(blank = True, null = True)
     is_approved = models.BooleanField(default=False)
-    approved_by = models.ForeignKey(User, related_name = "test_category", on_delete=models.CASCADE)
+    approved_by = models.ForeignKey(User, related_name = "test_category", on_delete=models.CASCADE, null = True)
     customer = models.ForeignKey(Customer, related_name = "test_category", on_delete=models.CASCADE)
     test_type = models.ForeignKey(TestType, related_name = "test_category", on_delete=models.CASCADE)
     last_updated_by = models.ForeignKey(User, related_name="test_category_last_updated", on_delete=models.CASCADE)
@@ -47,6 +49,7 @@ class TestCategories(DefaultModel, models.Model):
 
     def __str__(self) -> str:
         return f"{self.name}-{self.test_type.code}"
+
 
 class Prompt(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
@@ -76,7 +79,8 @@ class ProductCategory(DefaultModel, models.Model):
 
     def __str__(self):
         return f"{self.customer.code} - {self.category}"
-    
+
+
 class ProductSubCategory(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     customer = models.ForeignKey(Customer, related_name = "product_sub_category", on_delete=models.CASCADE)
@@ -90,7 +94,8 @@ class ProductSubCategory(DefaultModel, models.Model):
 
     def __str__(self):
         return f"{self.customer.code} - {self.product_category.category} - {self.sub_category}"
-    
+
+
 class ProductCategoryPromptCode(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     product_sub_category = models.ForeignKey(ProductSubCategory, related_name = "product_category_prompt_code", on_delete=models.CASCADE)
@@ -104,7 +109,8 @@ class ProductCategoryPromptCode(DefaultModel, models.Model):
 
     def __str__(self):
         return f"{self.customer.code} - {self.product_sub_category.sub_category} - {self.foundation_model} - {self.prompt_code}"
-    
+
+
 class Product(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     customer = models.ForeignKey(Customer, related_name = "product",  on_delete=models.CASCADE)
@@ -122,6 +128,7 @@ class Product(DefaultModel, models.Model):
     def __str__(self):
         return f"{self.customer.code} - {self.product_sub_category.sub_category} - {self.product_code}"
 
+
 class ProductCategoryPrompt(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     customer = models.ForeignKey(Customer, related_name = "product_category_prompt",  on_delete=models.CASCADE)
@@ -136,6 +143,7 @@ class ProductCategoryPrompt(DefaultModel, models.Model):
 
     def __str__(self):
         return f"{self.customer.code} - {self.product_category.category} - {self.prompt.prompt} - {self.sequence_no}"
+
 
 class ProductPrompt(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
@@ -153,7 +161,6 @@ class ProductPrompt(DefaultModel, models.Model):
         return f"{self.customer.code} - {self.product.product_code} - {self.prompt.prompt} - {self.sequence_no}"
 
 
-
 class TestCases(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     customer = models.ForeignKey(Customer, related_name = "test_cases",  on_delete=models.CASCADE)
@@ -169,6 +176,8 @@ class TestCases(DefaultModel, models.Model):
 
     def __str__(self):
         return f"{self.product.product_code}-{self.test_type.code}({self.created_at})"
+    
+
 class TestScriptExecResults(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     customer = models.ForeignKey(Customer, related_name="test_script_exec_results", on_delete=models.CASCADE)
@@ -212,5 +221,3 @@ class StructuredTestCases(DefaultModel, models.Model):
     def __str__(self):
         return f"{self.test_id}"
     
-
-

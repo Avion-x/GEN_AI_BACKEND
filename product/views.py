@@ -52,11 +52,8 @@ class TestTypeView(generics.ListAPIView):
     ordering_fields = ['id', 'created_at', 'last_updated_at']
     ordering = []  # for default orderings
 
-    def get_queryset(self):
-        try:
-            return TestType.objects.filter()
-        except Exception as e:
-            logger.error(level='ERROR', message="")
+    def get_queryset(self, filters={}):
+        return TestType.objects.filter(**filters)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -64,18 +61,39 @@ class TestTypeView(generics.ListAPIView):
         return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
+        request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse(serializer.data, status=201)
+        return JsonResponse({"message":"Test Type created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
+        request.data['last_updated_by'] = self.request.user.id
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        id = request.data.get('id')
+        print("id:",id)
+        if not id:
+            return Response({"message":"Please pass id to update Test Type", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()
+        print("in:",instance)       
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})      
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse(serializer.data)
+        return JsonResponse({"message":"Test Type updated successfully", "data": serializer.data, "status": 200})
+    
+    def delete(self, request, *args, **kwargs):
+        id = request.GET.get('id')
+        if not id:
+            return Response({"message":"Please pass id to delete Test Type", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()        
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})
+        instance.status = 0
+        instance.last_updated_by = self.request.user.id
+        instance.save()
+        return JsonResponse({"message":"Test Type deleted successfully", "status": 200})
 
 
 class ProductCategoryView(generics.ListAPIView):
@@ -87,8 +105,8 @@ class ProductCategoryView(generics.ListAPIView):
     ordering_fields = ['id', 'created_at', 'last_updated_at']
     ordering = []  # for default orderings
 
-    def get_queryset(self):
-        return ProductCategory.objects.all()
+    def get_queryset(self, filters={}):
+        return ProductCategory.objects.filter(**filters)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -103,23 +121,34 @@ class ProductCategoryView(generics.ListAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse(serializer.data, status=201)
+        return JsonResponse({"message":"Category created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        id = request.data.get('id')
+        if not id:
+            return Response({"message":"Please pass id to update Category", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()        
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})        
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse(serializer.data)
+        return JsonResponse({"message":"Category updated successfully", "data": serializer.data, "status":200})
 
     def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
+        id = request.GET.get('id')
+        if not id:
+            return Response({"message":"Please pass id to delete Category", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})                
         instance.status = 0
+        instance.last_updated_by = self.request.user
         instance.save()
-        return Response(status=204)
+        return JsonResponse({"message":"Category deleted successfully", "status": 200})
 
 
 class ProductSubCategoryView(generics.ListAPIView):
@@ -131,8 +160,8 @@ class ProductSubCategoryView(generics.ListAPIView):
     ordering_fields = ['id', 'created_at', 'last_updated_at']
     ordering = []  # for default orderings
 
-    def get_queryset(self):
-        return ProductSubCategory.objects.filter()
+    def get_queryset(self, filters={}):
+        return ProductSubCategory.objects.filter(**filters)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -146,23 +175,34 @@ class ProductSubCategoryView(generics.ListAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse(serializer.data, status=201)
+        return JsonResponse({"message":"Sub Category created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        id = request.data.get('id')
+        if not id:
+            return Response({"message":"Please pass id to update Sub Category", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()        
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})      
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse(serializer.data)
+        return JsonResponse({"message":"Sub Category updated successfully", "data": serializer.data, "status":200})
 
     def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
+        id = request.GET.get('id')
+        if not id:
+            return Response({"message":"Please pass id to delete Sub Category", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})        
         instance.status = 0
+        instance.last_updated_by = self.request.user
         instance.save()
-        return Response(status=204)
+        return JsonResponse({"message":"Sub Category deleted successfully", "status": 200})
 
 
 class ProductView(generics.ListAPIView):
@@ -174,8 +214,8 @@ class ProductView(generics.ListAPIView):
     ordering_fields = ['id', 'created_at', 'last_updated_at']
     ordering = []  # for default orderings
 
-    def get_queryset(self):
-        return Product.objects.filter()
+    def get_queryset(self, filters={}):
+        return Product.objects.filter(**filters)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -188,23 +228,34 @@ class ProductView(generics.ListAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse(serializer.data, status=201)
+        return JsonResponse({"message":"Product created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        id = request.data.get('id')
+        if not id:
+            return Response({"message":"Please pass id to update Product", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()        
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})         
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse(serializer.data)
+        return JsonResponse({"message":"Product updated successfully", "data": serializer.data, "status":200})
 
     def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
+        id = request.GET.get('id')
+        if not id:
+            return Response({"message":"Please pass id to delete Product", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})                
         instance.status = 0
+        instance.last_updated_by = self.request.user
         instance.save()
-        return Response(status=204)
+        return JsonResponse({"message":"Product deleted successfully", "status": 200})
 
 
 class GenerateTestCases(generics.ListAPIView):
@@ -612,8 +663,8 @@ class TestCategoriesView(generics.ListAPIView):
     ordering_fields = ['id', 'created_at', 'last_updated_at']
     ordering = []  # for default orderings
 
-    def get_queryset(self):
-        return TestCategories.objects.filter(is_approved=1)
+    def get_queryset(self, filters={}):
+        return TestCategories.objects.filter(**filters)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -621,6 +672,8 @@ class TestCategoriesView(generics.ListAPIView):
         return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
+        request.data['customer']=request.user.customer.id
+        request.data['last_updated_by']=request.user.id
         data = request.data
         if data:
             test_type_name = TestType.objects.get(id=data['test_type']).code
@@ -630,15 +683,34 @@ class TestCategoriesView(generics.ListAPIView):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse(serializer.data, status=201)
+        return Response({"message": "Test Category created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
+        request.data['customer']=request.user.customer.id
+        request.data['last_updated_by']=request.user.id
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        id = request.data.get('id')
+        if not id:
+            return Response({"message":"Please pass id to update Test Category", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})          
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse(serializer.data)
+        return Response({"message": "Test Category updated successfully", "data": serializer.data, "status": 200})
+    
+    def delete(self, request, *args, **kwargs):
+        id = request.GET.get('id')
+        if not id:
+            return Response({"message":"Please pass id to delete Test Category", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})                
+        instance.status = 0
+        instance.last_updated_by = self.request.user
+        instance.save()
+        return JsonResponse({"message":"Test Category deleted successfully", "status": 200})
 
 
 class ApproveTestCategoryView(generics.ListAPIView):

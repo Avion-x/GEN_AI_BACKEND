@@ -13,7 +13,7 @@ class TestTypeSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     main_category_id = serializers.SerializerMethodField()
-    sub_category_id = serializers.IntegerField(source='product_sub_category_id')
+    # sub_category_id = serializers.IntegerField(source='product_sub_category')
     main_category_name = serializers.SerializerMethodField()
     sub_category_name = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
@@ -30,7 +30,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_main_category_id(self, obj):
         return obj.product_sub_category.product_category.id
-
+    
     def get_sub_category_name(self, obj):
         return obj.product_sub_category.sub_category
 
@@ -115,6 +115,13 @@ class TestCategoriesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestCategories
         fields = '__all__'
+        read_only_fields = ('approved_by',)  # Assuming you don't want this field to be modified directly
+
+    def validate(self, data):
+        # If is_approved is not provided, approved_by should also be cleared
+        if 'is_approved' in data and not data.get('is_approved', False):
+            data['approved_by'] = None
+        return data
 
 
 class PromptSerializer(serializers.ModelSerializer):
