@@ -17,6 +17,7 @@ class UserRetriveSerializer(serializers.ModelSerializer, ISTTimestamp):
     created_at = serializers.SerializerMethodField()
     last_updated_at = serializers.SerializerMethodField()
     last_login = serializers.SerializerMethodField()
+    date_joined = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -30,6 +31,11 @@ class UserRetriveSerializer(serializers.ModelSerializer, ISTTimestamp):
     
     def get_last_updated_at(self,obj):
         timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_date_joined(self,obj):
+        timestamp = obj.date_joined
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
     
