@@ -225,7 +225,7 @@ class ProductView(generics.ListAPIView):
         for key in data:
             if len(key['test_types']) != 0:
                 non_empty.append(key)
-        return JsonResponse({'data': non_empty}, safe=False)
+        return JsonResponse({'data': data}, safe=False)
 
     def post(self, request, *args, **kwargs):
         request.data['customer'] = self.request.user.customer_id
