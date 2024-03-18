@@ -10,7 +10,7 @@ class ISTTimestamp:
     def get_ist_timestamp(self, timestamp):
         utc_timestamp = timestamp.astimezone(pytz.utc)
         ist_timestamp = utc_timestamp.astimezone(pytz.timezone('Asia/Kolkata'))
-        formatted_timestamp = ist_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        formatted_timestamp = ist_timestamp.strftime("%Y-%m-%d %H:%M")
         return formatted_timestamp
 
 
