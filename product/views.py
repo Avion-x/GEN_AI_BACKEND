@@ -766,12 +766,15 @@ class DashboardKpi(generics.ListAPIView):
         devices_expire_in_30_days = Product.objects.filter(valid_till__gte=datetime.today(), valid_till__lte=datetime.today()+timedelta(days=30)).count()
         ready_to_test = StructuredTestCases.objects.filter().values('product_id').all().distinct().count()
         return Response({
-            "total_devices" : total_devices,
-            "test_types" : test_types,
-            "users" : users,
-            "categories" : categories,
-            "sub_categories" : sub_categories,
-            "devices_expire_in_30_days" : devices_expire_in_30_days,
-            "ready_to_test" : ready_to_test,
-            "test_scheduled_devices" : 11
-        })
+            "status" : 200,
+            "data": {
+                "total_devices" : total_devices,
+                "test_types" : test_types,
+                "users" : users,
+                "categories" : categories,
+                "sub_categories" : sub_categories,
+                "devices_expire_in_30_days" : devices_expire_in_30_days,
+                "ready_to_test" : ready_to_test,
+                "test_scheduled_devices" : 11
+            }
+         })
