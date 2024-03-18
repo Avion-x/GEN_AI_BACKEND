@@ -221,9 +221,11 @@ class ProductView(generics.ListAPIView):
         serializer = ProductSerializer(queryset, many=True)
         non_empty = []
         data = serializer.data
-        for key in data:
-            if len(key['test_types']) != 0:
-                non_empty.append(key)
+        if request.GET.get('test_types_available', False):
+            for key in data:
+                if len(key['test_types']) != 0:
+                    non_empty.append(key)
+            data = non_empty
         return JsonResponse({'data': data}, safe=False)
 
     def post(self, request, *args, **kwargs):
