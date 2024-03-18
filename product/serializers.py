@@ -197,6 +197,7 @@ class TestCategoriesSerializer(serializers.ModelSerializer, ISTTimestamp):
     created_at = serializers.SerializerMethodField()
     last_updated_at = serializers.SerializerMethodField()
     last_updated_by_name = serializers.SerializerMethodField()
+    approved_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = TestCategories
@@ -221,6 +222,9 @@ class TestCategoriesSerializer(serializers.ModelSerializer, ISTTimestamp):
     
     def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
+    
+    def get_approved_by_name(self, obj):
+        return obj.approved_by.username
 
 
 class PromptSerializer(serializers.ModelSerializer):
