@@ -42,7 +42,7 @@ class ProductSerializer(serializers.ModelSerializer, ISTTimestamp):
     test_types = serializers.SerializerMethodField()
     created_at = serializers.SerializerMethodField()
     last_updated_at = serializers.SerializerMethodField()
-    last_updated_by = serializers.SerializerMethodField()
+    last_updated_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -75,7 +75,7 @@ class ProductSerializer(serializers.ModelSerializer, ISTTimestamp):
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
     
-    def get_last_updated_by(self, obj):
+    def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
 
 
@@ -86,7 +86,7 @@ class ProductSubCategorySerializer(serializers.ModelSerializer, ISTTimestamp):
     customer_name = serializers.SerializerMethodField()
     created_at = serializers.SerializerMethodField()
     last_updated_at = serializers.SerializerMethodField()
-    last_updated_by = serializers.SerializerMethodField()
+    last_updated_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductSubCategory
@@ -114,7 +114,7 @@ class ProductSubCategorySerializer(serializers.ModelSerializer, ISTTimestamp):
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
     
-    def get_last_updated_by(self, obj):
+    def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
 
 
@@ -123,7 +123,7 @@ class ProductCategorySerializer(serializers.ModelSerializer, ISTTimestamp):
     customer_name = serializers.SerializerMethodField()
     created_at = serializers.SerializerMethodField()
     last_updated_at = serializers.SerializerMethodField()
-    last_updated_by = serializers.SerializerMethodField()
+    last_updated_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductCategory
@@ -146,7 +146,7 @@ class ProductCategorySerializer(serializers.ModelSerializer, ISTTimestamp):
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
     
-    def get_last_updated_by(self, obj):
+    def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
 
 
@@ -196,7 +196,7 @@ class TestCasesSerializer(serializers.ModelSerializer, ISTTimestamp):
 class TestCategoriesSerializer(serializers.ModelSerializer, ISTTimestamp):
     created_at = serializers.SerializerMethodField()
     last_updated_at = serializers.SerializerMethodField()
-    last_updated_by = serializers.SerializerMethodField()
+    last_updated_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = TestCategories
@@ -219,7 +219,7 @@ class TestCategoriesSerializer(serializers.ModelSerializer, ISTTimestamp):
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
     
-    def get_last_updated_by(self, obj):
+    def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
 
 

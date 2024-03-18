@@ -220,7 +220,12 @@ class ProductView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = ProductSerializer(queryset, many=True)
-        return JsonResponse({'data': serializer.data}, safe=False)
+        non_empty = []
+        data = serializer.data
+        for key in data:
+            if len(key['test_types']) != 0:
+                non_empty.append(key)
+        return JsonResponse({'data': non_empty}, safe=False)
 
     def post(self, request, *args, **kwargs):
         request.data['customer'] = self.request.user.customer_id
