@@ -773,14 +773,38 @@ class DashboardKpi(generics.ListAPIView):
         ready_to_test = StructuredTestCases.objects.filter().values('product_id').all().distinct().count()
         return Response({
             "status" : 200,
-            "data": {
-                "total_devices" : total_devices,
-                "test_types" : test_types,
-                "users" : users,
-                "categories" : categories,
-                "sub_categories" : sub_categories,
-                "devices_expire_in_30_days" : devices_expire_in_30_days,
-                "ready_to_test" : ready_to_test,
-                "test_scheduled_devices" : 11
-            }
+            "data": [
+                {
+                    "title": "Total Devices",
+                    "value": total_devices
+                },
+                {
+                    "title": "Test Types",
+                    "value": test_types
+                },
+                {
+                    "title": "Users",
+                    "value": users
+                },
+                {
+                    "title": "Categories",
+                    "value": categories
+                },
+                {
+                    "title": "Sub Categories",
+                    "value": sub_categories
+                },
+                {
+                    "title": "Devices Expire In 30 Days",
+                    "value": devices_expire_in_30_days
+                },
+                {
+                    "title": "Ready To Test",
+                    "value": ready_to_test
+                },
+                {
+                    "title": "Test Scheduled Devices",
+                    "value": 11
+                }
+            ]
          })
