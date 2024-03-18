@@ -71,7 +71,6 @@ class TestTypeView(generics.ListAPIView):
         request.data['last_updated_by'] = self.request.user.username
         partial = kwargs.pop('partial', False)
         id = request.data.get('id')
-        print("id:",id)
         if not id:
             return Response({"message":"Please pass id to update Test Type", "status":400}) 
         instance = self.get_queryset({"id":id}).first()
@@ -660,8 +659,8 @@ class GetFilesInCommitView(generics.ListAPIView):
 
 
 class TestCategoriesView(generics.ListAPIView):
-    # permission_classes = (IsAuthenticated,)
-    # authentication_classes = (BasicAuthentication, TokenAuthentication)
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = TestCategoriesFilter
     serializer_class = TestCategoriesSerializer
