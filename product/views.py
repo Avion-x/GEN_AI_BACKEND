@@ -1,9 +1,9 @@
 import asyncio
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime, timedelta
 import threading
 from product.services.aws_bedrock import AwsBedrock
-from user.models import CustomerConfig
+from user.models import CustomerConfig, User
 from product.services.custom_logger import logger
 from product.services.github_service import push_to_github, get_commits_for_file, get_changes_in_file, \
     get_files_in_commit
@@ -751,3 +751,30 @@ class TestScriptExecResultsView(generics.ListAPIView):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = TestScriptExecResultsSerializer(queryset, many=True)
         return JsonResponse({'data': serializer.data}, safe=False)
+
+
+class DashboardKpi(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+    def get(self, request):
+        total_devices = Product.objects.all().count()
+        test_types = TestType.objects.all().count()
+        users = User.objects.all().count()
+        categories = ProductCategory.objects.all().count()
+        sub_categories = ProductSubCategory.objects.all().count()
+        devices_expire_in_30_days = Product.objects.filter(valid_till__gte=datetime.today(), valid_till__lte=datetime.today()+timedelta(days=30)).count()
+        ready_to_test = StructuredTestCases.objects.filter().values('product_id').all().distinct().count()
+        return Response({
+            "status" : 200,
+            "data": {
+                "total_devices" : total_devices,
+                "test_types" : test_types,
+                "users" : users,
+                "categories" : categories,
+                "sub_categories" : sub_categories,
+                "devices_expire_in_30_days" : devices_expire_in_30_days,
+                "ready_to_test" : ready_to_test,
+                "test_scheduled_devices" : 11
+            }
+         })
