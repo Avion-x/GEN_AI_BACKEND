@@ -19,6 +19,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
+from django.http import HttpResponse, JsonResponse
 
 
 def get_request_body(request):
@@ -79,8 +80,9 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
-        request.data['customer']=request.user.customer.id
-        request.data['last_updated_by']=request.user.id
+        request.data['customer'] = request.user.customer.id
+        request.data['last_updated_by'] = request.user.username
+        print(request.data['last_updated_by'])
         role_name = request.data.get('role_name')
         role_id = self.get_role_id(role_name)
         if role_id is None:
@@ -89,13 +91,18 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "User created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({"message": "User created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
-        request.data['customer']=request.user.customer.id
-        request.data['last_updated_by']=request.user.id
+        request.data['customer'] = request.user.customer.id
+        request.data['last_updated_by'] = request.user.username
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        id = request.data.get('id')
+        if not id:
+            return Response({"message":"Please pass id to update User", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()        
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400}) 
         role_name = request.data.get('role_name')
         role_id = self.get_role_id(role_name)
         if role_id is None:
@@ -104,19 +111,16 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "User updated successfully", "data": serializer.data})
-
-    # def delete(self, request, *args, **kwargs):
-    #     instance = self.get_object()
-    #     instance.is_active = False
-    #     instance.save()
-    #     return Response(status=204)
+        return Response({"message": "User updated successfully", "data": serializer.data, "status": 200})
 
     def delete(self, request, *args, **kwargs):
-        user_id = request.GET.get('user_id', None)
-        if not user_id:
-            return Response({"message":"Please pass user_id to delete user", "status":400})
-        instance = self.get_queryset({"id":user_id}).first()
+        id = request.GET.get('id')
+        if not id:
+            return Response({"message":"Please pass id to delete User", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})
+        instance = self.get_queryset({"id": id}).first()
         instance.is_active = False
         instance.status = False
         instance.last_updated_by = self.request.user.username

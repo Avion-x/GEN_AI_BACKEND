@@ -224,7 +224,10 @@ class TestCategoriesSerializer(serializers.ModelSerializer, ISTTimestamp):
         return obj.last_updated_by.username
     
     def get_approved_by_name(self, obj):
-        return obj.approved_by.username
+        if obj.approved_by:
+            return obj.approved_by.username
+        else:
+            return obj.approved_by
 
 
 class PromptSerializer(serializers.ModelSerializer):
