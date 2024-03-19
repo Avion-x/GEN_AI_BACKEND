@@ -122,6 +122,7 @@ class Product(DefaultModel, models.Model):
     prompts = models.ManyToManyField(Prompt, blank=True, related_name = 'product', through='ProductPrompt')
     product_name = models.CharField(max_length=255)
     product_category = models.ForeignKey(ProductCategory, related_name = "product", on_delete=models.CASCADE)
+    vector_name_space = models.CharField(max_length = 100)
 
     objects = CustomManager()
 
@@ -221,3 +222,45 @@ class StructuredTestCases(DefaultModel, models.Model):
     def __str__(self):
         return f"{self.test_id}"
     
+
+class KnowledgeBasePrompts(DefaultModel, models.Model):
+    id = models.AutoField(primary_key=True)
+    customer = models.ForeignKey(Customer, related_name="knowledge_base_prompts", on_delete=models.CASCADE)
+    test_category = models.ForeignKey(TestCategories, related_name="knowledge_base_prompts", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name="knowledge_base_prompts_created_by", on_delete=models.CASCADE)
+    updated_by = models.ForeignKey(User, related_name="knowledge_base_prompts_updated_by", on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=500)
+    description = models.TextField(blank = True, null = True)
+    sequence_no = models.IntegerField()
+    top_k = models.IntegerField()
+    query = models.TextField() 
+    default_data = models.TextField()
+
+    objects = CustomManager()
+
+    def __str__(self):
+        return self.name
+    
+
+
+class KnowledgeBaseResults(DefaultModel, models.Model):
+    id = models.AutoField(primary_key=True)
+    customer = models.ForeignKey(Customer, related_name="knowledge_base_results", on_delete=models.CASCADE)
+    kb_prompt = models.ForeignKey(KnowledgeBasePrompts, related_name="knowledge_base_results", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name="knowledge_base_results_created_by", on_delete=models.CASCADE)
+    updated_by = models.ForeignKey(User, related_name="knowledge_base_results_updated_by", on_delete=models.CASCADE)
+    request = models.ForeignKey(RequestTracking, related_name="knowledge_base_results", on_delete=models.CASCADE)
+    query = models.TextField()
+    top_k_docs = models.JSONField()
+    summary_of_docs = models.TextField()
+
+    objects = CustomManager()
+
+    def __str__(self):
+        return self.query
+
+    
+    
+
+

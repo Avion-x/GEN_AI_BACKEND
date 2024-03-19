@@ -80,7 +80,11 @@ class AwsBedrock():
 
     def set_default_values(self):
         try:
-            self.prompt = self.kwargs.get("prompt", "") + self.default_prompt_suffix
+            self.context = self.kwargs.get("context", None)
+            self.prompt = self.kwargs.get("prompt", "") 
+            if self.context:
+                self.prompt += f" Having context as {self.context}."
+            self.prompt += self.default_prompt_suffix
             self.temperature = self.kwargs.get("temperature", None)
             self.top_p = self.kwargs.get("top_p", None)
             self.top_k = self.kwargs.get("top_k", None)

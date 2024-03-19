@@ -40,7 +40,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
 from product.services.open_ai import CustomOpenAI
-
+from product.services.langchain_ import Langchain_
 
 # Create your views here.
 class TestTypeView(generics.ListAPIView):
@@ -317,11 +317,16 @@ class GenerateTestCases(generics.ListAPIView):
             self.ai_obj = self.get_ai_obj(data)
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
+            
+            print(prompts_data)
 
-            thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
-            thread.start()
+            self.lang_chain = Langchain_(prompts_data)
 
-            # self.process_request(request, prompts_data)
+
+            # thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
+            # thread.start()
+
+            self.process_request(request, prompts_data)
 
             response = {
                 "request_id": request.request_id,
@@ -353,15 +358,19 @@ class GenerateTestCases(generics.ListAPIView):
             return response
         except Exception as e:
             raise e
-
+    
     def execute(self, request, test_type, test_category, input_data):
         try:
             response = {}
             insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
                            "prompts": input_data}
-            for test_code, propmts in input_data.items():
+            for test_code, details in input_data.items():
+                kb_data = self.lang_chain.execute_kb_queries(details.get('kb_query',[]))
+                print("\n\n kb data is :", kb_data)
+                prompts = details.get('prompts', [])
+
                 file_path = self.get_file_path(request, test_type, test_category, test_code)
-                response[test_code] = self.generate_tests(prompts=propmts)
+                response[test_code] = self.generate_tests(prompts=prompts, context=kb_data)
                 self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
                 insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
                 insert_test_case(request, data=insert_data.copy())
@@ -369,6 +378,22 @@ class GenerateTestCases(generics.ListAPIView):
             return response
         except Exception as e:
             raise e
+
+    # def execute(self, request, test_type, test_category, input_data):
+    #     try:
+    #         response = {}
+    #         insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
+    #                        "prompts": input_data}
+    #         for test_code, propmts in input_data.items():
+    #             file_path = self.get_file_path(request, test_type, test_category, test_code)
+    #             response[test_code] = self.generate_tests(prompts=propmts)
+    #             self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
+    #             insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
+    #             insert_test_case(request, data=insert_data.copy())
+    #         # response['test_category'] = test_category
+    #         return response
+    #     except Exception as e:
+    #         raise e
 
     def store_parsed_tests(self, request, data, test_type, test_category, test_category_id):
         for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
@@ -427,11 +452,12 @@ class GenerateTestCases(generics.ListAPIView):
         except Exception as e:
             return f"data/{request.user.customer.code}/{test_type}/{test_code}"
 
-    def generate_tests(self, prompts, **kwargs):
+    def generate_tests(self, prompts, context, **kwargs):
         try:
             response_text = ""
             for prompt in prompts:
                 kwargs['prompt'] = prompt
+                kwargs['context'] = context
                 prompt_data = self.ai_obj.send_prompt(**kwargs)
                 response_text += prompt_data
             return self.get_test_data(response_text)
