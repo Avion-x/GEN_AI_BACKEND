@@ -9,16 +9,17 @@ from langchain_community.embeddings import BedrockEmbeddings
 from langchain_community.llms.bedrock import LLM
 from langchain_openai.llms.azure import AzureOpenAI
 from langchain_openai import AzureOpenAIEmbeddings
+from langchain_community.chat_models import ChatCohere
+from langchain_core.messages import AIMessage, HumanMessage
 
-# from langchain.llms.azure import AzureOpenAIEmbedding
 from llama_index.core import VectorStoreIndex, Settings
 from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.core.retrievers import VectorIndexRetriever
-# from pinecone import Pinecone
 
 
-from langchain_community.chat_models import ChatCohere
-from langchain_core.messages import AIMessage, HumanMessage
+from product.models import KnowledgeBaseResults
+
+
 
 # Load environment variables from a `.env` file (if present)
 load_dotenv(find_dotenv())
@@ -65,7 +66,8 @@ registry = {
 
 
 class Langchain_():
-    def __init__(self, prompt_data, *args, **kwargs):
+    def __init__(self, prompt_data, request, *args, **kwargs):
+        self.request = request
         self.top_k=kwargs.get('top_k', 3)
         self.vector_index = kwargs.get('vector_namespace', "alice_new_61")
         # self.kb_query = kwargs.get("kb_query", None)
@@ -84,35 +86,14 @@ class Langchain_():
                     kb_data = self.execute_kb_queries(test.get('kb_query',[]))
                     print(kb_data)
 
-    def execute_process(self, request, test_type, test_category, input_data):
-        try:
-            response = {}
-            insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
-                           "prompts": input_data}
-            for test_code, details in input_data.items():
-                kb_data = self.execute_kb_queries(details.get('kb_query',[]))
-                print(kb_data)
-                prompts = details.get('prompts', [])
-
-                file_path = self.get_file_path(request, test_type, test_category, test_code)
-                response[test_code] = self.generate_tests(prompts=propmts)
-                self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
-                insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
-                insert_test_case(request, data=insert_data.copy())
-            # response['test_category'] = test_category
-            return response
-        except Exception as e:
-            raise e
-
                     
                     
     def execute_kb_queries(self, kb_details):
         overall_summary = ""
         for query in kb_details:
             overall_summary += ". " +self.get_data_from_knowledge_base(query)
-            self.store_knowledge_base_data()
-        self.summary = overall_summary
-        return self.summary
+            self.store_knowledge_base_data(query)
+        return overall_summary
 
     def get_data_from_knowledge_base(self, query_details, *args, **kwargs):
         retriever = None
@@ -122,10 +103,9 @@ class Langchain_():
         retriever = retriever or self.retriever
         answer = retriever.retrieve(query_details.get('query')) or []
         
-        self.top_content, self.docs = "", []
+        self.docs = []
         for retrieved_doc in answer:
             res = retrieved_doc.get_content() + "\n" 
-            self.top_content += res # Concatenate with newlines
             self.docs.append(res)
         self.summary = self.get_knowledge_base_summary(query_details, self.docs)
         return self.summary
@@ -139,7 +119,18 @@ class Langchain_():
         knowledge_base_summary = f"{query_details.get('default_query_data', '')}" if ('Not Found'.lower() in a.content.lower()) else a.content
         return knowledge_base_summary
 
-    def store_knowledge_base_data(docs):
-        pass
+    def store_knowledge_base_data(self, query_details):
+        kb_result = KnowledgeBaseResults.objects.create(
+            customer = self.request.user.customer,
+            kb_prompt_id = query_details.get('kb_prompt_id'),
+            created_by = self.request.user,
+            request_id = self.request.request_id,
+            query = query_details.get('query'),
+            top_k_docs = self.docs,
+            summary_of_docs = self.summary
+        )
+        return kb_result
+
+        
 
 

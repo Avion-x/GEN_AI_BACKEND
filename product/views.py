@@ -320,7 +320,7 @@ class GenerateTestCases(generics.ListAPIView):
             
             print(prompts_data)
 
-            self.lang_chain = Langchain_(prompts_data)
+            self.lang_chain = Langchain_(prompt_data = prompts_data, request=request)
 
 
             # thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
