@@ -49,6 +49,8 @@ class UserRetriveSerializer(serializers.ModelSerializer, ISTTimestamp):
     
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = User
         fields = '__all__'
