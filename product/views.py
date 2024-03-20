@@ -13,12 +13,15 @@ from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
-from .models import StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestScriptExecResults
+from .models import StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
+    TestScriptExecResults
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
-from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, LatestTestTypesWithCategoriesOfProductFilter
+from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, \
+    LatestTestTypesWithCategoriesOfProductFilter
 # import git
 import os
-from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, When
+from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, \
+    When
 from django.db.models.functions import Cast
 
 from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories
@@ -65,34 +68,33 @@ class TestTypeView(generics.ListAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse({"message":"Test Type created successfully", "data": serializer.data, "status": 200})
+        return JsonResponse({"message": "Test Type created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
         request.data['last_updated_by'] = self.request.user.username
         partial = kwargs.pop('partial', False)
         id = request.data.get('id')
         if not id:
-            return Response({"message":"Please pass id to update Test Type", "status":400}) 
-        instance = self.get_queryset({"id":id}).first()
-        print("in:",instance)       
+            return Response({"message": "Please pass id to update Test Type", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
         if not instance:
-            return JsonResponse({"message":"No Record found", "status":400})      
+            return JsonResponse({"message": "No Record found", "status": 400})
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse({"message":"Test Type updated successfully", "data": serializer.data, "status": 200})
-    
+        return JsonResponse({"message": "Test Type updated successfully", "data": serializer.data, "status": 200})
+
     def delete(self, request, *args, **kwargs):
         id = request.GET.get('id')
         if not id:
-            return Response({"message":"Please pass id to delete Test Type", "status":400}) 
-        instance = self.get_queryset({"id":id}).first()        
+            return Response({"message": "Please pass id to delete Test Type", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
         if not instance:
-            return JsonResponse({"message":"No Record found", "status":400})
+            return JsonResponse({"message": "No Record found", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user.username
         instance.save()
-        return JsonResponse({"message":"Test Type deleted successfully", "status": 200})
+        return JsonResponse({"message": "Test Type deleted successfully", "status": 200})
 
 
 class ProductCategoryView(generics.ListAPIView):
@@ -109,7 +111,6 @@ class ProductCategoryView(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        print(queryset.query)
         serializer = ProductCategorySerializer(queryset, many=True)
         # return JsonResponse({'data':serializer.data}, safe=False)
         return Response(serializer.data)
@@ -120,34 +121,34 @@ class ProductCategoryView(generics.ListAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse({"message":"Category created successfully", "data": serializer.data, "status": 200})
+        return JsonResponse({"message": "Category created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         id = request.data.get('id')
         if not id:
-            return Response({"message":"Please pass id to update Category", "status":400}) 
-        instance = self.get_queryset({"id":id}).first()        
+            return Response({"message": "Please pass id to update Category", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
         if not instance:
-            return JsonResponse({"message":"No Record found", "status":400})        
+            return JsonResponse({"message": "No Record found", "status": 400})
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse({"message":"Category updated successfully", "data": serializer.data, "status":200})
+        return JsonResponse({"message": "Category updated successfully", "data": serializer.data, "status": 200})
 
     def delete(self, request, *args, **kwargs):
         id = request.GET.get('id')
         if not id:
-            return Response({"message":"Please pass id to delete Category", "status":400}) 
-        instance = self.get_queryset({"id":id}).first()
+            return Response({"message": "Please pass id to delete Category", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
         if not instance:
-            return JsonResponse({"message":"No Record found", "status":400})                
+            return JsonResponse({"message": "No Record found", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user
         instance.save()
-        return JsonResponse({"message":"Category deleted successfully", "status": 200})
+        return JsonResponse({"message": "Category deleted successfully", "status": 200})
 
 
 class ProductSubCategoryView(generics.ListAPIView):
@@ -174,34 +175,34 @@ class ProductSubCategoryView(generics.ListAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse({"message":"Sub Category created successfully", "data": serializer.data, "status": 200})
+        return JsonResponse({"message": "Sub Category created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         id = request.data.get('id')
         if not id:
-            return Response({"message":"Please pass id to update Sub Category", "status":400}) 
-        instance = self.get_queryset({"id":id}).first()        
+            return Response({"message": "Please pass id to update Sub Category", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
         if not instance:
-            return JsonResponse({"message":"No Record found", "status":400})      
+            return JsonResponse({"message": "No Record found", "status": 400})
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse({"message":"Sub Category updated successfully", "data": serializer.data, "status":200})
+        return JsonResponse({"message": "Sub Category updated successfully", "data": serializer.data, "status": 200})
 
     def delete(self, request, *args, **kwargs):
         id = request.GET.get('id')
         if not id:
-            return Response({"message":"Please pass id to delete Sub Category", "status":400}) 
-        instance = self.get_queryset({"id":id}).first()
+            return Response({"message": "Please pass id to delete Sub Category", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
         if not instance:
-            return JsonResponse({"message":"No Record found", "status":400})        
+            return JsonResponse({"message": "No Record found", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user
         instance.save()
-        return JsonResponse({"message":"Sub Category deleted successfully", "status": 200})
+        return JsonResponse({"message": "Sub Category deleted successfully", "status": 200})
 
 
 class ProductView(generics.ListAPIView):
@@ -234,34 +235,34 @@ class ProductView(generics.ListAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse({"message":"Product created successfully", "data": serializer.data, "status": 200})
+        return JsonResponse({"message": "Product created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         id = request.data.get('id')
         if not id:
-            return Response({"message":"Please pass id to update Product", "status":400}) 
-        instance = self.get_queryset({"id":id}).first()        
+            return Response({"message": "Please pass id to update Product", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
         if not instance:
-            return JsonResponse({"message":"No Record found", "status":400})         
+            return JsonResponse({"message": "No Record found", "status": 400})
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return JsonResponse({"message":"Product updated successfully", "data": serializer.data, "status":200})
+        return JsonResponse({"message": "Product updated successfully", "data": serializer.data, "status": 200})
 
     def delete(self, request, *args, **kwargs):
         id = request.GET.get('id')
         if not id:
-            return Response({"message":"Please pass id to delete Product", "status":400}) 
-        instance = self.get_queryset({"id":id}).first()
+            return Response({"message": "Please pass id to delete Product", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
         if not instance:
-            return JsonResponse({"message":"No Record found", "status":400})                
+            return JsonResponse({"message": "No Record found", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user
         instance.save()
-        return JsonResponse({"message":"Product deleted successfully", "status": 200})
+        return JsonResponse({"message": "Product deleted successfully", "status": 200})
 
 
 class GenerateTestCases(generics.ListAPIView):
@@ -349,7 +350,7 @@ class GenerateTestCases(generics.ListAPIView):
             for test_type, tests in prompts_data.items():
                 response[test_type] = {}
                 for test, test_data in tests.items():
-                    response[test_type][test]= self.execute(request, test_type, test, test_data)
+                    response[test_type][test] = self.execute(request, test_type, test, test_data)
             return response
         except Exception as e:
             raise e
@@ -362,8 +363,11 @@ class GenerateTestCases(generics.ListAPIView):
             for test_code, propmts in input_data.items():
                 file_path = self.get_file_path(request, test_type, test_category, test_code)
                 response[test_code] = self.generate_tests(prompts=propmts)
-                self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
-                insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
+                self.store_parsed_tests(request=request, data=response[test_code], test_type=test_type,
+                                        test_category=test_category,
+                                        test_category_id=insert_data.get("test_category_id"))
+                insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""),
+                                                         file_path=file_path)
                 insert_test_case(request, data=insert_data.copy())
             # response['test_category'] = test_category
             return response
@@ -373,37 +377,37 @@ class GenerateTestCases(generics.ListAPIView):
     def store_parsed_tests(self, request, data, test_type, test_category, test_category_id):
         for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
             name = test_case.get('testname', test_case.get('name', "")).replace(" ", "_").lower()
-            test_id = f"{request.user.customer.name}_{test_type}_{test_category}_{self.device.product_code}_{name}".replace(" ", "_").lower()
+            test_id = f"{request.user.customer.name}_{test_type}_{test_category}_{self.device.product_code}_{name}".replace(
+                " ", "_").lower()
             _test_case = {
                 "test_id": test_id,
-                "test_name" : f"{name}",
-                "objective" : test_case.get("objective", ""),
-                "data" : test_case,
-                "type" : "TESTCASE",
-                "test_category_id" : test_category_id,
-                "product" : self.device,
-                "customer" : request.user.customer,
-                "request_id" : self.request.request_id,
-                "created_by" : request.user
+                "test_name": f"{name}",
+                "objective": test_case.get("objective", ""),
+                "data": test_case,
+                "type": "TESTCASE",
+                "test_category_id": test_category_id,
+                "product": self.device,
+                "customer": request.user.customer,
+                "request_id": self.request.request_id,
+                "created_by": request.user
             }
 
             _test_script = {
                 "test_id": test_id,
-                "test_name" : f"{name}",
-                "objective" : test_script.get("objective", ""),
-                "data" : test_script,
-                "type" : "TESTSCRIPT",
-                "test_category_id" : test_category_id,
-                "product" : self.device,
-                "customer" : request.user.customer,
-                "request_id" : self.request.request_id,
-                "created_by" : request.user
+                "test_name": f"{name}",
+                "objective": test_script.get("objective", ""),
+                "data": test_script,
+                "type": "TESTSCRIPT",
+                "test_category_id": test_category_id,
+                "product": self.device,
+                "customer": request.user.customer,
+                "request_id": self.request.request_id,
+                "created_by": request.user
             }
 
             StructuredTestCases.objects.create(**_test_case)
             StructuredTestCases.objects.create(**_test_script)
         return True
-
 
     # def store_in_github(self, data, file_path ):
     #     response = []
@@ -438,13 +442,12 @@ class GenerateTestCases(generics.ListAPIView):
         except Exception as e:
             raise e
 
-
     def get_test_data(self, text_data):
-        result = {"raw_text": text_data, "test_cases": [], "test_scripts":[]}
+        result = {"raw_text": text_data, "test_cases": [], "test_scripts": []}
         data = parseModelDataToList(text_data)
         for _test in data:
-            test_case = _test.get('testcase',None)
-            test_scripts = _test.get('testscript',None)
+            test_case = _test.get('testcase', None)
+            test_scripts = _test.get('testscript', None)
             if test_case and test_scripts:
                 if isinstance(test_case, list):
                     result['test_cases'] += test_case
@@ -468,7 +471,7 @@ def insert_test_case(request, data):
             "sha": data.get('git_data').get("sha"),
             "test_category_id": data.pop("test_category_id"),
             "data": data,
-            "request_id" : request.request_id
+            "request_id": request.request_id
 
         }
         return TestCases.objects.create(**record)
@@ -483,7 +486,7 @@ class TestCasesAndScripts(generics.ListAPIView):
     # filterset_class = TestCasesFilter
     ordering_fields = ['id', 'created_at', 'updated_at']
 
-    def get_queryset(self, filters = {}):
+    def get_queryset(self, filters={}):
         return StructuredTestCases.objects.filter(**filters)
 
     def get(self, request, *args, **kwargs):
@@ -503,12 +506,15 @@ class TestCasesAndScripts(generics.ListAPIView):
             else:
                 filters['test_category_id'] = test_category_id
                 data = self.get_consolidated_data_of_test_category(self.get_queryset(filters))
-            return Response({"data" : data})
+            return Response({"data": data})
         except Exception as e:
             raise e
 
     def get_test_types_with_categories(self, filters):
-        queryset = self.get_queryset(filters).values("test_category_id").annotate(count = Count(F("test_category_id"))).values("test_category_id", "request_id", test_id = F("test_type_id"), test_name = F("test_type__code"), category_name=F("test_category__name")).order_by("test_type")
+        queryset = self.get_queryset(filters).values("test_category_id").annotate(
+            count=Count(F("test_category_id"))).values("test_category_id", "request_id", test_id=F("test_type_id"),
+                                                       test_name=F("test_type__code"),
+                                                       category_name=F("test_category__name")).order_by("test_type")
 
         test_data = {}
         for item in list(queryset):
@@ -520,7 +526,7 @@ class TestCasesAndScripts(generics.ListAPIView):
                 test_data[test_id] = {
                     "test_id": test_id,
                     "test_name": test_name,
-                    "categories":[item]
+                    "categories": [item]
                 }
 
         return list(test_data.values())
@@ -540,11 +546,24 @@ class TestCasesAndScripts(generics.ListAPIView):
 
         category_name = queryset.first().test_category.name
 
-        test_cases = queryset.filter(type='TESTCASE').order_by('test_id').values('id', 'test_id', 'test_name', 'objective', 'data', 'status', 'valid_till', 'product_id', product_name = F("product__product_code"), user_id = F("created_by_id"), user_name = F("created_by__username"))
+        test_cases = queryset.filter(type='TESTCASE').order_by('test_id').values('id', 'test_id', 'test_name',
+                                                                                 'objective', 'data', 'status',
+                                                                                 'valid_till', 'product_id',
+                                                                                 product_name=F(
+                                                                                     "product__product_code"),
+                                                                                 user_id=F("created_by_id"),
+                                                                                 user_name=F("created_by__username"))
 
-        test_scripts = queryset.filter(type='TESTSCRIPT').order_by('test_id').values('id', 'test_id', 'test_name', 'objective', 'data', 'status', 'valid_till', 'product_id', product_name = F("product__product_code"), user_id = F("created_by_id"), user_name = F("created_by__username") )
+        test_scripts = queryset.filter(type='TESTSCRIPT').order_by('test_id').values('id', 'test_id', 'test_name',
+                                                                                     'objective', 'data', 'status',
+                                                                                     'valid_till', 'product_id',
+                                                                                     product_name=F(
+                                                                                         "product__product_code"),
+                                                                                     user_id=F("created_by_id"),
+                                                                                     user_name=F(
+                                                                                         "created_by__username"))
 
-        serialized_data = {"test_cases":[], "test_scripts":[], "test_category":category_name }
+        serialized_data = {"test_cases": [], "test_scripts": [], "test_category": category_name}
 
         for test_case, test_script in zip(test_cases, test_scripts):
             _case = test_case['data']
@@ -570,20 +589,20 @@ class GeneratedTestCategoriesView(generics.ListAPIView):
             test_type_id = request.GET.get('test_type_id', None)
             if not test_type_id:
                 raise Exception("Please pass test_type_id")
-            test_categories = TestCategories.objects.filter(test_type_id = test_type_id)
+            test_categories = TestCategories.objects.filter(test_type_id=test_type_id)
             categories = []
             for category in test_categories:
                 result = {
                     "id": category.id,
                     "name": category.name
                 }
-                exists = StructuredTestCases.objects.filter(test_category_id = category.id).exists()
+                exists = StructuredTestCases.objects.filter(test_category_id=category.id).exists()
                 result['is_generated'] = exists
                 categories.append(result)
             return JsonResponse({'data': categories}, safe=False)
         except Exception as e:
             logger.log(level='Error', message=f"{e}")
-            raise e    
+            raise e
 
 
 class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
@@ -593,7 +612,7 @@ class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
     filterset_class = LatestTestTypesWithCategoriesOfProductFilter
     ordering_fields = ['id', 'created_at', 'updated_at']
 
-    def get_queryset(self, filters = {}):
+    def get_queryset(self, filters={}):
         return StructuredTestCases.objects.filter(**filters)
 
     def get(self, request, *args, **kwargs):
@@ -602,10 +621,10 @@ class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
             if not product_id:
                 raise Exception("Please pass product_id to get test cases")
             filters = {
-                "product_id" : product_id,
+                "product_id": product_id,
             }
             queryset = self.get_queryset(filters=filters)
-            latest_test_type_ids = queryset.annotate(latest = Max(F"test_type")).values_list(Max(F('id')), flat=True)
+            latest_test_type_ids = queryset.annotate(latest=Max(F"test_type")).values_list(Max(F('id')), flat=True)
         except Exception as e:
             logger.log(level='Error', message=f"{e}")
             raise e
@@ -617,6 +636,7 @@ class TestCasesView(generics.ListAPIView):
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = TestCasesFilter
     ordering_fields = ['id', 'created_at', 'updated_at']
+
     # ordering = []  # for default orderings
 
     def get_queryset(self):
@@ -646,8 +666,8 @@ class GetFileChangesView(generics.ListAPIView):
     def get(self, request):
         file_name = request.query_params.get('file_name')
         sha = request.query_params.get('sha')
-        response_data = get_changes_in_file(file_name = file_name, commit_sha = sha)
-        return JsonResponse({"data":response_data}, safe=False)
+        response_data = get_changes_in_file(file_name=file_name, commit_sha=sha)
+        return JsonResponse({"data": response_data}, safe=False)
 
 
 class GetFilesInCommitView(generics.ListAPIView):
@@ -678,8 +698,10 @@ class TestCategoriesView(generics.ListAPIView):
         return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
-        request.data['customer']=request.user.customer.id
-        request.data['last_updated_by']=request.user.id
+        request.data['customer'] = request.user.customer.id
+        request.data['last_updated_by'] = request.user.id
+        request.data['is_approved'] = False
+        request.data['approved_by'] = None
         data = request.data
         if data:
             test_type_name = TestType.objects.get(id=data['test_type']).code
@@ -692,53 +714,31 @@ class TestCategoriesView(generics.ListAPIView):
         return JsonResponse({"message": "Test Category created successfully", "data": serializer.data, "status": 200})
 
     def put(self, request, *args, **kwargs):
-        request.data['customer']=request.user.customer.id
-        request.data['last_updated_by']=request.user.id
+        request.data['customer'] = request.user.customer.id
+        request.data['last_updated_by'] = request.user.id
         partial = kwargs.pop('partial', False)
         id = request.data.get('id')
         if not id:
-            return Response({"message":"Please pass id to update Test Category", "status":400}) 
-        instance = self.get_queryset({"id":id}).first()
+            return Response({"message": "Please pass id to update Test Category", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
         if not instance:
-            return JsonResponse({"message":"No Record found", "status":400})          
+            return JsonResponse({"message": "No Record found", "status": 400})
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return JsonResponse({"message": "Test Category updated successfully", "data": serializer.data, "status": 200})
-    
+
     def delete(self, request, *args, **kwargs):
         id = request.GET.get('id')
         if not id:
-            return Response({"message":"Please pass id to delete Test Category", "status":400}) 
-        instance = self.get_queryset({"id":id}).first()
+            return Response({"message": "Please pass id to delete Test Category", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
         if not instance:
-            return JsonResponse({"message":"No Record found", "status":400})                
+            return JsonResponse({"message": "No Record found", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user
         instance.save()
-        return JsonResponse({"message":"Test Category deleted successfully", "status": 200})
-
-
-class ApproveTestCategoryView(generics.ListAPIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (BasicAuthentication, TokenAuthentication)
-    filter_backends = (django_filters.DjangoFilterBackend,)
-    filterset_class = TestCategoriesFilter
-    serializer_class = TestCategoriesSerializer
-    ordering_fields = ['id', 'created_at', 'last_updated_at']
-    ordering = []  # for default orderings
-
-    def put(self, request, category_id, *args, **kwargs):
-        updated_rows = TestCategories.objects.filter(id=category_id, is_approved=0).update(
-            approved_by=request.user_id,
-            is_approved=1
-        )
-        if updated_rows == 0:
-            return Response({"detail": "Test category is already approved"}, status=201)
-
-        test_category = get_object_or_404(TestCategories, id=category_id)
-        serializer = TestCategoriesSerializer(test_category)
-        return Response(serializer.data, status=201)
+        return JsonResponse({"message": "Test Category deleted successfully", "status": 200})
 
 
 class TestScriptExecResultsView(generics.ListAPIView):
@@ -769,10 +769,12 @@ class DashboardKpi(generics.ListAPIView):
         users = User.objects.all().count()
         categories = ProductCategory.objects.all().count()
         sub_categories = ProductSubCategory.objects.all().count()
-        devices_expire_in_30_days = Product.objects.filter(valid_till__gte=datetime.today(), valid_till__lte=datetime.today()+timedelta(days=30)).count()
+        devices_expire_in_30_days = Product.objects.filter(valid_till__gte=datetime.today(),
+                                                           valid_till__lte=datetime.today() + timedelta(
+                                                               days=30)).count()
         ready_to_test = StructuredTestCases.objects.filter().values('product_id').all().distinct().count()
         return Response({
-            "status" : 200,
+            "status": 200,
             "data": [
                 {
                     "title": "Total Devices",
@@ -807,4 +809,47 @@ class DashboardKpi(generics.ListAPIView):
                     "value": 11
                 }
             ]
-         })
+        })
+
+
+class PendingApprovalTestCategoryView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend,)
+    filterset_class = TestCategoriesFilter
+    serializer_class = TestCategoriesSerializer
+    ordering_fields = ['id', 'created_at', 'last_updated_at']
+    ordering = []  # for default orderings
+
+    def get_queryset(self, filters={}):
+        return TestCategories.objects.filter(**filters)
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset({"is_approved": False}))
+        serializer = self.get_serializer(queryset, many=True)
+        return JsonResponse({'data': serializer.data}, safe=False)
+
+
+class ApproveTestCategoryView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend,)
+    filterset_class = TestCategoriesFilter
+    serializer_class = TestCategoriesSerializer
+    ordering_fields = ['id', 'created_at', 'last_updated_at']
+    ordering = []  # for default orderings
+
+    def get_queryset(self, filters={}):
+        return TestCategories.objects.filter(**filters)
+
+    def put(self, request, *args, **kwargs):
+        id = request.GET.get('id')
+        if not id:
+            return Response({"message": "Please pass id to Approve Test Category", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
+        if not instance:
+            return JsonResponse({"message": "No Record found", "status": 400})
+        instance.is_approved = True
+        instance.approved_by = self.request.user
+        instance.save()
+        return JsonResponse({"message": "Test Category Approved successfully", "status": 200})

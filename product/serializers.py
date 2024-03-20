@@ -22,12 +22,12 @@ class TestTypeSerializer(serializers.ModelSerializer, ISTTimestamp):
         model = TestType
         fields = '__all__'
 
-    def get_created_at(self,obj):
+    def get_created_at(self, obj):
         timestamp = obj.created_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
-    def get_last_updated_at(self,obj):
+
+    def get_last_updated_at(self, obj):
         timestamp = obj.last_updated_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
@@ -48,14 +48,14 @@ class ProductSerializer(serializers.ModelSerializer, ISTTimestamp):
         model = Product
         # fields = '__all__'
         exclude = ['prompts']
-    
-    def get_test_types(self,obj):
-        data = obj.structured_test_cases.values("test_type_id", name = F("test_type__code")).distinct()
+
+    def get_test_types(self, obj):
+        data = obj.structured_test_cases.values("test_type_id", name=F("test_type__code")).distinct()
         return list(data)
 
     def get_main_category_id(self, obj):
         return obj.product_sub_category.product_category.id
-    
+
     def get_sub_category_name(self, obj):
         return obj.product_sub_category.sub_category
 
@@ -64,17 +64,17 @@ class ProductSerializer(serializers.ModelSerializer, ISTTimestamp):
 
     def get_customer_name(self, obj):
         return obj.customer.name
-    
-    def get_created_at(self,obj):
+
+    def get_created_at(self, obj):
         timestamp = obj.created_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
-    def get_last_updated_at(self,obj):
+
+    def get_last_updated_at(self, obj):
         timestamp = obj.last_updated_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
+
     def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
 
@@ -103,17 +103,17 @@ class ProductSubCategorySerializer(serializers.ModelSerializer, ISTTimestamp):
 
     def get_customer_name(self, obj):
         return obj.customer.name
-    
-    def get_created_at(self,obj):
+
+    def get_created_at(self, obj):
         timestamp = obj.created_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
-    def get_last_updated_at(self,obj):
+
+    def get_last_updated_at(self, obj):
         timestamp = obj.last_updated_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
+
     def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
 
@@ -135,17 +135,17 @@ class ProductCategorySerializer(serializers.ModelSerializer, ISTTimestamp):
 
     def get_customer_name(self, obj):
         return obj.customer.name
-    
-    def get_created_at(self,obj):
+
+    def get_created_at(self, obj):
         timestamp = obj.created_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
-    def get_last_updated_at(self,obj):
+
+    def get_last_updated_at(self, obj):
         timestamp = obj.last_updated_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
+
     def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
 
@@ -181,13 +181,13 @@ class TestCasesSerializer(serializers.ModelSerializer, ISTTimestamp):
 
     def get_username(self, obj):
         return obj.created_by.username
-    
-    def get_created_at(self,obj):
+
+    def get_created_at(self, obj):
         timestamp = obj.created_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
-    def get_last_updated_at(self,obj):
+
+    def get_last_updated_at(self, obj):
         timestamp = obj.last_updated_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
@@ -198,36 +198,33 @@ class TestCategoriesSerializer(serializers.ModelSerializer, ISTTimestamp):
     last_updated_at = serializers.SerializerMethodField()
     last_updated_by_name = serializers.SerializerMethodField()
     approved_by_name = serializers.SerializerMethodField()
+    test_type_name = serializers.SerializerMethodField()
 
     class Meta:
         model = TestCategories
         fields = '__all__'
-        read_only_fields = ('approved_by',)  # Assuming you don't want this field to be modified directly
 
-    def validate(self, data):
-        # If is_approved is not provided, approved_by should also be cleared
-        if 'is_approved' in data and not data.get('is_approved', False):
-            data['approved_by'] = None
-        return data
-    
-    def get_created_at(self,obj):
+    def get_created_at(self, obj):
         timestamp = obj.created_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
-    def get_last_updated_at(self,obj):
+
+    def get_last_updated_at(self, obj):
         timestamp = obj.last_updated_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
+
     def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
-    
+
     def get_approved_by_name(self, obj):
         if obj.approved_by:
             return obj.approved_by.username
         else:
             return obj.approved_by
+
+    def get_test_type_name(self, obj):
+        return obj.test_type.code
 
 
 class PromptSerializer(serializers.ModelSerializer):
@@ -280,17 +277,17 @@ class TestScriptExecResultsSerializer(serializers.ModelSerializer, ISTTimestamp)
 
     def get_executed_by(self, obj):
         return obj.created_by.username
-    
-    def get_created_at(self,obj):
+
+    def get_created_at(self, obj):
         timestamp = obj.created_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
-    def get_last_updated_at(self,obj):
+
+    def get_last_updated_at(self, obj):
         timestamp = obj.last_updated_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
-    
+
     class Meta:
         model = TestScriptExecResults
         fields = ['test_script_number', 'execution_result_details', 'product', 'customer', 'test_type', 'test_category',
