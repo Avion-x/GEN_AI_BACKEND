@@ -90,7 +90,7 @@ class TestTypeView(generics.ListAPIView):
         if not instance:
             return JsonResponse({"message":"No Record found", "status":400})
         instance.status = 0
-        instance.last_updated_by = self.request.user.id
+        instance.last_updated_by = self.request.user.username
         instance.save()
         return JsonResponse({"message":"Test Type deleted successfully", "status": 200})
 
