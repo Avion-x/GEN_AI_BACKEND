@@ -260,3 +260,20 @@ class KnowledgeBaseResults(DefaultModel, models.Model):
     def __str__(self):
         return self.query
 
+class Audit_Report(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    user_name = models.CharField(max_length=255)
+    email_address = models.EmailField()
+    creation_date = models.DateTimeField(auto_now_add=True)
+    action_type = models.CharField(max_length=50)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50)
+    product_category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True)
+    category = models.CharField(max_length=50, null=True)
+
+    class Meta:
+        verbose_name = "Audit_Report Log"
+        verbose_name_plural = "Audit_Report Logs"
+
+    def __str__(self):
+        return f"{self.user_name} - {self.action_type} - {self.timestamp}"
