@@ -270,6 +270,8 @@ class Audit_Report(models.Model):
     status = models.CharField(max_length=50)
     product_category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True)
     category = models.CharField(max_length=50, null=True)
+    product_subcategory = models.ForeignKey(ProductSubCategory, on_delete=models.SET_NULL, null=True)
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         verbose_name = "Audit_Report Log"
