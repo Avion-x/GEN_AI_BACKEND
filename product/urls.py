@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib import admin
-from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestTypeView, ProductCategoryView, ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi
+from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestTypeView, ProductCategoryView, ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, DashboardChart
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -18,5 +18,7 @@ urlpatterns = [
     path('test_categories/', TestCategoriesView.as_view(), name='test_categories'),
     path('test_execution/', TestScriptExecResultsView.as_view(), name='test_execution'),
     path('generated_categories/', GeneratedTestCategoriesView.as_view(), name='generated_categories'),
-    path('dashboard_kpi/', DashboardKpi().as_view(), name='dashboard_kpi')
+    path('dashboard_kpi/', DashboardKpi().as_view(), name='dashboard_kpi'),
+    path('dashboard_chart/', DashboardChart().as_view(), name='dashboard_chart')
+
 ]

@@ -18,7 +18,7 @@ from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductS
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, LatestTestTypesWithCategoriesOfProductFilter
 # import git
 import os
-from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, When
+from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, When, Sum, CharField, IntegerField
 from django.db.models.functions import Cast
 
 from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories
@@ -834,3 +834,42 @@ class DashboardKpi(generics.ListAPIView):
                 }
             ]
          })
+
+
+
+class DashboardChart(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+    def get(self, request):
+        registry = {
+            "total_devices" : Product.objects.all().values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
+
+            "test_types" : TestType.objects.all().values("id", "name", "code", "description"),
+            "users" : User.objects.aggregate(admins = Sum(Case(
+                When(role_name="ADMIN", then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField()
+            )), users = Sum(Case(
+                When(role_name="USER", then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField()
+            ))),
+            "categories" : ProductCategory.objects.all().values("id", "category", "description"),
+            "sub_categories" : ProductSubCategory.objects.all().values("id", "sub_category", category = F("product_category__category")),
+            "devices_expire_in_30_days" : Product.objects.filter(valid_till__gte=datetime.today(),valid_till__lte=datetime.today() + timedelta(days=30)).values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
+            "ready_to_test" : StructuredTestCases.objects.filter().values('product_id').all().distinct().values('id', "test_id", "test_name", "objective", "product_id", product_name = F("product__product_code"), test_type_name = F('test_type__code'), test_category_name = F("test_category__name")),
+        }
+        choice = request.GET.get("chart_data_point", None)
+        if not (choice or choice in registry.keys()):
+            response = {
+                "status" : 400,
+                "message" : f"Please pass the chart_data_point to get chart data. Available chart data points are {registry.keys}",
+                "data" : []
+            }
+        response = {
+            "status" : 200,
+            "message" : "",
+            "data" : list(registry.get(choice, [])) if choice != 'users' else registry.get(choice, {})
+        }
+        return Response(response)
