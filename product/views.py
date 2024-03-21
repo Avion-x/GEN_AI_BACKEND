@@ -20,8 +20,7 @@ from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFi
     LatestTestTypesWithCategoriesOfProductFilter
 # import git
 import os
-from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, \
-    When
+from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, When, Sum, CharField, IntegerField
 from django.db.models.functions import Cast
 
 from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories
@@ -43,7 +42,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
 from product.services.open_ai import CustomOpenAI
-
+from product.services.langchain_ import Langchain_
 
 # Create your views here.
 class TestTypeView(generics.ListAPIView):
@@ -318,11 +317,16 @@ class GenerateTestCases(generics.ListAPIView):
             self.ai_obj = self.get_ai_obj(data)
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
+            
+            print(prompts_data)
 
-            thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
-            thread.start()
+            self.lang_chain = Langchain_(prompt_data = prompts_data, request=request)
 
-            # self.process_request(request, prompts_data)
+
+            # thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
+            # thread.start()
+
+            self.process_request(request, prompts_data)
 
             response = {
                 "request_id": request.request_id,
@@ -354,25 +358,42 @@ class GenerateTestCases(generics.ListAPIView):
             return response
         except Exception as e:
             raise e
-
+    
     def execute(self, request, test_type, test_category, input_data):
         try:
             response = {}
             insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
                            "prompts": input_data}
-            for test_code, propmts in input_data.items():
+            for test_code, details in input_data.items():
+                kb_data = self.lang_chain.execute_kb_queries(details.get('kb_query',[]))
+                print("\n\n kb data is :", kb_data)
+                prompts = details.get('prompts', [])
+
                 file_path = self.get_file_path(request, test_type, test_category, test_code)
-                response[test_code] = self.generate_tests(prompts=propmts)
-                self.store_parsed_tests(request=request, data=response[test_code], test_type=test_type,
-                                        test_category=test_category,
-                                        test_category_id=insert_data.get("test_category_id"))
-                insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""),
-                                                         file_path=file_path)
+                response[test_code] = self.generate_tests(prompts=prompts, context=kb_data)
+                self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
+                insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
                 insert_test_case(request, data=insert_data.copy())
             # response['test_category'] = test_category
             return response
         except Exception as e:
             raise e
+
+    # def execute(self, request, test_type, test_category, input_data):
+    #     try:
+    #         response = {}
+    #         insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
+    #                        "prompts": input_data}
+    #         for test_code, propmts in input_data.items():
+    #             file_path = self.get_file_path(request, test_type, test_category, test_code)
+    #             response[test_code] = self.generate_tests(prompts=propmts)
+    #             self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
+    #             insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
+    #             insert_test_case(request, data=insert_data.copy())
+    #         # response['test_category'] = test_category
+    #         return response
+    #     except Exception as e:
+    #         raise e
 
     def store_parsed_tests(self, request, data, test_type, test_category, test_category_id):
         for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
@@ -431,11 +452,12 @@ class GenerateTestCases(generics.ListAPIView):
         except Exception as e:
             return f"data/{request.user.customer.code}/{test_type}/{test_code}"
 
-    def generate_tests(self, prompts, **kwargs):
+    def generate_tests(self, prompts, context, **kwargs):
         try:
             response_text = ""
             for prompt in prompts:
                 kwargs['prompt'] = prompt
+                kwargs['context'] = context
                 prompt_data = self.ai_obj.send_prompt(**kwargs)
                 response_text += prompt_data
             return self.get_test_data(response_text)
@@ -853,3 +875,42 @@ class ApproveTestCategoryView(generics.ListAPIView):
         instance.approved_by = self.request.user
         instance.save()
         return JsonResponse({"message": "Test Category Approved successfully", "status": 200})
+
+
+
+class DashboardChart(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+    def get(self, request):
+        registry = {
+            "total_devices" : Product.objects.all().values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
+
+            "test_types" : TestType.objects.all().values("id", "name", "code", "description"),
+            "users" : User.objects.aggregate(admins = Sum(Case(
+                When(role_name="ADMIN", then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField()
+            )), users = Sum(Case(
+                When(role_name="USER", then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField()
+            ))),
+            "categories" : ProductCategory.objects.all().values("id", "category", "description"),
+            "sub_categories" : ProductSubCategory.objects.all().values("id", "sub_category", category = F("product_category__category")),
+            "devices_expire_in_30_days" : Product.objects.filter(valid_till__gte=datetime.today(),valid_till__lte=datetime.today() + timedelta(days=30)).values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
+            "ready_to_test" : StructuredTestCases.objects.filter().values('product_id').all().distinct().values('id', "test_id", "test_name", "objective", "product_id", product_name = F("product__product_code"), test_type_name = F('test_type__code'), test_category_name = F("test_category__name")),
+        }
+        choice = request.GET.get("chart_data_point", None)
+        if not (choice or choice in registry.keys()):
+            response = {
+                "status" : 400,
+                "message" : f"Please pass the chart_data_point to get chart data. Available chart data points are {registry.keys}",
+                "data" : []
+            }
+        response = {
+            "status" : 200,
+            "message" : "",
+            "data" : list(registry.get(choice, [])) if choice != 'users' else registry.get(choice, {})
+        }
+        return Response(response)

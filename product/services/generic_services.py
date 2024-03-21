@@ -33,6 +33,7 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], 
                     for test_code, test_code_details in test_category.executable_codes.items():
                         test_prompts = [prompt.replace('${TestType}', test_code_details.get("code", test_code)) for prompt in  prompts] if test_code_details.get("code", None) else []
                         test_prompts += test_code_details.get("default", [])
+                        test_prompts = {"kb_query":get_knowledge_base_query(test_category), "prompts" : test_prompts}
                         if not len(test_prompts):
                             continue
                         if response.get(test_type.code) and response[test_type.code].get(test_category.name):
@@ -45,7 +46,16 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], 
         return response
     except Exception as e:
         raise e
-    
+
+def get_knowledge_base_query(test_category):
+    kb_queries = test_category.knowledge_base_prompts.all()
+    data = []
+    for query in kb_queries:
+        _q = query.query.replace('${TestCategory}', test_category.name)
+        data.append({"top_k":query.top_k, "kb_prompt_id":query.id,  "query":_q, "default_query_data":query.default_data})
+    return data
+
+
 def get_string_from_datetime(_timestamp=None):
     if not _timestamp:
         _timestamp = datetime.datetime.now()
@@ -191,3 +201,8 @@ def trigger_product_prompt_data(customer_id, product_sub_category_id, product_co
 
         product_prompt_obj.save()
 
+
+
+
+
+    
