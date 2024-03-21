@@ -1,13 +1,11 @@
 from django.urls import path
 from django.contrib import admin
-<<<<<<< HEAD
 from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestTypeView, ProductCategoryView, \
     ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, \
     GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, \
     PendingApprovalTestCategoryView, ApproveTestCategoryView
-=======
+    
 from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestTypeView, ProductCategoryView, ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, DashboardChart
->>>>>>> rag
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,13 +25,7 @@ urlpatterns = [
     path('test_execution/', TestScriptExecResultsView.as_view(), name='test_execution'),
     path('generated_categories/', GeneratedTestCategoriesView.as_view(), name='generated_categories'),
     path('dashboard_kpi/', DashboardKpi().as_view(), name='dashboard_kpi'),
-<<<<<<< HEAD
-    path('pending_approval_test_categories/', PendingApprovalTestCategoryView.as_view(),
-         name='pending_approval_test_categories'),
+    path('pending_approval_test_categories/', PendingApprovalTestCategoryView.as_view(),name='pending_approval_test_categories'),
     path('approve_test_category/', ApproveTestCategoryView.as_view(), name='approve_test_category'),
-]
-=======
     path('dashboard_chart/', DashboardChart().as_view(), name='dashboard_chart')
-
 ]
->>>>>>> rag
