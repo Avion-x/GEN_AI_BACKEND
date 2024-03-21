@@ -10,3 +10,11 @@ pyparsing
 pytz
 sqlparse
 django-filter @ git+https://github.com/carltongibson/django-filter.git@00e88652d9308c4c6c4e707c3e0d735dd6843dca
+langchain
+langchain-openai
+llama-index
+llama-index-vector-stores-pinecone
+dotenv-python
+llama-index-embeddings-langchain
+cohere
+open_ai
