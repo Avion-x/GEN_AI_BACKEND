@@ -17,6 +17,7 @@ class ISTTimestamp:
 class TestTypeSerializer(serializers.ModelSerializer, ISTTimestamp):
     created_at = serializers.SerializerMethodField()
     last_updated_at = serializers.SerializerMethodField()
+    test_categories_count = serializers.SerializerMethodField()
 
     class Meta:
         model = TestType
@@ -31,6 +32,9 @@ class TestTypeSerializer(serializers.ModelSerializer, ISTTimestamp):
         timestamp = obj.last_updated_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
+    
+    def get_test_categories_count(self, obj):
+        return obj.test_category.count()
 
 
 class ProductSerializer(serializers.ModelSerializer, ISTTimestamp):
