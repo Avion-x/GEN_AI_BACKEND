@@ -14,7 +14,7 @@ langchain
 langchain-openai
 llama-index
 llama-index-vector-stores-pinecone
-dotenv-python
+python-dotenv
 llama-index-embeddings-langchain
 cohere
 openai
