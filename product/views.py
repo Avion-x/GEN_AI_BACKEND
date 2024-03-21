@@ -323,10 +323,10 @@ class GenerateTestCases(generics.ListAPIView):
             self.lang_chain = Langchain_(prompt_data = prompts_data, request=request)
 
 
-            # thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
-            # thread.start()
+            thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
+            thread.start()
 
-            self.process_request(request, prompts_data)
+            # self.process_request(request, prompts_data)
 
             response = {
                 "request_id": request.request_id,
