@@ -44,6 +44,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
 from product.services.open_ai import CustomOpenAI
 from product.services.langchain_ import Langchain_
+import pdfplumber, boto3
+from io import BytesIO
 
 
 # Create your views here.
@@ -923,3 +925,62 @@ class DashboardChart(generics.ListAPIView):
             "data": list(registry.get(choice, [])) if choice != 'users' else registry.get(choice, {})
         }
         return Response(response)
+
+
+class ExtractTextFromPDFView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+    # Function to extract table as matrix
+    def extract_table_as_matrix(page):
+        table = page.extract_table()
+        if table is None:
+            return None
+
+        # Convert table to matrix
+        matrix = []
+        for row in table:
+            matrix_row = []
+            for cell in row:
+                if cell:
+                    matrix_row.append(cell)
+            if matrix_row:
+                matrix.append(matrix_row)
+
+        return matrix
+     
+    def post(self, request, *args, **kwargs):
+        # AWS credentials and bucket name
+        aws_access_key_id = 'your_access_key_id'
+        aws_secret_access_key = 'your_secret_access_key'
+        bucket_name = 'your_bucket_name'
+
+        # Establish connection with S3
+        s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+        pdf_file_name = 'your_pdf_file_name.pdf'
+        # Download PDF from S3
+        s3_response_object = s3.get_object(Bucket=bucket_name, Key=pdf_file_name)
+        pdf_content = s3_response_object['Body'].read()
+
+        # Process PDF content and write to S3
+        with pdfplumber.open(BytesIO(pdf_content)) as pdf:
+            processed_text = ""
+            for page in pdf.pages:
+                string = ""
+                # Extract text from the page
+                text = page.extract_text()
+                processed_text += text + "\n"
+                matrix = self.extract_table_as_matrix(page)
+                if matrix:
+                    for row in matrix[1:-1]:
+                        # Iterate over each column other than the first one
+                        for i in range(1, len(row)):
+                            string += f"{matrix[0][0]}, {row[0]}, {matrix[0][i]}, {row[i]},"
+                    if string:
+                        processed_text += string[:-1] + "\n"
+
+        # Convert processed text to BytesIO object
+        processed_text_bytes = BytesIO(processed_text.encode('utf-8'))
+        file_name = 'your_file_name_for_text_file_to_create_in_s3'
+        # Upload the processed file directly to S3
+        s3.put_object(Bucket=bucket_name, Key=file_name, Body=processed_text_bytes)

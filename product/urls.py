@@ -3,10 +3,8 @@ from django.contrib import admin
 from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestTypeView, ProductCategoryView, \
     ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, \
     GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, \
-    PendingApprovalTestCategoryView, ApproveTestCategoryView
+    PendingApprovalTestCategoryView, ApproveTestCategoryView, DashboardChart
     
-from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestTypeView, ProductCategoryView, ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, DashboardChart
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('testtypes/', TestTypeView.as_view(), name='test-type'),
