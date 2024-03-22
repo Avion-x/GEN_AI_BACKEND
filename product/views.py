@@ -20,7 +20,8 @@ from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFi
     LatestTestTypesWithCategoriesOfProductFilter
 # import git
 import os
-from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, When, Sum, CharField, IntegerField
+from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, \
+    When, Sum, CharField, IntegerField
 from django.db.models.functions import Cast
 
 from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories
@@ -43,6 +44,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
 from product.services.open_ai import CustomOpenAI
 from product.services.langchain_ import Langchain_
+
 
 # Create your views here.
 class TestTypeView(generics.ListAPIView):
@@ -90,6 +92,9 @@ class TestTypeView(generics.ListAPIView):
         instance = self.get_queryset({"id": id}).first()
         if not instance:
             return JsonResponse({"message": "No Record found", "status": 400})
+        test_categories_count = TestType.objects.get(id=id).test_category.count()
+        if test_categories_count != 0:
+            return JsonResponse({"message": "Cannot delete this Test Type as it contains Test Categories", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user.username
         instance.save()
@@ -144,6 +149,9 @@ class ProductCategoryView(generics.ListAPIView):
         instance = self.get_queryset({"id": id}).first()
         if not instance:
             return JsonResponse({"message": "No Record found", "status": 400})
+        sub_categories_count = ProductCategory.objects.get(id=id).product_sub_category.count()
+        if sub_categories_count != 0:
+            return JsonResponse({"message": "Cannot delete this Category as it contains Sub Categories", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user
         instance.save()
@@ -198,6 +206,9 @@ class ProductSubCategoryView(generics.ListAPIView):
         instance = self.get_queryset({"id": id}).first()
         if not instance:
             return JsonResponse({"message": "No Record found", "status": 400})
+        product_count = ProductSubCategory.objects.get(id=id).product.count()
+        if product_count != 0:
+            return JsonResponse({"message": "Cannot delete this Sub Category as it contains Devices", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user
         instance.save()
@@ -317,11 +328,10 @@ class GenerateTestCases(generics.ListAPIView):
             self.ai_obj = self.get_ai_obj(data)
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
-            
+
             print(prompts_data)
 
-            self.lang_chain = Langchain_(prompt_data = prompts_data, request=request)
-
+            self.lang_chain = Langchain_(prompt_data=prompts_data, request=request)
 
             thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
             thread.start()
@@ -358,14 +368,14 @@ class GenerateTestCases(generics.ListAPIView):
             return response
         except Exception as e:
             raise e
-    
+
     def execute(self, request, test_type, test_category, input_data):
         try:
             response = {}
             insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
                            "prompts": input_data}
             for test_code, details in input_data.items():
-                kb_data = self.lang_chain.execute_kb_queries(details.get('kb_query',[]))
+                kb_data = self.lang_chain.execute_kb_queries(details.get('kb_query', []))
                 print("\n\n kb data is :", kb_data)
                 prompts = details.get('prompts', [])
 
@@ -877,7 +887,6 @@ class ApproveTestCategoryView(generics.ListAPIView):
         return JsonResponse({"message": "Test Category Approved successfully", "status": 200})
 
 
-
 class DashboardChart(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
@@ -886,12 +895,12 @@ class DashboardChart(generics.ListAPIView):
         registry = {
             "total_devices" : Product.objects.all().values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
 
-            "test_types" : TestType.objects.all().values("id", "name", "code", "description"),
-            "users" : User.objects.aggregate(admins = Sum(Case(
+            "test_types": TestType.objects.all().values("id", "name", "code", "description"),
+            "users": User.objects.aggregate(admins=Sum(Case(
                 When(role_name="ADMIN", then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField()
-            )), users = Sum(Case(
+            )), users=Sum(Case(
                 When(role_name="USER", then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField()
@@ -904,13 +913,13 @@ class DashboardChart(generics.ListAPIView):
         choice = request.GET.get("chart_data_point", None)
         if not (choice or choice in registry.keys()):
             response = {
-                "status" : 400,
-                "message" : f"Please pass the chart_data_point to get chart data. Available chart data points are {registry.keys}",
-                "data" : []
+                "status": 400,
+                "message": f"Please pass the chart_data_point to get chart data. Available chart data points are {registry.keys}",
+                "data": []
             }
         response = {
-            "status" : 200,
-            "message" : "",
-            "data" : list(registry.get(choice, [])) if choice != 'users' else registry.get(choice, {})
+            "status": 200,
+            "message": "",
+            "data": list(registry.get(choice, [])) if choice != 'users' else registry.get(choice, {})
         }
         return Response(response)
