@@ -953,7 +953,8 @@ class ExtractTextFromPDFView(generics.ListAPIView):
         bucket_name = 'your_bucket_name'
 
         # Establish connection with S3
-        s3 = boto3.client('s3', aws_access_key_id='AKIA3MUTZS7BNCEROH24', aws_secret_access_key='tShLXp76HaJ+IL3ymWEnE5aPEQvnwAVPATCU0239', region_name='us-west-2')
+        s3 = boto3.client('s3', aws_access_key_id='AKIA3MUTZS7BNCEROH24',
+                          aws_secret_access_key='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', region_name='us-west-2')
         pdf_file_name = request.GET.get('file_name')
 
         # Download PDF from S3
@@ -979,7 +980,7 @@ class ExtractTextFromPDFView(generics.ListAPIView):
 
         # Convert processed text to BytesIO object
         processed_text_bytes = BytesIO(processed_text.encode('utf-8'))
-        file_name = 'transcript'+datetime.today()
+        file_name = 'transcript' + datetime.today() + '.txt'
         
         # Upload the processed file directly to S3
         s3.put_object(Bucket=bucket_name, Key=file_name, Body=processed_text_bytes)
