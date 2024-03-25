@@ -3,7 +3,7 @@ from django.contrib import admin
 from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestTypeView, ProductCategoryView, \
     ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, \
     GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, \
-    PendingApprovalTestCategoryView, ApproveTestCategoryView, DashboardChart
+    PendingApprovalTestCategoryView, ApproveTestCategoryView, DashboardChart, ExtractTextFromPDFView
     
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,5 +25,6 @@ urlpatterns = [
     path('dashboard_kpi/', DashboardKpi().as_view(), name='dashboard_kpi'),
     path('pending_approval_test_categories/', PendingApprovalTestCategoryView.as_view(),name='pending_approval_test_categories'),
     path('approve_test_category/', ApproveTestCategoryView.as_view(), name='approve_test_category'),
-    path('dashboard_chart/', DashboardChart().as_view(), name='dashboard_chart')
+    path('dashboard_chart/', DashboardChart().as_view(), name='dashboard_chart'),
+    path('extract_pdf/', ExtractTextFromPDFView.as_view(), name='extract_pdf')
 ]
