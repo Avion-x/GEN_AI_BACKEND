@@ -124,6 +124,7 @@ class ProductCategoryView(generics.ListAPIView):
     def post(self, request, *args, **kwargs):
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
+        request.data['created_by'] = self.request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -181,6 +182,7 @@ class ProductSubCategoryView(generics.ListAPIView):
     def post(self, request, *args, **kwargs):
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
+        request.data['created_by'] = self.request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -244,6 +246,7 @@ class ProductView(generics.ListAPIView):
     def post(self, request, *args, **kwargs):
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
+        request.data['created_by'] = self.request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -992,3 +995,10 @@ class ExtractTextFromPDFView(generics.ListAPIView):
         
         # Upload the processed file directly to S3
         s3.put_object(Bucket=bucket_name, Key=file_name, Body=processed_text_bytes)
+
+
+# class CategoryDetails(generics.ListAPIView):
+#     permission_classes = (IsAuthenticated,)
+#     authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+#     def get(self, request):
