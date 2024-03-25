@@ -96,7 +96,8 @@ class TestTypeView(generics.ListAPIView):
             return JsonResponse({"message": "No Record found", "status": 400})
         test_categories_count = TestType.objects.get(id=id).test_category.count()
         if test_categories_count != 0:
-            return JsonResponse({"message": "Cannot delete this Test Type as it contains Test Categories", "status": 400})
+            return JsonResponse(
+                {"message": "Cannot delete this Test Type as it contains Test Categories", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user.username
         instance.save()
@@ -959,7 +960,7 @@ class ExtractTextFromPDFView(generics.ListAPIView):
                 matrix.append(matrix_row)
 
         return matrix
-     
+
     def post(self, request, *args, **kwargs):
         bucket_name = 'your_bucket_name'
 
@@ -992,13 +993,25 @@ class ExtractTextFromPDFView(generics.ListAPIView):
         # Convert processed text to BytesIO object
         processed_text_bytes = BytesIO(processed_text.encode('utf-8'))
         file_name = 'transcript' + datetime.today() + '.txt'
-        
+
         # Upload the processed file directly to S3
         s3.put_object(Bucket=bucket_name, Key=file_name, Body=processed_text_bytes)
 
 
-# class CategoryDetails(generics.ListAPIView):
-#     permission_classes = (IsAuthenticated,)
-#     authentication_classes = (BasicAuthentication, TokenAuthentication)
+class CategoryDetailsView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
 
-#     def get(self, request):
+    def get(self, request):
+        categories = ProductCategory.objects.all()
+        category_data = []
+        for category in categories:
+            sub_category_count = ProductSubCategory.objects.filter(product_category_id=category.id).count()
+            product_count = Product.objects.filter(product_category_id=category.id).count()
+            category_data.append({
+                'category_name': category.category,
+                'sub_category_count': sub_category_count,
+                'device_count': product_count
+            }
+            )
+        return JsonResponse({"data": category_data, "status": 200})
