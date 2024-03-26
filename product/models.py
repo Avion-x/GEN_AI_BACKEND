@@ -283,3 +283,6 @@ class Audit_Report(models.Model):
 
     def __str__(self):
         return f"{self.user_name} - {self.action_type} - {self.timestamp}"
+
+
+# class 

@@ -48,6 +48,27 @@ import pdfplumber, boto3
 from io import BytesIO
 
 
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from botocore.exceptions import ClientError
+from boto3.s3.transfer import S3Transfer
+
+import boto3
+
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION')
+
+
+session = boto3.Session(
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_DEFAULT_REGION  # Override default region
+)
+s3 = session.client('s3')
+
 # Create your views here.
 class TestTypeView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
@@ -939,6 +960,37 @@ class DashboardChart(generics.ListAPIView):
         return Response(response)
 
 
+class UploadDeviceDocsView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+    def post(self, request):
+        files = request.FILES.getlist('pdf_files', [])  # Access multiple files
+        files_uploaded = []
+        files_not_uplaoded = []
+
+        product_name = "MX480"
+
+        for f in files:
+            temp_file = ContentFile(f.read())
+            try:
+                filename = f.name  # Get original filename
+                s3.put_object(Bucket='genaidev', Key=f'devices/{product_name}/{filename}')  # Create subfolder with filename
+                s3.upload_fileobj(temp_file, 'genaidev', f'devices/{product_name}/{filename}')  # Upload file to S3
+                files_uploaded.append(filename)
+            except Exception as e:
+                print(e)
+                files_not_uplaoded.append(f.name)
+        
+        return Response({
+            "status" : 400 if len(files_not_uplaoded) else 200,
+            "error_message" : f"Some files {files_not_uplaoded} are not uploaded " if len(files_not_uplaoded) else "All files are uploaded to s3 Succesfully",
+            "data" : {
+                "files_uploaded" : files_uploaded,
+                "files_not_uploaded" : files_not_uplaoded
+            }
+        })
+        
 class ExtractTextFromPDFView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
