@@ -55,8 +55,8 @@ class VectorStoreService():
             transformations=[
                 embed_model,
                 ],
-                vector_store=pinecone_vector_store 
-            )
+            vector_store=pinecone_vector_store 
+        )
 
 
         pipeline.run(nodes=nodes)
