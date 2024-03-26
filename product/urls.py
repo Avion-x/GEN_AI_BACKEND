@@ -3,7 +3,7 @@ from django.contrib import admin
 from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestTypeView, ProductCategoryView, \
     ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, \
     GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, \
-    PendingApprovalTestCategoryView, ApproveTestCategoryView
+    PendingApprovalTestCategoryView, ApproveTestCategoryView, UploadDeviceDocsView
     
 from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestTypeView, ProductCategoryView, ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, DashboardChart
 
@@ -27,5 +27,6 @@ urlpatterns = [
     path('dashboard_kpi/', DashboardKpi().as_view(), name='dashboard_kpi'),
     path('pending_approval_test_categories/', PendingApprovalTestCategoryView.as_view(),name='pending_approval_test_categories'),
     path('approve_test_category/', ApproveTestCategoryView.as_view(), name='approve_test_category'),
-    path('dashboard_chart/', DashboardChart().as_view(), name='dashboard_chart')
+    path('dashboard_chart/', DashboardChart().as_view(), name='dashboard_chart'),
+    path('upload_device_docs/', UploadDeviceDocsView.as_view(), name = "upload_device_docs")
 ]
