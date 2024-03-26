@@ -996,7 +996,7 @@ class ExtractTextFromPDFView(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     # Function to extract table as matrix
-    def extract_table_as_matrix(page):
+    def extract_table_as_matrix(self, page):
         table = page.extract_table()
         if table is None:
             return None
@@ -1014,7 +1014,7 @@ class ExtractTextFromPDFView(generics.ListAPIView):
         return matrix
 
     def post(self, request, *args, **kwargs):
-        bucket_name = 'your_bucket_name'
+        bucket_name = 'testmx480'
 
         # Establish connection with S3
         s3 = boto3.client('s3', aws_access_key_id='AKIA3MUTZS7BNCEROH24',
@@ -1044,10 +1044,14 @@ class ExtractTextFromPDFView(generics.ListAPIView):
 
         # Convert processed text to BytesIO object
         processed_text_bytes = BytesIO(processed_text.encode('utf-8'))
-        file_name = 'transcript' + datetime.today() + '.txt'
+        file_name = 'transcript-' + str(datetime.today()) + '.txt'
 
-        # Upload the processed file directly to S3
-        s3.put_object(Bucket=bucket_name, Key=file_name, Body=processed_text_bytes)
+        try:
+            # Upload the processed file directly to S3
+            s3.put_object(Bucket=bucket_name, Key=file_name, Body=processed_text_bytes)
+            return JsonResponse({"message": "File extracted and uploaded to s3 successfully", "status": 200})
+        except Exception as e:
+            return JsonResponse({"message": "File extraction failed", "status": 400})
 
 
 class CategoryDetailsView(generics.ListAPIView):
