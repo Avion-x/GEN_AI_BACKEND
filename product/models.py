@@ -74,6 +74,7 @@ class ProductCategory(DefaultModel, models.Model):
     comments = models.TextField(blank=True, null=True)
     last_updated_by = models.ForeignKey(User, on_delete=models.CASCADE)
     prompts = models.ManyToManyField(Prompt, blank=True, related_name = 'product_category', through='ProductCategoryPrompt')
+    created_by = models.ForeignKey(User, related_name = "create_product_category", on_delete=models.CASCADE, null = True)
 
     objects = CustomManager()
 
@@ -89,6 +90,7 @@ class ProductSubCategory(DefaultModel, models.Model):
     description = models.TextField(blank=True, null=True)
     comments = models.TextField(blank=True, null=True)
     last_updated_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name = "create_product_sub_category", on_delete=models.CASCADE, null = True)
 
     objects = CustomManager()
 
@@ -123,6 +125,7 @@ class Product(DefaultModel, models.Model):
     product_name = models.CharField(max_length=255)
     product_category = models.ForeignKey(ProductCategory, related_name = "product", on_delete=models.CASCADE)
     vector_name_space = models.CharField(max_length = 100)
+    created_by = models.ForeignKey(User, related_name = "create_product", on_delete=models.CASCADE, null = True)
 
     objects = CustomManager()
 
@@ -221,7 +224,6 @@ class StructuredTestCases(DefaultModel, models.Model):
     
     def __str__(self):
         return f"{self.test_id}"
-
     
 
 class KnowledgeBasePrompts(DefaultModel, models.Model):
@@ -260,6 +262,7 @@ class KnowledgeBaseResults(DefaultModel, models.Model):
     def __str__(self):
         return self.query
 
+
 class Audit_Report(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     user_name = models.CharField(max_length=255)
@@ -282,4 +285,4 @@ class Audit_Report(models.Model):
         return f"{self.user_name} - {self.action_type} - {self.timestamp}"
 
 
-class 
+# class 

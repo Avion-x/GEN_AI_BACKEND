@@ -20,7 +20,8 @@ from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFi
     LatestTestTypesWithCategoriesOfProductFilter
 # import git
 import os
-from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, When, Sum, CharField, IntegerField
+from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, \
+    When, Sum, CharField, IntegerField
 from django.db.models.functions import Cast
 
 from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories
@@ -43,6 +44,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
 from product.services.open_ai import CustomOpenAI
 from product.services.langchain_ import Langchain_
+import pdfplumber, boto3
+from io import BytesIO
+
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -111,6 +115,10 @@ class TestTypeView(generics.ListAPIView):
         instance = self.get_queryset({"id": id}).first()
         if not instance:
             return JsonResponse({"message": "No Record found", "status": 400})
+        test_categories_count = TestType.objects.get(id=id).test_category.count()
+        if test_categories_count != 0:
+            return JsonResponse(
+                {"message": "Cannot delete this Test Type as it contains Test Categories", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user.username
         instance.save()
@@ -138,6 +146,7 @@ class ProductCategoryView(generics.ListAPIView):
     def post(self, request, *args, **kwargs):
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
+        request.data['created_by'] = self.request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -165,6 +174,9 @@ class ProductCategoryView(generics.ListAPIView):
         instance = self.get_queryset({"id": id}).first()
         if not instance:
             return JsonResponse({"message": "No Record found", "status": 400})
+        sub_categories_count = ProductCategory.objects.get(id=id).product_sub_category.count()
+        if sub_categories_count != 0:
+            return JsonResponse({"message": "Cannot delete this Category as it contains Sub Categories", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user
         instance.save()
@@ -192,6 +204,7 @@ class ProductSubCategoryView(generics.ListAPIView):
     def post(self, request, *args, **kwargs):
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
+        request.data['created_by'] = self.request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -219,6 +232,9 @@ class ProductSubCategoryView(generics.ListAPIView):
         instance = self.get_queryset({"id": id}).first()
         if not instance:
             return JsonResponse({"message": "No Record found", "status": 400})
+        product_count = ProductSubCategory.objects.get(id=id).product.count()
+        if product_count != 0:
+            return JsonResponse({"message": "Cannot delete this Sub Category as it contains Devices", "status": 400})
         instance.status = 0
         instance.last_updated_by = self.request.user
         instance.save()
@@ -252,6 +268,7 @@ class ProductView(generics.ListAPIView):
     def post(self, request, *args, **kwargs):
         request.data['customer'] = self.request.user.customer_id
         request.data['last_updated_by'] = self.request.user.id
+        request.data['created_by'] = self.request.user.id
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -338,11 +355,10 @@ class GenerateTestCases(generics.ListAPIView):
             self.ai_obj = self.get_ai_obj(data)
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
-            
+
             print(prompts_data)
 
-            self.lang_chain = Langchain_(prompt_data = prompts_data, request=request)
-
+            self.lang_chain = Langchain_(prompt_data=prompts_data, request=request)
 
             thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
             thread.start()
@@ -379,14 +395,14 @@ class GenerateTestCases(generics.ListAPIView):
             return response
         except Exception as e:
             raise e
-    
+
     def execute(self, request, test_type, test_category, input_data):
         try:
             response = {}
             insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
                            "prompts": input_data}
             for test_code, details in input_data.items():
-                kb_data = self.lang_chain.execute_kb_queries(details.get('kb_query',[]))
+                kb_data = self.lang_chain.execute_kb_queries(details.get('kb_query', []))
                 print("\n\n kb data is :", kb_data)
                 prompts = details.get('prompts', [])
 
@@ -821,35 +837,43 @@ class DashboardKpi(generics.ListAPIView):
             "data": [
                 {
                     "title": "Total Devices",
-                    "value": total_devices
+                    "value": total_devices,
+                    "chart_data_point": total_devices
                 },
                 {
                     "title": "Test Types",
-                    "value": test_types
+                    "value": test_types,
+                    "chart_data_point": test_types
                 },
                 {
                     "title": "Users",
-                    "value": users
+                    "value": users,
+                    "chart_data_point": users
                 },
                 {
                     "title": "Categories",
-                    "value": categories
+                    "value": categories,
+                    "chart_data_point": categories
                 },
                 {
                     "title": "Sub Categories",
-                    "value": sub_categories
+                    "value": sub_categories,
+                    "chart_data_point": sub_categories
                 },
                 {
                     "title": "Devices Expire In 30 Days",
-                    "value": devices_expire_in_30_days
+                    "value": devices_expire_in_30_days,
+                    "chart_data_point": devices_expire_in_30_days
                 },
                 {
                     "title": "Ready To Test",
-                    "value": ready_to_test
+                    "value": ready_to_test,
+                    "chart_data_point": ready_to_test
                 },
                 {
                     "title": "Test Scheduled Devices",
-                    "value": 11
+                    "value": 11,
+                    "chart_data_point": 11
                 }
             ]
         })
@@ -898,7 +922,6 @@ class ApproveTestCategoryView(generics.ListAPIView):
         return JsonResponse({"message": "Test Category Approved successfully", "status": 200})
 
 
-
 class DashboardChart(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
@@ -907,12 +930,12 @@ class DashboardChart(generics.ListAPIView):
         registry = {
             "total_devices" : Product.objects.all().values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
 
-            "test_types" : TestType.objects.all().values("id", "name", "code", "description"),
-            "users" : User.objects.aggregate(admins = Sum(Case(
+            "test_types": TestType.objects.all().values("id", "name", "code", "description"),
+            "users": User.objects.aggregate(admins=Sum(Case(
                 When(role_name="ADMIN", then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField()
-            )), users = Sum(Case(
+            )), users=Sum(Case(
                 When(role_name="USER", then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField()
@@ -925,14 +948,14 @@ class DashboardChart(generics.ListAPIView):
         choice = request.GET.get("chart_data_point", None)
         if not (choice or choice in registry.keys()):
             response = {
-                "status" : 400,
-                "message" : f"Please pass the chart_data_point to get chart data. Available chart data points are {registry.keys}",
-                "data" : []
+                "status": 400,
+                "message": f"Please pass the chart_data_point to get chart data. Available chart data points are {registry.keys}",
+                "data": []
             }
         response = {
-            "status" : 200,
-            "message" : "",
-            "data" : list(registry.get(choice, [])) if choice != 'users' else registry.get(choice, {})
+            "status": 200,
+            "message": "",
+            "data": list(registry.get(choice, [])) if choice != 'users' else registry.get(choice, {})
         }
         return Response(response)
 
@@ -967,3 +990,80 @@ class UploadDeviceDocsView(generics.ListAPIView):
                 "files_not_uploaded" : files_not_uplaoded
             }
         })
+        
+class ExtractTextFromPDFView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+    # Function to extract table as matrix
+    def extract_table_as_matrix(page):
+        table = page.extract_table()
+        if table is None:
+            return None
+
+        # Convert table to matrix
+        matrix = []
+        for row in table:
+            matrix_row = []
+            for cell in row:
+                if cell:
+                    matrix_row.append(cell)
+            if matrix_row:
+                matrix.append(matrix_row)
+
+        return matrix
+
+    def post(self, request, *args, **kwargs):
+        bucket_name = 'your_bucket_name'
+
+        # Establish connection with S3
+        s3 = boto3.client('s3', aws_access_key_id='AKIA3MUTZS7BNCEROH24',
+                          aws_secret_access_key='tShLXp76HaJ+IL3ymWEnE5aPEQvnwAVPATCU0239', region_name='us-west-2')
+        pdf_file_name = request.GET.get('file_name')
+
+        # Download PDF from S3
+        s3_response_object = s3.get_object(Bucket=bucket_name, Key=pdf_file_name)
+        pdf_content = s3_response_object['Body'].read()
+
+        # Process PDF content and write to S3
+        with pdfplumber.open(BytesIO(pdf_content)) as pdf:
+            processed_text = ""
+            for page in pdf.pages:
+                string = ""
+                # Extract text from the page
+                text = page.extract_text()
+                processed_text += text + "\n"
+                matrix = self.extract_table_as_matrix(page)
+                if matrix:
+                    for row in matrix[1:-1]:
+                        # Iterate over each column other than the first one
+                        for i in range(1, len(row)):
+                            string += f"{matrix[0][0]}, {row[0]}, {matrix[0][i]}, {row[i]},"
+                    if string:
+                        processed_text += string[:-1] + "\n"
+
+        # Convert processed text to BytesIO object
+        processed_text_bytes = BytesIO(processed_text.encode('utf-8'))
+        file_name = 'transcript' + datetime.today() + '.txt'
+
+        # Upload the processed file directly to S3
+        s3.put_object(Bucket=bucket_name, Key=file_name, Body=processed_text_bytes)
+
+
+class CategoryDetailsView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+    def get(self, request):
+        categories = ProductCategory.objects.all()
+        category_data = []
+        for category in categories:
+            sub_category_count = ProductSubCategory.objects.filter(product_category_id=category.id).count()
+            product_count = Product.objects.filter(product_category_id=category.id).count()
+            category_data.append({
+                'category_name': category.category,
+                'sub_category_count': sub_category_count,
+                'device_count': product_count
+            }
+            )
+        return JsonResponse({"data": category_data, "status": 200})

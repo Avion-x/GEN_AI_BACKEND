@@ -18,3 +18,4 @@ python-dotenv
 llama-index-embeddings-langchain
 cohere
 openai
+pdfplumber
