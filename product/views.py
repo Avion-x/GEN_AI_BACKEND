@@ -817,37 +817,37 @@ class DashboardKpi(generics.ListAPIView):
                 {
                     "title": "Total Devices",
                     "value": total_devices,
-                    "chart_data_point": total_devices
+                    "chart_data_point": "total_devices"
                 },
                 {
                     "title": "Test Types",
                     "value": test_types,
-                    "chart_data_point": test_types
+                    "chart_data_point": "test_types"
                 },
                 {
                     "title": "Users",
                     "value": users,
-                    "chart_data_point": users
+                    "chart_data_point": "users"
                 },
                 {
                     "title": "Categories",
                     "value": categories,
-                    "chart_data_point": categories
+                    "chart_data_point": "categories"
                 },
                 {
                     "title": "Sub Categories",
                     "value": sub_categories,
-                    "chart_data_point": sub_categories
+                    "chart_data_point": "sub_categories"
                 },
                 {
                     "title": "Devices Expire In 30 Days",
                     "value": devices_expire_in_30_days,
-                    "chart_data_point": devices_expire_in_30_days
+                    "chart_data_point": "devices_expire_in_30_days"
                 },
                 {
                     "title": "Ready To Test",
                     "value": ready_to_test,
-                    "chart_data_point": ready_to_test
+                    "chart_data_point": "ready_to_test"
                 },
                 {
                     "title": "Test Scheduled Devices",
