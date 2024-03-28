@@ -24,7 +24,7 @@ from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanFie
     When, Sum, CharField, IntegerField
 from django.db.models.functions import Cast
 
-from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories
+from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories, DocumentUploads
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, \
     TestCasesSerializer, TestCategoriesSerializer, TestScriptExecResultsSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, TestCasesFilter, \
@@ -46,7 +46,8 @@ from product.services.open_ai import CustomOpenAI
 from product.services.langchain_ import Langchain_
 import pdfplumber, boto3
 from io import BytesIO
-
+from event_manager.models import CronExecution
+from event_manager.service.cronjob import CronJob
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -929,7 +930,6 @@ class DashboardChart(generics.ListAPIView):
     def get(self, request):
         registry = {
             "total_devices" : Product.objects.all().values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
-
             "test_types": TestType.objects.all().values("id", "name", "code", "description"),
             "users": User.objects.aggregate(admins=Sum(Case(
                 When(role_name="ADMIN", then=Value(1)),
@@ -968,16 +968,35 @@ class UploadDeviceDocsView(generics.ListAPIView):
         files = request.FILES.getlist('pdf_files', [])  # Access multiple files
         files_uploaded = []
         files_not_uplaoded = []
-
-        product_name = "MX480"
-
+        product_id = request.GET.get("device_id", "5")
+        product = Product.objects.filter(id = product_id).first()
+        if not product:
+            return Response(
+                {
+                    "status" : 400,
+                    "error_message" : f"No device found with device_id {product_id}. Please pass valid device_id.",
+                    "data" : {}
+                }
+            )
+        product_name = product.product_code
         for f in files:
             temp_file = ContentFile(f.read())
             try:
                 filename = f.name  # Get original filename
-                s3.put_object(Bucket='genaidev', Key=f'devices/{product_name}/{filename}')  # Create subfolder with filename
-                s3.upload_fileobj(temp_file, 'genaidev', f'devices/{product_name}/{filename}')  # Upload file to S3
+                bucket_name = 'genaidev'
+                key = f'devices/{product_name}/{filename}'
+                s3.put_object(Bucket=bucket_name, Key=key)  # Create subfolder with filename
+                s3.upload_fileobj(temp_file, bucket_name, key)  # Upload file to S3
                 files_uploaded.append(filename)
+                s3_url = f"https://{bucket_name}.s3.{AWS_DEFAULT_REGION}.amazonaws.com/{key}"
+                DocumentUploads.objects.create(
+                    customer = request.user.customer,
+                    created_by = request.user,
+                    request_id = request.request_id,
+                    product = product,
+                    file_name = filename,
+                    s3_url= s3_url
+                )
             except Exception as e:
                 print(e)
                 files_not_uplaoded.append(f.name)
@@ -990,7 +1009,46 @@ class UploadDeviceDocsView(generics.ListAPIView):
                 "files_not_uploaded" : files_not_uplaoded
             }
         })
-        
+
+class EmbedUploadedDocs(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+    def get(self, request):
+        if self.request.GET.get('run_cron', False):
+            a = CronJob()
+            a.performOperation()
+
+        device_id = request.GET.get('device_id', None)
+        device = Product.objects.filter(id = device_id).first()
+        if not device:
+            return Response(
+                {
+                    "status" : 400,
+                    "error_message" : "Please pass valid device_id in queryparams",
+                    "data" : {}
+                }
+            )
+        CronExecution.objects.create(
+            name = "CREATE_VECTOR_EMBEDDINGS",
+            customer = request.user.customer,
+            created_by = request.user,
+            params = {
+                "device_id" : device_id
+            },
+            request_id = request.request_id
+        )
+        return Response(
+            {
+                "status" : 200,
+                "error_message" : "",
+                "data" : {
+                    "message" : "Creation of Embeddings will take atleast 20 mins."
+                }
+            }
+        )
+
+
 class ExtractTextFromPDFView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)

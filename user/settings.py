@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'user',
     'product',
+    'event_manager'
 ]
 
 MIDDLEWARE = [

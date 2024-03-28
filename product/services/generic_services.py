@@ -4,6 +4,20 @@ from product.serializers import ProductSubCategorySerializer, CustomerSerializer
 import datetime
 import os, re, json
 from user.settings import BASE_DIR
+import boto3
+
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION')
+
+session = boto3.Session(
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_DEFAULT_REGION  # Override default region
+)
+s3 = session.client('s3')
 
 
 def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], **kwargs):
@@ -91,6 +105,39 @@ def write_file(file_path="data/output.md", mode="w", data= ""):
             file.write(data)
     except Exception as e:
         raise e
+
+
+def download_files_from_s3(bucket_name, key_prefix, local_directory):
+    try:
+        # List objects in the specified S3 directory
+        response = s3.list_objects_v2(Bucket=bucket_name, Prefix=key_prefix)
+        
+        # Check if any objects are found
+        if 'Contents' in response:
+            # Create local directory if it doesn't exist
+            os.makedirs(local_directory, exist_ok=True)
+            
+            # Iterate over objects and download them
+            for obj in response['Contents']:
+                key = obj['Key']
+                file_name = os.path.basename(key)
+                local_path = os.path.join(local_directory, file_name)
+                # Download file from S3 to local filesystem
+                s3.download_file(bucket_name, key, local_path)
+            return True
+        else:
+            raise Exception("No files found in the specified directory.")
+    except Exception as e:
+        raise e
+
+
+def delete_local_directory(local_directory):
+    # Delete the local
+    if os.path.exists(local_directory):
+        os.rmdir(local_directory)
+        return (True, f"Local directory '{local_directory}' deleted.")
+    else:
+        return (False, f"Local directory '{local_directory}' not found")
 
 
 def parseModelDataToList(text):

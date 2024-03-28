@@ -126,6 +126,7 @@ class Product(DefaultModel, models.Model):
     product_category = models.ForeignKey(ProductCategory, related_name = "product", on_delete=models.CASCADE)
     vector_name_space = models.CharField(max_length = 100)
     created_by = models.ForeignKey(User, related_name = "create_product", on_delete=models.CASCADE, null = True)
+    pinecone_name_space = models.CharField(max_length=100, default="")
 
     objects = CustomManager()
 
@@ -285,4 +286,22 @@ class Audit_Report(models.Model):
         return f"{self.user_name} - {self.action_type} - {self.timestamp}"
 
 
-# class 
+class DocumentUploads(DefaultModel, models.Model):
+    id = models.AutoField(primary_key=True)
+    customer = models.ForeignKey(Customer, related_name="documents_upload", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name="documents_upload", on_delete=models.CASCADE)
+    request = models.ForeignKey(RequestTracking, to_field='request_id', related_name="documents_upload", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="documents_upload", on_delete=models.CASCADE)
+    file_name = models.CharField(max_length=100)
+    s3_url = models.URLField()
+    is_processed = models.BooleanField(default=False)
+
+    objects = CustomManager()
+
+    def __str__(self):
+        return self.file_name
+
+    
+    
+
+    
