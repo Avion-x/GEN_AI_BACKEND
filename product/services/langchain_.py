@@ -67,14 +67,19 @@ registry = {
 
 class Langchain_():
     def __init__(self, prompt_data, request, *args, **kwargs):
-        self.request = request
-        self.top_k=kwargs.get('top_k', 3)
-        self.vector_index = kwargs.get('vector_namespace', "alice_new_61")
-        # self.kb_query = kwargs.get("kb_query", None)
-        # self.prompt = kwargs.get("query", None)
-        self.retriever = VectorIndexRetriever(vector_index, similarity_top_k=self.top_k)
-        self.prompt_data = prompt_data
-        self.cohere_chat_model = ChatCohere(cohere_api_key=os.environ["COHERE_API_KEY"], temaperature=kwargs.get('embedding_temaperature', 0.1))
+        try:
+            self.request = request
+            self.top_k=kwargs.get('top_k', 3)
+            self.vector_index = kwargs.get('vector_namespace',None)
+            # self.kb_query = kwargs.get("kb_query", None)
+            # self.prompt = kwargs.get("query", None)
+            self.retriever = VectorIndexRetriever(vector_index, similarity_top_k=self.top_k)
+            self.prompt_data = prompt_data
+            self.cohere_chat_model = ChatCohere(cohere_api_key=os.environ["COHERE_API_KEY"], temaperature=kwargs.get('embedding_temaperature', 0.1))
+            if not self.vector_index:
+                raise Exception("No Pinecone namespace is sent to check in knowledge base")
+        except Exception as e:
+            raise e
 
     def execute(self):
         response = {}

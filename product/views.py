@@ -359,7 +359,7 @@ class GenerateTestCases(generics.ListAPIView):
 
             print(prompts_data)
 
-            self.lang_chain = Langchain_(prompt_data=prompts_data, request=request)
+            self.lang_chain = Langchain_(prompt_data=prompts_data, request=request, vector_namespace = self.device.pinecone_name_space)
 
             thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
             thread.start()
@@ -1018,10 +1018,6 @@ class EmbedUploadedDocs(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
-        if self.request.GET.get('run_cron', False):
-            a = CronJob()
-            a.performOperation()
-
         device_id = request.GET.get('device_id', None)
         device = Product.objects.filter(id = device_id).first()
         if not device:
