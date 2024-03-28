@@ -839,43 +839,43 @@ class DashboardKpi(generics.ListAPIView):
                 {
                     "title": "Total Devices",
                     "value": total_devices,
-                    "chart_data_point": total_devices
+                    "chart_data_point": "total_devices"
                 },
                 {
                     "title": "Test Types",
                     "value": test_types,
-                    "chart_data_point": test_types
+                    "chart_data_point": "test_types"
                 },
                 {
                     "title": "Users",
                     "value": users,
-                    "chart_data_point": users
+                    "chart_data_point": "users"
                 },
                 {
                     "title": "Categories",
                     "value": categories,
-                    "chart_data_point": categories
+                    "chart_data_point": "categories"
                 },
                 {
                     "title": "Sub Categories",
                     "value": sub_categories,
-                    "chart_data_point": sub_categories
+                    "chart_data_point": "sub_categories"
                 },
                 {
                     "title": "Devices Expire In 30 Days",
                     "value": devices_expire_in_30_days,
-                    "chart_data_point": devices_expire_in_30_days
+                    "chart_data_point": "devices_expire_in_30_days"
                 },
                 {
                     "title": "Ready To Test",
                     "value": ready_to_test,
-                    "chart_data_point": ready_to_test
+                    "chart_data_point": "ready_to_test"
                 },
-                {
-                    "title": "Test Scheduled Devices",
-                    "value": 11,
-                    "chart_data_point": 11
-                }
+                # {
+                #     "title": "Test Scheduled Devices",
+                #     "value": 11,
+                #     "chart_data_point": 11
+                # }
             ]
         })
 
@@ -929,21 +929,24 @@ class DashboardChart(generics.ListAPIView):
 
     def get(self, request):
         registry = {
-            "total_devices" : Product.objects.all().values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
+            "total_devices": Product.objects.all().values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
+
             "test_types": TestType.objects.all().values("id", "name", "code", "description"),
-            "users": User.objects.aggregate(admins=Sum(Case(
-                When(role_name="ADMIN", then=Value(1)),
-                default=Value(0),
-                output_field=IntegerField()
-            )), users=Sum(Case(
-                When(role_name="USER", then=Value(1)),
-                default=Value(0),
-                output_field=IntegerField()
-            ))),
-            "categories" : ProductCategory.objects.all().values("id", "category", "description"),
-            "sub_categories" : ProductSubCategory.objects.all().values("id", "sub_category", category = F("product_category__category")),
-            "devices_expire_in_30_days" : Product.objects.filter(valid_till__gte=datetime.today(),valid_till__lte=datetime.today() + timedelta(days=30)).values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
-            "ready_to_test" : StructuredTestCases.objects.filter().values('product_id').all().distinct().values('id', "test_id", "test_name", "objective", "product_id", product_name = F("product__product_code"), test_type_name = F('test_type__code'), test_category_name = F("test_category__name")),
+            # "users": User.objects.aggregate(admins=Sum(Case(
+            #     When(role_name="ADMIN", then=Value(1)),
+            #     default=Value(0),
+            #     output_field=IntegerField()
+            # )), users=Sum(Case(
+            #     When(role_name="USER", then=Value(1)),
+            #     default=Value(0),
+            #     output_field=IntegerField()
+            # ))),
+            "users": User.objects.all().order_by('first_name').values("id", "username", "email", "role_name"),
+            "categories": ProductCategory.objects.all().values("id", "category", "description"),
+            "sub_categories": ProductSubCategory.objects.all().values("id", "sub_category", category = F("product_category__category")),
+            "devices_expire_in_30_days": Product.objects.filter(valid_till__gte=datetime.today(), valid_till__lte=datetime.today() + timedelta(days=30)).values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
+            # "ready_to_test": StructuredTestCases.objects.filter().values('product_id').all().distinct().values('id', "test_id", "test_name", "objective", "product_id", product_name = F("product__product_code"), test_type_name = F('test_type__code'), test_category_name = F("test_category__name")),
+            "ready_to_test": StructuredTestCases.objects.filter().values('product_id').all().distinct().values("product_id", product_name = F("product__product_code"), sub_category = F("product__product_sub_category__sub_category"), category = F("product__product_category__category")),
         }
         choice = request.GET.get("chart_data_point", None)
         if not (choice or choice in registry.keys()):
