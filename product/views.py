@@ -46,6 +46,7 @@ from product.services.open_ai import CustomOpenAI
 from product.services.langchain_ import Langchain_
 import pdfplumber, boto3
 from io import BytesIO
+from product.services.generic_services import extract_pdf
 from event_manager.models import CronExecution
 from event_manager.service.cronjob import CronJob
 
@@ -69,6 +70,7 @@ session = boto3.Session(
     region_name=AWS_DEFAULT_REGION  # Override default region
 )
 s3 = session.client('s3')
+
 
 # Create your views here.
 class TestTypeView(generics.ListAPIView):
@@ -972,13 +974,13 @@ class UploadDeviceDocsView(generics.ListAPIView):
         files_uploaded = []
         files_not_uplaoded = []
         product_id = request.GET.get("device_id", "5")
-        product = Product.objects.filter(id = product_id).first()
+        product = Product.objects.filter(id=product_id).first()
         if not product:
             return Response(
                 {
-                    "status" : 400,
-                    "error_message" : f"No device found with device_id {product_id}. Please pass valid device_id.",
-                    "data" : {}
+                    "status": 400,
+                    "error_message": f"No device found with device_id {product_id}. Please pass valid device_id.",
+                    "data": {}
                 }
             )
         product_name = product.product_code
@@ -993,25 +995,27 @@ class UploadDeviceDocsView(generics.ListAPIView):
                 files_uploaded.append(filename)
                 s3_url = f"https://{bucket_name}.s3.{AWS_DEFAULT_REGION}.amazonaws.com/{key}"
                 DocumentUploads.objects.create(
-                    customer = request.user.customer,
-                    created_by = request.user,
-                    request_id = request.request_id,
-                    product = product,
-                    file_name = filename,
-                    s3_url= s3_url
+                    customer=request.user.customer,
+                    created_by=request.user,
+                    request_id=request.request_id,
+                    product=product,
+                    file_name=filename,
+                    s3_url=s3_url
                 )
             except Exception as e:
                 print(e)
                 files_not_uplaoded.append(f.name)
-        
+
         return Response({
-            "status" : 400 if len(files_not_uplaoded) else 200,
-            "error_message" : f"Some files {files_not_uplaoded} are not uploaded " if len(files_not_uplaoded) else "All files are uploaded to s3 Succesfully",
-            "data" : {
-                "files_uploaded" : files_uploaded,
-                "files_not_uploaded" : files_not_uplaoded
+            "status": 400 if len(files_not_uplaoded) else 200,
+            "error_message": f"Some files {files_not_uplaoded} are not uploaded " if len(
+                files_not_uplaoded) else "All files are uploaded to s3 Succesfully",
+            "data": {
+                "files_uploaded": files_uploaded,
+                "files_not_uploaded": files_not_uplaoded
             }
         })
+
 
 class EmbedUploadedDocs(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
@@ -1023,30 +1027,30 @@ class EmbedUploadedDocs(generics.ListAPIView):
             a.performOperation()
 
         device_id = request.GET.get('device_id', None)
-        device = Product.objects.filter(id = device_id).first()
+        device = Product.objects.filter(id=device_id).first()
         if not device:
             return Response(
                 {
-                    "status" : 400,
-                    "error_message" : "Please pass valid device_id in queryparams",
-                    "data" : {}
+                    "status": 400,
+                    "error_message": "Please pass valid device_id in queryparams",
+                    "data": {}
                 }
             )
         CronExecution.objects.create(
-            name = "CREATE_VECTOR_EMBEDDINGS",
-            customer = request.user.customer,
-            created_by = request.user,
-            params = {
-                "device_id" : device_id
+            name="CREATE_VECTOR_EMBEDDINGS",
+            customer=request.user.customer,
+            created_by=request.user,
+            params={
+                "device_id": device_id
             },
-            request_id = request.request_id
+            request_id=request.request_id
         )
         return Response(
             {
-                "status" : 200,
-                "error_message" : "",
-                "data" : {
-                    "message" : "Creation of Embeddings will take atleast 20 mins."
+                "status": 200,
+                "error_message": "",
+                "data": {
+                    "message": "Creation of Embeddings will take atleast 20 mins."
                 }
             }
         )
@@ -1056,63 +1060,11 @@ class ExtractTextFromPDFView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
-    # Function to extract table as matrix
-    def extract_table_as_matrix(self, page):
-        table = page.extract_table()
-        if table is None:
-            return None
-
-        # Convert table to matrix
-        matrix = []
-        for row in table:
-            matrix_row = []
-            for cell in row:
-                if cell:
-                    matrix_row.append(cell)
-            if matrix_row:
-                matrix.append(matrix_row)
-
-        return matrix
-
     def post(self, request, *args, **kwargs):
-        bucket_name = 'testmx480'
-
-        # Establish connection with S3
-        s3 = boto3.client('s3', aws_access_key_id='AKIA3MUTZS7BNCEROH24',
-                          aws_secret_access_key='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', region_name='us-west-2')
-        pdf_file_name = request.GET.get('file_name')
-
-        # Download PDF from S3
-        s3_response_object = s3.get_object(Bucket=bucket_name, Key=pdf_file_name)
-        pdf_content = s3_response_object['Body'].read()
-
-        # Process PDF content and write to S3
-        with pdfplumber.open(BytesIO(pdf_content)) as pdf:
-            processed_text = ""
-            for page in pdf.pages:
-                string = ""
-                # Extract text from the page
-                text = page.extract_text()
-                processed_text += text + "\n"
-                matrix = self.extract_table_as_matrix(page)
-                if matrix:
-                    for row in matrix[1:-1]:
-                        # Iterate over each column other than the first one
-                        for i in range(1, len(row)):
-                            string += f"{matrix[0][0]}, {row[0]}, {matrix[0][i]}, {row[i]},"
-                    if string:
-                        processed_text += string[:-1] + "\n"
-
-        # Convert processed text to BytesIO object
-        processed_text_bytes = BytesIO(processed_text.encode('utf-8'))
-        file_name = 'transcript-' + str(datetime.today()) + '.txt'
-
-        try:
-            # Upload the processed file directly to S3
-            s3.put_object(Bucket=bucket_name, Key=file_name, Body=processed_text_bytes)
-            return JsonResponse({"message": "File extracted and uploaded to s3 successfully", "status": 200})
-        except Exception as e:
-            return JsonResponse({"message": "File extraction failed", "status": 400})
+        bucket_name = request.GET.get('bucket_name')
+        folder_path = request.GET.get('folder_path')
+        result = extract_pdf(bucket_name=bucket_name, folder_path=folder_path)
+        return JsonResponse(result)
 
 
 class CategoryDetailsView(generics.ListAPIView):

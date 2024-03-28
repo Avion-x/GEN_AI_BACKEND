@@ -4,7 +4,8 @@ from product.serializers import ProductSubCategorySerializer, CustomerSerializer
 import datetime
 import os, re, json
 from user.settings import BASE_DIR
-import boto3
+import boto3, pdfplumber
+from io import BytesIO
 
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -249,7 +250,61 @@ def trigger_product_prompt_data(customer_id, product_sub_category_id, product_co
         product_prompt_obj.save()
 
 
+# Function to extract table as matrix
+def extract_table_as_matrix(page):
+    table = page.extract_table()
+    if table is None:
+        return None
+
+    # Convert table to matrix
+    matrix = []
+    for row in table:
+        matrix_row = []
+        for cell in row:
+            if cell:
+                matrix_row.append(cell)
+        if matrix_row:
+            matrix.append(matrix_row)
+
+    return matrix
 
 
+def extract_pdf(bucket_name, folder_path):
+    response = s3.list_objects_v2(Bucket=bucket_name, Prefix=folder_path)
+    for obj in response.get('Contents', []):
+        pdf_file = obj['Key']
+        if pdf_file.endswith('.pdf'):
+            # Download PDF from S3
+            s3_response_object = s3.get_object(Bucket=bucket_name, Key=pdf_file)
+            pdf_content = s3_response_object['Body'].read()
 
-    
+            # Process PDF content and write to S3
+            with pdfplumber.open(BytesIO(pdf_content)) as pdf:
+                processed_text = ""
+                for page in pdf.pages:
+                    string = ""
+                    # Extract text from the page
+                    text = page.extract_text()
+                    processed_text += text + "\n"
+                    matrix = extract_table_as_matrix(page)
+                    if matrix:
+                        for row in matrix[1:-1]:
+                            # Iterate over each column other than the first one
+                            for i in range(1, len(row)):
+                                string += f"{matrix[0][0]}, {row[0]}, {matrix[0][i]}, {row[i]},"
+                        if string:
+                            processed_text += string[:-1] + "\n"
+                    processed_text += '\n'
+
+            # Convert processed text to BytesIO object
+            processed_text_bytes = BytesIO(processed_text.encode('utf-8'))
+            # Create text file name
+            file_name = pdf_file[:-4] + str(datetime.datetime.today()) + '.txt'
+
+            # Upload the processed file directly to S3 in the same folder
+            try:
+                s3.put_object(Bucket=bucket_name, Key=file_name, Body=processed_text_bytes)
+            except Exception as e:
+                return {"message": f"Failed to upload text file for {file_name}", "status": 400}
+
+    return {"message": "Text extraction and upload completed successfully", "status": 200}
