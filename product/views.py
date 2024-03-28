@@ -1018,6 +1018,10 @@ class EmbedUploadedDocs(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
+        if self.request.GET.get('run_cron', False):
+            a = CronJob()
+            a.performOperation()
+            
         device_id = request.GET.get('device_id', None)
         device = Product.objects.filter(id = device_id).first()
         if not device:

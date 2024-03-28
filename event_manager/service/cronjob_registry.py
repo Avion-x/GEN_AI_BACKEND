@@ -7,7 +7,7 @@ from datetime import datetime
 from product.models import Product
 
 from product.services.lammaindex import VectorStoreService
-from product.services.generic_services import delete_local_directory, download_files_from_s3
+from product.services.generic_services import delete_local_directory, download_files_from_s3, extract_pdf
 
 PENDING = 'PENDING'
 EXECUTING = 'EXECUTING'
@@ -36,6 +36,9 @@ class CronJobRegistry():
             
             bucket_name = 'genaidev'
             key_prefix = f'devices/{product.product_code}/'
+
+            extract_pdf(bucket_name=bucket_name, folder_path=key_prefix)
+
             local_directory = os.path.join(os.getcwd(), 'data', product.product_code)
             download_files_from_s3(bucket_name, key_prefix, local_directory)
 
