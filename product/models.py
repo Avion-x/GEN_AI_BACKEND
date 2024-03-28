@@ -124,7 +124,7 @@ class Product(DefaultModel, models.Model):
     prompts = models.ManyToManyField(Prompt, blank=True, related_name = 'product', through='ProductPrompt')
     product_name = models.CharField(max_length=255)
     product_category = models.ForeignKey(ProductCategory, related_name = "product", on_delete=models.CASCADE)
-    vector_name_space = models.CharField(max_length = 100)
+    vector_name_space = models.CharField(max_length = 100, blank=True, null=True)
     created_by = models.ForeignKey(User, related_name = "create_product", on_delete=models.CASCADE, null = True)
     pinecone_name_space = models.CharField(max_length=100, default="")
 
@@ -301,7 +301,7 @@ class DocumentUploads(DefaultModel, models.Model):
     def __str__(self):
         return self.file_name
 
-    
-    
 
-    
+
+
+
