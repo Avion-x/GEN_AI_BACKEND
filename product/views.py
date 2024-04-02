@@ -762,8 +762,12 @@ class TestCategoriesView(generics.ListAPIView):
     def post(self, request, *args, **kwargs):
         request.data['customer'] = request.user.customer.id
         request.data['last_updated_by'] = request.user.id
-        request.data['is_approved'] = False
-        request.data['approved_by'] = None
+        if request.user.role_name == "ADMIN":
+            request.data['is_approved'] = True
+            request.data['approved_by'] = request.user.id
+        else:
+            request.data['is_approved'] = False
+            request.data['approved_by'] = None
         data = request.data
         if data:
             test_type_name = TestType.objects.get(id=data['test_type']).code
