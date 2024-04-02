@@ -301,7 +301,7 @@ def extract_pdf(bucket_name, folder_path):
             # Convert processed text to BytesIO object
             processed_text_bytes = BytesIO(processed_text.encode('utf-8'))
             # Create text file name
-            file_name = pdf_file[:-4] + str(datetime.datetime.today()) + '.txt'
+            file_name = folder_path + "processed/" + pdf_file.split('/')[-1][:-4] + "_" + str(datetime.datetime.today()) + '.txt'
 
             # Upload the processed file directly to S3 in the same folder
             try:
