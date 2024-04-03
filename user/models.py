@@ -26,6 +26,8 @@ class Customer(DefaultModel, models.Model):
     created_by = models.CharField(max_length = 255, blank=True, null=True)
     email = models.EmailField(default="")
 
+    objects = CustomManager()
+
     def __str__(self):
         return f"{self.code} - {self.name}"
     
