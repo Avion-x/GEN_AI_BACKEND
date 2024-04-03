@@ -20,7 +20,7 @@ class Customer(DefaultModel, models.Model):
     code = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
     address = models.TextField()
-    comments = models.TextField()
+    comments = models.TextField(blank=True, null=True)
     last_updated_by = models.CharField(max_length=255)
     logo = models.URLField(blank=True, null=True)
 
