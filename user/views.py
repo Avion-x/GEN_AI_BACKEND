@@ -127,7 +127,7 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         return Response({"message":"User deleted Succesfully", "status":200})
 
 
-class CustomerOrEnterpriseView(generics.ListCreateAPIView):
+class CustomerOrEnterpriseView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend, rest_filters.OrderingFilter)
