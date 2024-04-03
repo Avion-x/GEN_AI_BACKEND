@@ -146,6 +146,7 @@ class CustomerOrEnterpriseView(generics.ListCreateAPIView):
 
     def post(self, request, *args, **kwargs):
         request.data['last_updated_by'] = request.user.username
+        request.data['created_by'] = request.user.username
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         customer_instance = serializer.save()
