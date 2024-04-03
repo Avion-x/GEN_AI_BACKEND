@@ -3,7 +3,7 @@ from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from django.db import IntegrityError
 from django.contrib.auth.models import Group, Permission
-from user.filters import CustomUserFilter
+from user.filters import CustomUserFilter, CustomerFilter
 from .models import User, Customer, CustomerConfig, AccessType, Roles
 from product.models import TestType
 from .serializers import UserRetriveSerializer, UserSerializer, CustomerSerializer, CustomerConfigSerializer, TestTypeSerializer, AccessTypeSerializer
@@ -131,6 +131,7 @@ class CustomerOrEnterpriseView(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend, rest_filters.OrderingFilter)
+    filterset_class = CustomerFilter
     serializer_class = CustomerSerializer
 
     ordering_fields = ['id', 'created_at', 'last_updated_at'] #for ordering or sorting replace with '__all__' for all fields
