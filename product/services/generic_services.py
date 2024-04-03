@@ -289,7 +289,7 @@ def extract_pdf(bucket_name, folder_path):
                     text = page.extract_text()
                     processed_text += text + "\n"
                     matrix = extract_table_as_matrix(page)
-                    if matrix:
+                    if matrix and len(matrix[0]) == len(matrix[1]):
                         for row in matrix[1:-1]:
                             # Iterate over each column other than the first one
                             for i in range(1, len(row)):
