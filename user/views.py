@@ -181,7 +181,7 @@ class CustomerOrEnterpriseView(generics.ListCreateAPIView):
         instance.status = False
         instance.last_updated_by = self.request.user.username
         instance.save()
-        return JsonResponse({"message":"User deleted Succesfully", "status":200})
+        return JsonResponse({"message":"Customer deleted Succesfully", "status":200})
 
 
 class CheckUsernameExistsView(generics.ListAPIView):
