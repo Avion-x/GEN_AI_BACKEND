@@ -819,7 +819,7 @@ class TestCasesView(generics.ListAPIView):
         try:
             queryset = self.filter_queryset(self.get_queryset())
             serializer = TestCasesSerializer(queryset, many=True)
-            logger.log(level='info',message=f'TestCase generated sucessfully.')
+            logger.log(level='INFO',message=f'TestCase generated sucessfully.')
             return JsonResponse({'data': serializer.data}, safe=False)
         except Exception as e:
             logger.log(level='ERROR',message=f'failed to generate test cases.{e}')
@@ -834,7 +834,7 @@ class GetFileCommitsView(generics.ListAPIView):
             file_path = request.query_params.get('file_path')
             repo = request.query_params.get('repo')
             response_data = get_commits_for_file(file_path=file_path, repo=repo)
-            logger.log(level='info', message=f'TestCase generated sucessfully.')
+            logger.log(level='INFO', message=f'TestCase generated sucessfully.')
             return JsonResponse(response_data, safe=False)
         except Exception as e:
             logger.log(level='ERROR', message=f'failed to generate test cases.{e}')
@@ -850,7 +850,7 @@ class GetFileChangesView(generics.ListAPIView):
             file_name = request.query_params.get('file_name')
             sha = request.query_params.get('sha')
             response_data = get_changes_in_file(file_name=file_name, commit_sha=sha)
-            logger.log(level='info', message=f'TestCase generated sucessfully.')
+            logger.log(level='INFO', message=f'TestCase generated sucessfully.')
             return JsonResponse({"data": response_data}, safe=False)
         except Exception as e:
             logger.log(level='ERROR', message=f'failed to generate test cases.{e}')
@@ -892,7 +892,7 @@ class TestCategoriesView(generics.ListAPIView):
         try:
             queryset = self.filter_queryset(self.get_queryset())
             serializer = self.get_serializer(queryset, many=True)
-            logger.log(level='info', message=f'TestCategories generated sucessfully.')
+            logger.log(level='INFO', message=f'TestCategories generated sucessfully.')
             return JsonResponse({'data': serializer.data}, safe=False)
         except Exception as e:
             logger.log(level="ERROR", message=f"Error while retriving TestCategories,{e}")
@@ -917,7 +917,7 @@ class TestCategoriesView(generics.ListAPIView):
             serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            logger.log(level='info', message=f'TestCategories stored sucessfully.')
+            logger.log(level='INFO', message=f'TestCategories stored sucessfully.')
             return JsonResponse({"message": "Test Category created successfully", "data": serializer.data, "status": 200})
         except Exception as e:
             logger.log(level="ERROR", message=f"Error while creating Test Caregorie,{e}")
@@ -939,7 +939,7 @@ class TestCategoriesView(generics.ListAPIView):
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            logger.log(level='info', message=f'TestCategories updated sucessfully.')
+            logger.log(level='INFO', message=f'TestCategories updated sucessfully.')
             return JsonResponse({"message": "Test Category updated successfully", "data": serializer.data, "status": 200})
         except Exception as e:
             logger.log(level="ERROR", message=f"Error while Updating TestCategory,{e}")
@@ -958,7 +958,7 @@ class TestCategoriesView(generics.ListAPIView):
             instance.status = 0
             instance.last_updated_by = self.request.user
             instance.save()
-            logger.log(level='info', message=f'TestCategories Deleted sucessfully.')
+            logger.log(level='INFO', message=f'TestCategories Deleted sucessfully.')
             return JsonResponse({"message": "Test Category deleted successfully", "status": 200})
         except Exception as e:
             logger.log(level="ERROR", message=f"Error while deleting Test Category,{e}")
@@ -986,7 +986,7 @@ class TestScriptExecResultsView(generics.ListAPIView):
         try:
             queryset = self.filter_queryset(self.get_queryset())
             serializer = TestScriptExecResultsSerializer(queryset, many=True)
-            logger.log(level='info', message=f'TestScriptExecResults fetched sucessfully.')
+            logger.log(level='INFO', message=f'TestScriptExecResults fetched sucessfully.')
             return JsonResponse({'data': serializer.data}, safe=False)
         except Exception as e:
             logger.log(level="ERROR", message=f" Error while retriving TestScriptExecResults,{e}")
@@ -1008,7 +1008,7 @@ class DashboardKpi(generics.ListAPIView):
                                                             valid_till__lte=datetime.today() + timedelta(
                                                                 days=30)).count()
             ready_to_test = StructuredTestCases.objects.filter().values('product_id').all().distinct().count()
-            logger.log(level='info', message=f'Dashboard fetched sucessfully.')
+            logger.log(level='INFO', message=f'Dashboard fetched sucessfully.')
             return Response({
                 "status": 200,
                 "data": [
@@ -1114,7 +1114,7 @@ class ApproveTestCategoryView(generics.ListAPIView):
             instance.is_approved = True
             instance.approved_by = self.request.user
             instance.save()
-            logger.log(level='info', message=f'ApproveTestCategory updated sucessfully.')
+            logger.log(level='INFO', message=f'ApproveTestCategory updated sucessfully.')
             return JsonResponse({"message": "Test Category Approved successfully", "status": 200})
         except Exception as e:
             logger.log(level="ERROR", message=f"ApproveTestCategory update failed,{e}")
@@ -1160,7 +1160,7 @@ class DashboardChart(generics.ListAPIView):
                 "message": "",
                 "data": list(registry.get(choice, [])) if choice != 'users' else registry.get(choice, {})
             }
-            logger.log(level='info', message=f'DashboardChart data fetched sucessfully.')
+            logger.log(level='INFO', message=f'DashboardChart data fetched sucessfully.')
             return Response(response)
         except Exception as e:
             logger.log(level="ERROR", message=f"DashboardChart data fetching failed,{e}")
@@ -1253,7 +1253,7 @@ class EmbedUploadedDocs(generics.ListAPIView):
                 },
                 request_id=request.request_id
             )
-            logger.log(level='info', message=f'file data fetched sucessfully.')
+            logger.log(level='INFO', message=f'file data fetched sucessfully.')
             return Response(
                 {
                     "status": 200,
@@ -1277,7 +1277,7 @@ class ExtractTextFromPDFView(generics.ListAPIView):
             bucket_name = request.GET.get('bucket_name')
             folder_path = request.GET.get('folder_path')
             result = extract_pdf(bucket_name=bucket_name, folder_path=folder_path)
-            logger.log(level='info', message=f'Extract Text From PDF  inserted sucessfully.')
+            logger.log(level='INFO', message=f'Extract Text From PDF  inserted sucessfully.')
             return JsonResponse(result)
         except Exception as e:
             logger.log(level="ERROR", message=f"Extract Text From PDF  inserted failed,{e}")
@@ -1301,7 +1301,7 @@ class CategoryDetailsView(generics.ListAPIView):
                     'device_count': product_count
                 }
                 )
-            logger.log(level='info', message=f'fetching sucessfully CategoryDetails  .')
+            logger.log(level='INFO', message=f'fetching sucessfully CategoryDetails  .')
             return JsonResponse({"data": category_data, "status": 200})
         except Exception as e:
             logger.log(level="ERROR", message=f" fetching CategoryDetails failed,{e}")
