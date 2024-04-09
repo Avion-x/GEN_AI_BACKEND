@@ -304,8 +304,13 @@ class ProductView(generics.ListAPIView):
 
 
 class GenerateTestCases(generics.ListAPIView):
+    """
+    This class is responsible for generating test cases and scripts based on the provided input data.
+    """
+
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
+
     validation_checks = {
         "device_id": {
             "is_mandatory": True,
@@ -323,8 +328,8 @@ class GenerateTestCases(generics.ListAPIView):
             "type": str,
             "convert_type": False,
         },
-
     }
+
     AiModels = {
         "open_ai": CustomOpenAI,
         "anthropic.claude-v2:1": AwsBedrock,
@@ -333,12 +338,18 @@ class GenerateTestCases(generics.ListAPIView):
     }
 
     def set_device(self, device_id):
+        """
+        Sets the device based on the provided device_id.
+        """
         try:
             self.device = Product.objects.get(id=device_id)
         except Exception as e:
             raise e
 
     def get_ai_obj(self, data):
+        """
+        Returns the AI model object based on the provided ai_model.
+        """
         try:
             model = data.get('ai_model', "open_ai")
             ai_model = self.AiModels.get(model, None)
@@ -351,6 +362,9 @@ class GenerateTestCases(generics.ListAPIView):
             raise e
 
     def post(self, request):
+        """
+        Handles the POST request to generate test cases and scripts.
+        """
         try:
             data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
             self.ai_obj = self.get_ai_obj(data)
@@ -359,16 +373,14 @@ class GenerateTestCases(generics.ListAPIView):
 
             print(prompts_data)
 
-            self.lang_chain = Langchain_(prompt_data=prompts_data, request=request, vector_namespace = self.device.pinecone_name_space)
+            self.lang_chain = Langchain_(prompt_data=prompts_data, request=request, vector_namespace=self.device.pinecone_name_space)
 
             thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
             thread.start()
 
-            # self.process_request(request, prompts_data)
-
             response = {
                 "request_id": request.request_id,
-                "Message": "Processing request will take some time Please come here in 5 mins",
+                "Message": "Processing request will take some time. Please come back in 5 minutes.",
             }
             return Response({
                 "error": "",
@@ -377,9 +389,6 @@ class GenerateTestCases(generics.ListAPIView):
             })
 
         except Exception as e:
-            # request.request_tracking.status_code = 400
-            # request.request_tracking.error_message = str(e)
-            # request.request_tracking.save()
             return Response({
                 "error": f"{e}",
                 "status": 400,
@@ -387,6 +396,9 @@ class GenerateTestCases(generics.ListAPIView):
             })
 
     def process_request(self, request, prompts_data):
+        """
+        Processes the request by executing the tests for each test type and test category.
+        """
         try:
             response = {}
             for test_type, tests in prompts_data.items():
@@ -398,6 +410,9 @@ class GenerateTestCases(generics.ListAPIView):
             raise e
 
     def execute(self, request, test_type, test_category, input_data):
+        """
+        Executes the tests for a specific test type and test category.
+        """
         try:
             response = {}
             insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
@@ -409,10 +424,9 @@ class GenerateTestCases(generics.ListAPIView):
 
                 file_path = self.get_file_path(request, test_type, test_category, test_code)
                 response[test_code] = self.generate_tests(prompts=prompts, context=kb_data)
-                self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
+                self.store_parsed_tests(request=request, data=response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
                 insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
                 insert_test_case(request, data=insert_data.copy())
-            # response['test_category'] = test_category
             return response
         except Exception as e:
             raise e
@@ -434,6 +448,9 @@ class GenerateTestCases(generics.ListAPIView):
     #         raise e
 
     def store_parsed_tests(self, request, data, test_type, test_category, test_category_id):
+        """
+        Stores the parsed tests in the database.
+        """
         for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
             name = test_case.get('testname', test_case.get('name', "")).replace(" ", "_").lower()
             test_id = f"{request.user.customer.name}_{test_type}_{test_category}_{self.device.product_code}_{name}".replace(
@@ -479,6 +496,9 @@ class GenerateTestCases(generics.ListAPIView):
     #         pass
 
     def get_file_path(self, request, test_type, test_category, test_code):
+        """
+        Returns the file path based on the provided parameters.
+        """
         try:
             device_code = self.device.product_code
             path = CustomerConfig.objects.filter(config_type='repo_folder_path',
@@ -491,6 +511,9 @@ class GenerateTestCases(generics.ListAPIView):
             return f"data/{request.user.customer.code}/{test_type}/{test_code}"
 
     def generate_tests(self, prompts, context, **kwargs):
+        """
+        Generates the tests based on the provided prompts and context.
+        """
         try:
             response_text = ""
             for prompt in prompts:
@@ -503,6 +526,9 @@ class GenerateTestCases(generics.ListAPIView):
             raise e
 
     def get_test_data(self, text_data):
+        """
+        Extracts the test data from the provided text data.
+        """
         result = {"raw_text": text_data, "test_cases": [], "test_scripts": []}
         data = parseModelDataToList(text_data)
         for _test in data:
