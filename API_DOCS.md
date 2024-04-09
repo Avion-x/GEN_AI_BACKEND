@@ -1,4 +1,10 @@
 
+# GEN AI API DOCS
+### Here are the api documentation for all the apis in gen ai backend project.
+### All the classes, methods and function have its own doc string, input params and return type included at the same place.
+
+
+
 # Generate Test Case API Documentation (Core Engine)
 ## Overview
 The "Generate Test Case" API automates the generation of test cases and scripts for specific devices using AI models. It is designed to enhance efficiency and accuracy in test case creation by leveraging advanced AI technologies and a robust backend processing system.
