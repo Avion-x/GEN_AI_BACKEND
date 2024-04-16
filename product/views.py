@@ -46,6 +46,7 @@ from product.services.open_ai import CustomOpenAI
 from product.services.langchain_ import Langchain_
 import pdfplumber, boto3
 from io import BytesIO
+from product.services.generic_services import extract_pdf
 from event_manager.models import CronExecution
 from event_manager.service.cronjob import CronJob
 
@@ -57,11 +58,11 @@ from boto3.s3.transfer import S3Transfer
 import boto3
 
 from dotenv import load_dotenv, find_dotenv
+
 load_dotenv(find_dotenv())
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION')
-
 
 session = boto3.Session(
     aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -69,6 +70,7 @@ session = boto3.Session(
     region_name=AWS_DEFAULT_REGION  # Override default region
 )
 s3 = session.client('s3')
+
 
 # Create your views here.
 class TestTypeView(generics.ListAPIView):
@@ -81,50 +83,72 @@ class TestTypeView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self, filters={}):
-        return TestType.objects.filter(**filters)
+        try:
+            return TestType.objects.filter(**filters)
+        except Exception as e:
+            logger.log(level='ERROR', message=f"Error retriving Test Type queryset: {e}")
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = TestTypeSerializer(queryset, many=True)
-        return JsonResponse({'data': serializer.data}, safe=False)
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = TestTypeSerializer(queryset, many=True)
+            logger.log(level='INFO', message="Test Type data fetched successfully.")
+            return JsonResponse({'data': serializer.data}, safe=False)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while retriving data: {e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def post(self, request, *args, **kwargs):
-        request.data['last_updated_by'] = self.request.user.username
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse({"message": "Test Type created successfully", "data": serializer.data, "status": 200})
+        try:
+            request.data['last_updated_by'] = self.request.user.username
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            logger.log(level='INFO',message=f"Test Type created sucessfully.")
+            return JsonResponse({"message": "Test Type created successfully", "data": serializer.data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR",message=f"Error while creating Test Type,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def put(self, request, *args, **kwargs):
-        request.data['last_updated_by'] = self.request.user.username
-        partial = kwargs.pop('partial', False)
-        id = request.data.get('id')
-        if not id:
-            return Response({"message": "Please pass id to update Test Type", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse({"message": "Test Type updated successfully", "data": serializer.data, "status": 200})
+        try:
+            request.data['last_updated_by'] = self.request.user.username
+            partial = kwargs.pop('partial', False)
+            id = request.data.get('id')
+            if not id:
+                return Response({"message": "Please pass id to update Test Type", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                return JsonResponse({"message": "No Record found", "status": 400})
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            logger.log(level='INFO',message=f"Test Type updated sucessfully.")
+            return JsonResponse({"message": "Test Type updated successfully", "data": serializer.data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while updating Test Type,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def delete(self, request, *args, **kwargs):
-        id = request.GET.get('id')
-        if not id:
-            return Response({"message": "Please pass id to delete Test Type", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        test_categories_count = TestType.objects.get(id=id).test_category.count()
-        if test_categories_count != 0:
-            return JsonResponse(
-                {"message": "Cannot delete this Test Type as it contains Test Categories", "status": 400})
-        instance.status = 0
-        instance.last_updated_by = self.request.user.username
-        instance.save()
-        return JsonResponse({"message": "Test Type deleted successfully", "status": 200})
-
+        try:
+            id = request.GET.get('id')
+            if not id:
+                return Response({"message": "Please pass id to delete Test Type", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                return JsonResponse({"message": "No Record found", "status": 400})
+            test_categories_count = TestType.objects.get(id=id).test_category.count()
+            if test_categories_count != 0:
+                return JsonResponse(
+                    {"message": "Cannot delete this Test Type as it contains Test Categories", "status": 400})
+            instance.status = 0
+            instance.last_updated_by = self.request.user.username
+            instance.save()
+            logger.log(level='INFO', message="Test Type deleted successfully.")
+            return JsonResponse({"message": "Test Type deleted successfully", "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while deleting Test Type,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
 class ProductCategoryView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
@@ -136,52 +160,75 @@ class ProductCategoryView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self, filters={}):
-        return ProductCategory.objects.filter(**filters)
+        try:
+            return ProductCategory.objects.filter(**filters)
+        except Exception as e:
+            logger.log(level='ERROR', message=f"Error retriving Category queryset: {e}")
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = ProductCategorySerializer(queryset, many=True)
-        # return JsonResponse({'data':serializer.data}, safe=False)
-        return Response(serializer.data)
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = ProductCategorySerializer(queryset, many=True)
+            # return JsonResponse({'data':serializer.data}, safe=False)
+            logger.log(level='INFO', message="Category data fetched successfully.")
+            return Response(serializer.data)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while retriving data: {e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def post(self, request, *args, **kwargs):
-        request.data['customer'] = self.request.user.customer_id
-        request.data['last_updated_by'] = self.request.user.id
-        request.data['created_by'] = self.request.user.id
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse({"message": "Category created successfully", "data": serializer.data, "status": 200})
+        try:
+            request.data['customer'] = self.request.user.customer_id
+            request.data['last_updated_by'] = self.request.user.id
+            request.data['created_by'] = self.request.user.id
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            logger.log(level='INFO',message=f"Category created sucessfully.")
+            return JsonResponse({"message": "Category created successfully", "data": serializer.data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR",message=f"Error while creating Category,{e}")
+            return JsonResponse({"data": "Something went wrong"}) 
 
     def put(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        id = request.data.get('id')
-        if not id:
-            return Response({"message": "Please pass id to update Category", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        request.data['customer'] = self.request.user.customer_id
-        request.data['last_updated_by'] = self.request.user.id
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse({"message": "Category updated successfully", "data": serializer.data, "status": 200})
+        try:
+            partial = kwargs.pop('partial', False)
+            id = request.data.get('id')
+            if not id:
+                return Response({"message": "Please pass id to update Category", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                return JsonResponse({"message": "No Record found", "status": 400})
+            request.data['customer'] = self.request.user.customer_id
+            request.data['last_updated_by'] = self.request.user.id
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            logger.log(level='INFO',message=f"Category updated sucessfully.")
+            return JsonResponse({"message": "Category updated successfully", "data": serializer.data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while updating Category,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def delete(self, request, *args, **kwargs):
-        id = request.GET.get('id')
-        if not id:
-            return Response({"message": "Please pass id to delete Category", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        sub_categories_count = ProductCategory.objects.get(id=id).product_sub_category.count()
-        if sub_categories_count != 0:
-            return JsonResponse({"message": "Cannot delete this Category as it contains Sub Categories", "status": 400})
-        instance.status = 0
-        instance.last_updated_by = self.request.user
-        instance.save()
-        return JsonResponse({"message": "Category deleted successfully", "status": 200})
+        try:
+            id = request.GET.get('id')
+            if not id:
+                return Response({"message": "Please pass id to delete Category", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                return JsonResponse({"message": "No Record found", "status": 400})
+            sub_categories_count = ProductCategory.objects.get(id=id).product_sub_category.count()
+            if sub_categories_count != 0:
+                return JsonResponse({"message": "Cannot delete this Category as it contains Sub Categories", "status": 400})
+            instance.status = 0
+            instance.last_updated_by = self.request.user
+            instance.save()
+            logger.log(level='INFO', message="Category deleted successfully.")
+            return JsonResponse({"message": "Category deleted successfully", "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while deleting Category,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
 
 class ProductSubCategoryView(generics.ListAPIView):
@@ -194,52 +241,74 @@ class ProductSubCategoryView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self, filters={}):
-        return ProductSubCategory.objects.filter(**filters)
+        try:
+            return ProductSubCategory.objects.filter(**filters)
+        except Exception as e:
+            logger.log(level='ERROR', message=f"Error retriving Sub Category queryset: {e}")      
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = ProductSubCategorySerializer(queryset, many=True)
-        logger.log(level="INFO", message="Product Sub Categories api")
-        return JsonResponse({'data': serializer.data}, safe=False)
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = ProductSubCategorySerializer(queryset, many=True)
+            logger.log(level="INFO", message="Sub Category data fetched successfully.")
+            return JsonResponse({'data': serializer.data}, safe=False)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while retriving data: {e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def post(self, request, *args, **kwargs):
-        request.data['customer'] = self.request.user.customer_id
-        request.data['last_updated_by'] = self.request.user.id
-        request.data['created_by'] = self.request.user.id
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse({"message": "Sub Category created successfully", "data": serializer.data, "status": 200})
+        try:
+            request.data['customer'] = self.request.user.customer_id
+            request.data['last_updated_by'] = self.request.user.id
+            request.data['created_by'] = self.request.user.id
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            logger.log(level='INFO',message=f"Sub Category created sucessfully.")
+            return JsonResponse({"message": "Sub Category created successfully", "data": serializer.data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR",message=f"Error while creating Sub Category,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def put(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        id = request.data.get('id')
-        if not id:
-            return Response({"message": "Please pass id to update Sub Category", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        request.data['customer'] = self.request.user.customer_id
-        request.data['last_updated_by'] = self.request.user.id
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse({"message": "Sub Category updated successfully", "data": serializer.data, "status": 200})
+        try:
+            partial = kwargs.pop('partial', False)
+            id = request.data.get('id')
+            if not id:
+                return Response({"message": "Please pass id to update Sub Category", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                return JsonResponse({"message": "No Record found", "status": 400})
+            request.data['customer'] = self.request.user.customer_id
+            request.data['last_updated_by'] = self.request.user.id
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            logger.log(level='INFO',message=f"Sub Category updated sucessfully.")
+            return JsonResponse({"message": "Sub Category updated successfully", "data": serializer.data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while updating Sub Category,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def delete(self, request, *args, **kwargs):
-        id = request.GET.get('id')
-        if not id:
-            return Response({"message": "Please pass id to delete Sub Category", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        product_count = ProductSubCategory.objects.get(id=id).product.count()
-        if product_count != 0:
-            return JsonResponse({"message": "Cannot delete this Sub Category as it contains Devices", "status": 400})
-        instance.status = 0
-        instance.last_updated_by = self.request.user
-        instance.save()
-        return JsonResponse({"message": "Sub Category deleted successfully", "status": 200})
+        try:
+            id = request.GET.get('id')
+            if not id:
+                return Response({"message": "Please pass id to delete Sub Category", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                return JsonResponse({"message": "No Record found", "status": 400})
+            product_count = ProductSubCategory.objects.get(id=id).product.count()
+            if product_count != 0:
+                return JsonResponse({"message": "Cannot delete this Sub Category as it contains Devices", "status": 400})
+            instance.status = 0
+            instance.last_updated_by = self.request.user
+            instance.save()
+            logger.log(level='INFO', message="Sub Category deleted successfully.")
+            return JsonResponse({"message": "Sub Category deleted successfully", "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while deleting Sub Category,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
 
 class ProductView(generics.ListAPIView):
@@ -252,55 +321,78 @@ class ProductView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self, filters={}):
-        return Product.objects.filter(**filters)
+        try:
+            return Product.objects.filter(**filters)
+        except Exception as e:
+            logger.log(level='ERROR', message=f"Error retriving Product queryset: {e}")
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = ProductSerializer(queryset, many=True)
-        non_empty = []
-        data = serializer.data
-        if request.GET.get('test_types_available', False):
-            for key in data:
-                if len(key['test_types']) != 0:
-                    non_empty.append(key)
-            data = non_empty
-        return JsonResponse({'data': data}, safe=False)
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = ProductSerializer(queryset, many=True)
+            non_empty = []
+            data = serializer.data
+            if request.GET.get('test_types_available', False):
+                for key in data:
+                    if len(key['test_types']) != 0:
+                        non_empty.append(key)
+                data = non_empty
+            logger.log(level="INFO", message="Product data fetched successfully.")
+            return JsonResponse({'data': data}, safe=False)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while retriving data: {e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def post(self, request, *args, **kwargs):
-        request.data['customer'] = self.request.user.customer_id
-        request.data['last_updated_by'] = self.request.user.id
-        request.data['created_by'] = self.request.user.id
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse({"message": "Product created successfully", "data": serializer.data, "status": 200})
+        try:
+            request.data['customer'] = self.request.user.customer_id
+            request.data['last_updated_by'] = self.request.user.id
+            request.data['created_by'] = self.request.user.id
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            logger.log(level='INFO',message=f"Product created sucessfully.")
+            return JsonResponse({"message": "Product created successfully", "data": serializer.data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR",message=f"Error while creating Product,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def put(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        id = request.data.get('id')
-        if not id:
-            return Response({"message": "Please pass id to update Product", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        request.data['customer'] = self.request.user.customer_id
-        request.data['last_updated_by'] = self.request.user.id
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse({"message": "Product updated successfully", "data": serializer.data, "status": 200})
+        try:
+            partial = kwargs.pop('partial', False)
+            id = request.data.get('id')
+            if not id:
+                return Response({"message": "Please pass id to update Product", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                return JsonResponse({"message": "No Record found", "status": 400})
+            request.data['customer'] = self.request.user.customer_id
+            request.data['last_updated_by'] = self.request.user.id
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            logger.log(level='INFO',message=f"Product updated sucessfully.")
+            return JsonResponse({"message": "Product updated successfully", "data": serializer.data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while updating Product,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
     def delete(self, request, *args, **kwargs):
-        id = request.GET.get('id')
-        if not id:
-            return Response({"message": "Please pass id to delete Product", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        instance.status = 0
-        instance.last_updated_by = self.request.user
-        instance.save()
-        return JsonResponse({"message": "Product deleted successfully", "status": 200})
+        try:
+            id = request.GET.get('id')
+            if not id:
+                return Response({"message": "Please pass id to delete Product", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                return JsonResponse({"message": "No Record found", "status": 400})
+            instance.status = 0
+            instance.last_updated_by = self.request.user
+            instance.save()
+            logger.log(level='INFO', message="Product deleted successfully.")
+            return JsonResponse({"message": "Product deleted successfully", "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while deleting Product,{e}")
+            return JsonResponse({"data": "Something went wrong"})
 
 
 class GenerateTestCases(generics.ListAPIView):
@@ -382,6 +474,7 @@ class GenerateTestCases(generics.ListAPIView):
                 "request_id": request.request_id,
                 "Message": "Processing request will take some time. Please come back in 5 minutes.",
             }
+            logger.log(level='INFO', message="Generated test cases successfully.")
             return Response({
                 "error": "",
                 "status": 200,
@@ -389,6 +482,10 @@ class GenerateTestCases(generics.ListAPIView):
             })
 
         except Exception as e:
+            # request.request_tracking.status_code = 400
+            # request.request_tracking.error_message = str(e)
+            # request.request_tracking.save()
+            logger.log(level="ERROR", message=f"Error while generating test cases ,{e}")
             return Response({
                 "error": f"{e}",
                 "status": 400,
@@ -573,7 +670,13 @@ class TestCasesAndScripts(generics.ListAPIView):
     ordering_fields = ['id', 'created_at', 'updated_at']
 
     def get_queryset(self, filters={}):
-        return StructuredTestCases.objects.filter(**filters)
+        try:
+            data=StructuredTestCases.objects.filter(**filters)
+            logger.log(level='INFO', message=f"retriving TestCasesAndScripts queryset:")
+            return data
+        except Exception as e:
+            logger.log(level='ERROR', message=f"Error retriving TestCasesAndScripts queryset: {e}")
+            return None
 
     def get(self, request, *args, **kwargs):
         try:
@@ -592,75 +695,85 @@ class TestCasesAndScripts(generics.ListAPIView):
             else:
                 filters['test_category_id'] = test_category_id
                 data = self.get_consolidated_data_of_test_category(self.get_queryset(filters))
+                logger.log(level='INFO', message=f'sucessfully executed.')
             return Response({"data": data})
         except Exception as e:
-            raise e
+            logger.log(level='ERROR', message=f'Failed to generate TestCaseAndscript executed.')
+            return JsonResponse({'data': "Something went wrong"})
 
     def get_test_types_with_categories(self, filters):
-        queryset = self.get_queryset(filters).values("test_category_id").annotate(
-            count=Count(F("test_category_id"))).values("test_category_id", "request_id", test_id=F("test_type_id"),
-                                                       test_name=F("test_type__code"),
-                                                       category_name=F("test_category__name")).order_by("test_type")
+        try:
+            queryset = self.get_queryset(filters).values("test_category_id").annotate(
+                count=Count(F("test_category_id"))).values("test_category_id", "request_id", test_id=F("test_type_id"),
+                                                        test_name=F("test_type__code"),
+                                                        category_name=F("test_category__name")).order_by("test_type")
 
-        test_data = {}
-        for item in list(queryset):
-            test_id = item.pop('test_id')
-            test_name = item.pop("test_name")
-            try:
-                test_data[test_id]["categories"].append(item)
-            except:
-                test_data[test_id] = {
-                    "test_id": test_id,
-                    "test_name": test_name,
-                    "categories": [item]
-                }
-
-        return list(test_data.values())
+            test_data = {}
+            for item in list(queryset):
+                test_id = item.pop('test_id')
+                test_name = item.pop("test_name")
+                try:
+                    test_data[test_id]["categories"].append(item)
+                except:
+                    test_data[test_id] = {
+                        "test_id": test_id,
+                        "test_name": test_name,
+                        "categories": [item]
+                    }
+                    logger.log(level='INFO', message=f'sucessfully executed.')
+            return list(test_data.values())
+        except Exception as e:
+            logger.log(level='ERROR', message=f'Failed to generate TestCaseAndscript executed.')
+            return JsonResponse({'data': "Something went wrong"})
 
     def get_consolidated_data_of_test_category(self, queryset):
+        try:
+            if not len(queryset):
+                return {}
 
-        if not len(queryset):
-            return {}
+            # queryset = queryset.values('test_id').annotate(
+            #     data=Case(
+            #         When(type='TESTCASE', then=ExpressionWrapper(F('data'), output_field=JSONField())),
+            #         When(type='TESTSCRIPT', then=Value({'TESTSCRIPT': F('data')}, output_field=JSONField())),
+            #         default=Value({}, output_field=JSONField())
+            #     )
+            # )
 
-        # queryset = queryset.values('test_id').annotate(
-        #     data=Case(
-        #         When(type='TESTCASE', then=ExpressionWrapper(F('data'), output_field=JSONField())),
-        #         When(type='TESTSCRIPT', then=Value({'TESTSCRIPT': F('data')}, output_field=JSONField())),
-        #         default=Value({}, output_field=JSONField())
-        #     )
-        # )
+            category_name = queryset.first().test_category.name
 
-        category_name = queryset.first().test_category.name
+            test_cases = queryset.filter(type='TESTCASE').order_by('test_id').values('id', 'test_id', 'test_name',
+                                                                                    'objective', 'data', 'status',
+                                                                                    'valid_till', 'product_id',
+                                                                                    product_name=F(
+                                                                                        "product__product_code"),
+                                                                                    user_id=F("created_by_id"),
+                                                                                    user_name=F("created_by__username"))
 
-        test_cases = queryset.filter(type='TESTCASE').order_by('test_id').values('id', 'test_id', 'test_name',
-                                                                                 'objective', 'data', 'status',
-                                                                                 'valid_till', 'product_id',
-                                                                                 product_name=F(
-                                                                                     "product__product_code"),
-                                                                                 user_id=F("created_by_id"),
-                                                                                 user_name=F("created_by__username"))
+            test_scripts = queryset.filter(type='TESTSCRIPT').order_by('test_id').values('id', 'test_id', 'test_name',
+                                                                                        'objective', 'data', 'status',
+                                                                                        'valid_till', 'product_id',
+                                                                                        product_name=F(
+                                                                                            "product__product_code"),
+                                                                                        user_id=F("created_by_id"),
+                                                                                        user_name=F(
+                                                                                            "created_by__username"))
 
-        test_scripts = queryset.filter(type='TESTSCRIPT').order_by('test_id').values('id', 'test_id', 'test_name',
-                                                                                     'objective', 'data', 'status',
-                                                                                     'valid_till', 'product_id',
-                                                                                     product_name=F(
-                                                                                         "product__product_code"),
-                                                                                     user_id=F("created_by_id"),
-                                                                                     user_name=F(
-                                                                                         "created_by__username"))
+            serialized_data = {"test_cases": [], "test_scripts": [], "test_category": category_name}
 
-        serialized_data = {"test_cases": [], "test_scripts": [], "test_category": category_name}
-
-        for test_case, test_script in zip(test_cases, test_scripts):
-            _case = test_case['data']
-            _script = test_script['data']
-            for key in ['id', 'test_id', 'status', 'valid_till', 'product_id', 'product_name', 'user_id', 'user_name']:
-                _case[key] = test_case[key]
-                _script[key] = test_script[key]
-            serialized_data['test_cases'].append(_case)
-            serialized_data['test_scripts'].append(_script)
-
-        return serialized_data
+            for test_case, test_script in zip(test_cases, test_scripts):
+                _case = test_case['data']
+                _script = test_script['data']
+                for key in ['id', 'test_id', 'status', 'valid_till', 'product_id', 'product_name', 'user_id', 'user_name']:
+                    _case[key] = test_case[key]
+                    _script[key] = test_script[key]
+                serialized_data['test_cases'].append(_case)
+                serialized_data['test_scripts'].append(_script)
+                logger.log(level='INFO', message=f'sucessfully executed.')
+            return serialized_data
+        except Exception as e:
+            logger.log(level='ERROR', message=f'Failed to generate TestCaseAndscript executed.')
+            return JsonResponse({'data': "Something went wrong"})
+        
 
 
 class GeneratedTestCategoriesView(generics.ListAPIView):
@@ -685,10 +798,11 @@ class GeneratedTestCategoriesView(generics.ListAPIView):
                 exists = StructuredTestCases.objects.filter(test_category_id=category.id).exists()
                 result['is_generated'] = exists
                 categories.append(result)
+                logger.log(level='INFO', message=f" retriving GeneratedTestCategories queryset")
             return JsonResponse({'data': categories}, safe=False)
         except Exception as e:
-            logger.log(level='Error', message=f"{e}")
-            raise e
+            logger.log(level='Error', message=f"Error while retriving Generate test cases{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
 
 class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
@@ -705,15 +819,17 @@ class LatestTestTypesWithCategoriesOfProduct(generics.ListAPIView):
         try:
             product_id = request.GET.get("product_id", None)
             if not product_id:
+
                 raise Exception("Please pass product_id to get test cases")
             filters = {
                 "product_id": product_id,
             }
             queryset = self.get_queryset(filters=filters)
             latest_test_type_ids = queryset.annotate(latest=Max(F"test_type")).values_list(Max(F('id')), flat=True)
+
         except Exception as e:
-            logger.log(level='Error', message=f"{e}")
-            raise e
+            logger.log(level='Error', message=f"Error while retriving data. {e}")
+            return JsonResponse({'data': "Something went wrong"})
 
 
 class TestCasesView(generics.ListAPIView):
@@ -729,20 +845,29 @@ class TestCasesView(generics.ListAPIView):
         return TestCases.objects.filter()
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = TestCasesSerializer(queryset, many=True)
-        return JsonResponse({'data': serializer.data}, safe=False)
-
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = TestCasesSerializer(queryset, many=True)
+            logger.log(level='INFO',message=f'TestCase generated sucessfully.')
+            return JsonResponse({'data': serializer.data}, safe=False)
+        except Exception as e:
+            logger.log(level='ERROR',message=f'failed to generate test cases.{e}')
+            return JsonResponse({'data': "serialization failed"})
 
 class GetFileCommitsView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
-        file_path = request.query_params.get('file_path')
-        repo = request.query_params.get('repo')
-        response_data = get_commits_for_file(file_path=file_path, repo=repo)
-        return JsonResponse(response_data, safe=False)
+        try:
+            file_path = request.query_params.get('file_path')
+            repo = request.query_params.get('repo')
+            response_data = get_commits_for_file(file_path=file_path, repo=repo)
+            logger.log(level='INFO', message=f'TestCase generated sucessfully.')
+            return JsonResponse(response_data, safe=False)
+        except Exception as e:
+            logger.log(level='ERROR', message=f'failed to generate test cases.{e}')
+            return JsonResponse({'data': "Something went wrong"})
 
 
 class GetFileChangesView(generics.ListAPIView):
@@ -750,10 +875,15 @@ class GetFileChangesView(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
-        file_name = request.query_params.get('file_name')
-        sha = request.query_params.get('sha')
-        response_data = get_changes_in_file(file_name=file_name, commit_sha=sha)
-        return JsonResponse({"data": response_data}, safe=False)
+        try:
+            file_name = request.query_params.get('file_name')
+            sha = request.query_params.get('sha')
+            response_data = get_changes_in_file(file_name=file_name, commit_sha=sha)
+            logger.log(level='INFO', message=f'TestCase generated sucessfully.')
+            return JsonResponse({"data": response_data}, safe=False)
+        except Exception as e:
+            logger.log(level='ERROR', message=f'failed to generate test cases.{e}')
+            return JsonResponse({'data': "Something went wrong"})
 
 
 class GetFilesInCommitView(generics.ListAPIView):
@@ -761,9 +891,14 @@ class GetFilesInCommitView(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
-        sha = request.query_params.get('sha')
-        response_data = get_files_in_commit(sha)
-        return JsonResponse(response_data, safe=False)
+        try:
+            sha = request.query_params.get('sha')
+            response_data = get_files_in_commit(sha)
+
+            return JsonResponse(response_data, safe=False)
+        except Exception as e:
+            logger.log(level='ERROR', message=f'failed to generate test cases.{e}')
+            return JsonResponse({'data': "Something went wrong"})
 
 
 class TestCategoriesView(generics.ListAPIView):
@@ -776,55 +911,87 @@ class TestCategoriesView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self, filters={}):
-        return TestCategories.objects.filter(**filters)
+        try:
+            return TestCategories.objects.filter(**filters)
+        except Exception as e:
+            logger.log(level='ERROR', message=f"Error retriving TestCategories queryset: {e}")
+            return None
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True)
-        return JsonResponse({'data': serializer.data}, safe=False)
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = self.get_serializer(queryset, many=True)
+            logger.log(level='INFO', message=f'TestCategories generated sucessfully.')
+            return JsonResponse({'data': serializer.data}, safe=False)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while retriving TestCategories,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
     def post(self, request, *args, **kwargs):
-        request.data['customer'] = request.user.customer.id
-        request.data['last_updated_by'] = request.user.id
-        request.data['is_approved'] = False
-        request.data['approved_by'] = None
-        data = request.data
-        if data:
-            test_type_name = TestType.objects.get(id=data['test_type']).code
-            data['executable_codes'] = {"TestCases": {"code": f"{test_type_name} with category {data['name']}"},
-                                        "TestScripts": {
-                                            "code": f"python script in seperate file for each {test_type_name} for {data['name']}"}}
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse({"message": "Test Category created successfully", "data": serializer.data, "status": 200})
+        try:
+            request.data['customer'] = request.user.customer.id
+            request.data['last_updated_by'] = request.user.id
+            if request.user.role_name == "ADMIN":
+                request.data['is_approved'] = True
+                request.data['approved_by'] = request.user.id
+            else:
+                request.data['is_approved'] = False
+                request.data['approved_by'] = None
+            data = request.data
+            if data:
+                test_type_name = TestType.objects.get(id=data['test_type']).code
+                data['executable_codes'] = {"TestCases": {"code": f"{test_type_name} with category {data['name']}"},
+                                            "TestScripts": {
+                                                "code": f"python script in seperate file for each {test_type_name} for {data['name']}"}}
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            logger.log(level='INFO', message=f'TestCategories stored sucessfully.')
+            return JsonResponse({"message": "Test Category created successfully", "data": serializer.data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while creating Test Caregorie,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
     def put(self, request, *args, **kwargs):
-        request.data['customer'] = request.user.customer.id
-        request.data['last_updated_by'] = request.user.id
-        partial = kwargs.pop('partial', False)
-        id = request.data.get('id')
-        if not id:
-            return Response({"message": "Please pass id to update Test Category", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse({"message": "Test Category updated successfully", "data": serializer.data, "status": 200})
+        try:
+            request.data['customer'] = request.user.customer.id
+            request.data['last_updated_by'] = request.user.id
+            partial = kwargs.pop('partial', False)
+            id = request.data.get('id')
+            if not id:
+                logger.log(level="ERROR", message=f"id not found in TestCategory.")
+                return Response({"message": "Please pass id to update Test Category", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                logger.log(level="ERROR", message=f"instance not found in TestCategory.")
+                return JsonResponse({"message": "No Record found", "status": 400})
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            logger.log(level='INFO', message=f'TestCategories updated sucessfully.')
+            return JsonResponse({"message": "Test Category updated successfully", "data": serializer.data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while Updating TestCategory,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
     def delete(self, request, *args, **kwargs):
-        id = request.GET.get('id')
-        if not id:
-            return Response({"message": "Please pass id to delete Test Category", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        instance.status = 0
-        instance.last_updated_by = self.request.user
-        instance.save()
-        return JsonResponse({"message": "Test Category deleted successfully", "status": 200})
+        try:
+            id = request.GET.get('id')
+            if not id:
+                logger.log(level="ERROR", message=f"Deletion failed in test Category")
+                return Response({"message": "Please pass id to delete Test Category", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                logger.log(level="ERROR", message=f"Not a valid instance of Approve test Category")
+                return JsonResponse({"message": "No Record found", "status": 400})
+            instance.status = 0
+            instance.last_updated_by = self.request.user
+            instance.save()
+            logger.log(level='INFO', message=f'TestCategories Deleted sucessfully.')
+            return JsonResponse({"message": "Test Category deleted successfully", "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while deleting Test Category,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
 
 class TestScriptExecResultsView(generics.ListAPIView):
@@ -836,13 +1003,23 @@ class TestScriptExecResultsView(generics.ListAPIView):
     ordering = []
 
     def get_queryset(self):
-        return TestScriptExecResults.objects.filter(status=1,
-                                                    test_script_number=self.request.data.get('test_script_number'))
+        try:
+            response= TestScriptExecResults.objects.filter(status=1,
+                                                                test_script_number=self.request.data.get('test_script_number'))
+            return response
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Connectivity issues,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = TestScriptExecResultsSerializer(queryset, many=True)
-        return JsonResponse({'data': serializer.data}, safe=False)
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = TestScriptExecResultsSerializer(queryset, many=True)
+            logger.log(level='INFO', message=f'TestScriptExecResults fetched sucessfully.')
+            return JsonResponse({'data': serializer.data}, safe=False)
+        except Exception as e:
+            logger.log(level="ERROR", message=f" Error while retriving TestScriptExecResults,{e}")
+            return JsonResponse({'data': "TestScriptExecResults getting failed"})
 
 
 class DashboardKpi(generics.ListAPIView):
@@ -850,60 +1027,65 @@ class DashboardKpi(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
-        total_devices = Product.objects.all().count()
-        test_types = TestType.objects.all().count()
-        users = User.objects.all().count()
-        categories = ProductCategory.objects.all().count()
-        sub_categories = ProductSubCategory.objects.all().count()
-        devices_expire_in_30_days = Product.objects.filter(valid_till__gte=datetime.today(),
-                                                           valid_till__lte=datetime.today() + timedelta(
-                                                               days=30)).count()
-        ready_to_test = StructuredTestCases.objects.filter().values('product_id').all().distinct().count()
-        return Response({
-            "status": 200,
-            "data": [
-                {
-                    "title": "Total Devices",
-                    "value": total_devices,
-                    "chart_data_point": "total_devices"
-                },
-                {
-                    "title": "Test Types",
-                    "value": test_types,
-                    "chart_data_point": "test_types"
-                },
-                {
-                    "title": "Users",
-                    "value": users,
-                    "chart_data_point": "users"
-                },
-                {
-                    "title": "Categories",
-                    "value": categories,
-                    "chart_data_point": "categories"
-                },
-                {
-                    "title": "Sub Categories",
-                    "value": sub_categories,
-                    "chart_data_point": "sub_categories"
-                },
-                {
-                    "title": "Devices Expire In 30 Days",
-                    "value": devices_expire_in_30_days,
-                    "chart_data_point": "devices_expire_in_30_days"
-                },
-                {
-                    "title": "Ready To Test",
-                    "value": ready_to_test,
-                    "chart_data_point": "ready_to_test"
-                },
-                # {
-                #     "title": "Test Scheduled Devices",
-                #     "value": 11,
-                #     "chart_data_point": 11
-                # }
-            ]
-        })
+        try:
+            total_devices = Product.objects.all().count()
+            test_types = TestType.objects.all().count()
+            users = User.objects.all().count()
+            categories = ProductCategory.objects.all().count()
+            sub_categories = ProductSubCategory.objects.all().count()
+            devices_expire_in_30_days = Product.objects.filter(valid_till__gte=datetime.today(),
+                                                            valid_till__lte=datetime.today() + timedelta(
+                                                                days=30)).count()
+            ready_to_test = StructuredTestCases.objects.filter().values('product_id').all().distinct().count()
+            logger.log(level='INFO', message=f'Dashboard fetched sucessfully.')
+            return Response({
+                "status": 200,
+                "data": [
+                    {
+                        "title": "Total Devices",
+                        "value": total_devices,
+                        "chart_data_point": "total_devices"
+                    },
+                    {
+                        "title": "Test Types",
+                        "value": test_types,
+                        "chart_data_point": "test_types"
+                    },
+                    {
+                        "title": "Users",
+                        "value": users,
+                        "chart_data_point": "users"
+                    },
+                    {
+                        "title": "Categories",
+                        "value": categories,
+                        "chart_data_point": "categories"
+                    },
+                    {
+                        "title": "Sub Categories",
+                        "value": sub_categories,
+                        "chart_data_point": "sub_categories"
+                    },
+                    {
+                        "title": "Devices Expire In 30 Days",
+                        "value": devices_expire_in_30_days,
+                        "chart_data_point": "devices_expire_in_30_days"
+                    },
+                    {
+                        "title": "Ready To Test",
+                        "value": ready_to_test,
+                        "chart_data_point": "ready_to_test"
+                    },
+                    # {
+                    #     "title": "Test Scheduled Devices",
+                    #     "value": 11,
+                    #     "chart_data_point": 11
+                    # }
+                ]
+            })
+        except Exception as e:
+            logger.log(level="ERROR", message=f"DashboardKpi getting failed,{e}")
+            return JsonResponse({'data': "DashboardKpi getting failed"})
 
 
 class PendingApprovalTestCategoryView(generics.ListAPIView):
@@ -916,12 +1098,20 @@ class PendingApprovalTestCategoryView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self, filters={}):
-        return TestCategories.objects.filter(**filters)
+        try:
+            return TestCategories.objects.filter(**filters)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Connectivity issues,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset({"is_approved": False}))
-        serializer = self.get_serializer(queryset, many=True)
-        return JsonResponse({'data': serializer.data}, safe=False)
+        try:
+            queryset = self.filter_queryset(self.get_queryset({"is_approved": False}))
+            serializer = self.get_serializer(queryset, many=True)
+            return JsonResponse({'data': serializer.data}, safe=False)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"PendingApprovalTestCategory getting failed,{e}")
+            return JsonResponse({'data': "PendingApprovalTestCategory getting failed"})
 
 
 class ApproveTestCategoryView(generics.ListAPIView):
@@ -934,19 +1124,30 @@ class ApproveTestCategoryView(generics.ListAPIView):
     ordering = []  # for default orderings
 
     def get_queryset(self, filters={}):
-        return TestCategories.objects.filter(**filters)
+        try:
+            return TestCategories.objects.filter(**filters)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Connectivity issues,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
     def put(self, request, *args, **kwargs):
-        id = request.GET.get('id')
-        if not id:
-            return Response({"message": "Please pass id to Approve Test Category", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        instance.is_approved = True
-        instance.approved_by = self.request.user
-        instance.save()
-        return JsonResponse({"message": "Test Category Approved successfully", "status": 200})
+        try:
+            id = request.GET.get('id')
+            if not id:
+                logger.log(level="ERROR", message=f"Getting id failed in test Category")
+                return Response({"message": "Please pass id to Approve Test Category", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                logger.log(level="ERROR", message=f"Not a valid instance of Approve test Category")
+                return JsonResponse({"message": "No Record found", "status": 400})
+            instance.is_approved = True
+            instance.approved_by = self.request.user
+            instance.save()
+            logger.log(level='INFO', message=f'ApproveTestCategory updated sucessfully.')
+            return JsonResponse({"message": "Test Category Approved successfully", "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f"ApproveTestCategory update failed,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
 
 class DashboardChart(generics.ListAPIView):
@@ -954,39 +1155,45 @@ class DashboardChart(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
-        registry = {
-            "total_devices": Product.objects.all().values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
-
-            "test_types": TestType.objects.all().values("id", "name", "code", "description"),
-            # "users": User.objects.aggregate(admins=Sum(Case(
-            #     When(role_name="ADMIN", then=Value(1)),
-            #     default=Value(0),
-            #     output_field=IntegerField()
-            # )), users=Sum(Case(
-            #     When(role_name="USER", then=Value(1)),
-            #     default=Value(0),
-            #     output_field=IntegerField()
-            # ))),
-            "users": User.objects.all().order_by('first_name').values("id", "username", "email", "role_name"),
-            "categories": ProductCategory.objects.all().values("id", "category", "description"),
-            "sub_categories": ProductSubCategory.objects.all().values("id", "sub_category", category = F("product_category__category")),
-            "devices_expire_in_30_days": Product.objects.filter(valid_till__gte=datetime.today(), valid_till__lte=datetime.today() + timedelta(days=30)).values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
-            # "ready_to_test": StructuredTestCases.objects.filter().values('product_id').all().distinct().values('id', "test_id", "test_name", "objective", "product_id", product_name = F("product__product_code"), test_type_name = F('test_type__code'), test_category_name = F("test_category__name")),
-            "ready_to_test": StructuredTestCases.objects.filter().values('product_id').all().distinct().values("product_id", product_name = F("product__product_code"), sub_category = F("product__product_sub_category__sub_category"), category = F("product__product_category__category")),
-        }
-        choice = request.GET.get("chart_data_point", None)
-        if not (choice or choice in registry.keys()):
-            response = {
-                "status": 400,
-                "message": f"Please pass the chart_data_point to get chart data. Available chart data points are {registry.keys}",
-                "data": []
+        try:
+            registry = {
+                "total_devices": Product.objects.all().values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
+                "test_types": TestType.objects.all().values("id", "name", "code", "description"),
+                # "users": User.objects.aggregate(admins=Sum(Case(
+                #     When(role_name="ADMIN", then=Value(1)),
+                #     default=Value(0),
+                #     output_field=IntegerField()
+                # )), users=Sum(Case(
+                #     When(role_name="USER", then=Value(1)),
+                #     default=Value(0),
+                #     output_field=IntegerField()
+                # ))),
+                "users": User.objects.all().order_by('first_name').values("id", "username", "email", "role_name"),
+                "categories": ProductCategory.objects.all().values("id", "category", "description"),
+                "sub_categories": ProductSubCategory.objects.all().values("id", "sub_category", category = F("product_category__category")),
+                "devices_expire_in_30_days": Product.objects.filter(valid_till__gte=datetime.today(), valid_till__lte=datetime.today() + timedelta(days=30)).values("id", "product_code", sub_category = F("product_sub_category__sub_category"), category=F("product_sub_category__product_category__category")),
+                # "ready_to_test": StructuredTestCases.objects.filter().values('product_id').all().distinct().values('id', "test_id", "test_name", "objective", "product_id", product_name = F("product__product_code"), test_type_name = F('test_type__code'), test_category_name = F("test_category__name")),
+                "ready_to_test": StructuredTestCases.objects.filter().values('product_id').all().distinct().values("product_id", product_name = F("product__product_code"), sub_category = F("product__product_sub_category__sub_category"), category = F("product__product_category__category")),
             }
-        response = {
-            "status": 200,
-            "message": "",
-            "data": list(registry.get(choice, [])) if choice != 'users' else registry.get(choice, {})
-        }
-        return Response(response)
+            choice = request.GET.get("chart_data_point", None)
+            if not (choice or choice in registry.keys()):
+
+                response = {
+                    "status": 400,
+                    "message": f"Please pass the chart_data_point to get chart data. Available chart data points are {registry.keys}",
+                    "data": []
+                }
+                logger.log(level="ERROR", message=f"chart_data_point failed")
+            response = {
+                "status": 200,
+                "message": "",
+                "data": list(registry.get(choice, [])) if choice != 'users' else registry.get(choice, {})
+            }
+            logger.log(level='INFO', message=f'DashboardChart data fetched sucessfully.')
+            return Response(response)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"DashboardChart data fetching failed,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
 
 class UploadDeviceDocsView(generics.ListAPIView):
@@ -994,151 +1201,116 @@ class UploadDeviceDocsView(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def post(self, request):
-        files = request.FILES.getlist('pdf_files', [])  # Access multiple files
-        files_uploaded = []
-        files_not_uplaoded = []
-        product_id = request.GET.get("device_id", "5")
-        product = Product.objects.filter(id = product_id).first()
-        if not product:
-            return Response(
-                {
-                    "status" : 400,
-                    "error_message" : f"No device found with device_id {product_id}. Please pass valid device_id.",
-                    "data" : {}
-                }
-            )
-        product_name = product.product_code
-        for f in files:
-            temp_file = ContentFile(f.read())
-            try:
-                filename = f.name  # Get original filename
-                bucket_name = 'genaidev'
-                key = f'devices/{product_name}/{filename}'
-                s3.put_object(Bucket=bucket_name, Key=key)  # Create subfolder with filename
-                s3.upload_fileobj(temp_file, bucket_name, key)  # Upload file to S3
-                files_uploaded.append(filename)
-                s3_url = f"https://{bucket_name}.s3.{AWS_DEFAULT_REGION}.amazonaws.com/{key}"
-                DocumentUploads.objects.create(
-                    customer = request.user.customer,
-                    created_by = request.user,
-                    request_id = request.request_id,
-                    product = product,
-                    file_name = filename,
-                    s3_url= s3_url
+        try:
+            files = request.FILES.getlist('pdf_files', [])  # Access multiple files
+            files_uploaded = []
+            files_not_uplaoded = []
+            product_id = request.GET.get("device_id", "5")
+            product = Product.objects.filter(id=product_id).first()
+            if not product:
+                logger.log(level="ERROR", message=f"product not found")
+                return Response(
+                    {
+                        "status": 400,
+                        "error_message": f"No device found with device_id {product_id}. Please pass valid device_id.",
+                        "data": {}
+                    }
                 )
-            except Exception as e:
-                print(e)
-                files_not_uplaoded.append(f.name)
-        
-        return Response({
-            "status" : 400 if len(files_not_uplaoded) else 200,
-            "error_message" : f"Some files {files_not_uplaoded} are not uploaded " if len(files_not_uplaoded) else "All files are uploaded to s3 Succesfully",
-            "data" : {
-                "files_uploaded" : files_uploaded,
-                "files_not_uploaded" : files_not_uplaoded
-            }
-        })
+            product_name = product.product_code
+            for f in files:
+                temp_file = ContentFile(f.read())
+                try:
+                    filename = f.name  # Get original filename
+                    bucket_name = 'genaidev'
+                    key = f'devices/{product_name}/{filename}'
+                    s3.put_object(Bucket=bucket_name, Key=key)  # Create subfolder with filename
+                    s3.upload_fileobj(temp_file, bucket_name, key)  # Upload file to S3
+                    files_uploaded.append(filename)
+                    s3_url = f"https://{bucket_name}.s3.{AWS_DEFAULT_REGION}.amazonaws.com/{key}"
+                    DocumentUploads.objects.create(
+                        customer=request.user.customer,
+                        created_by=request.user,
+                        request_id=request.request_id,
+                        product=product,
+                        file_name=filename,
+                        s3_url=s3_url
+                    )
+                except Exception as e:
+                    files_not_uplaoded.append(f.name)
+                    logger.log(level="ERROR", message=f"file uploaded failed,{f.name}")
+            return Response({
+                "status": 400 if len(files_not_uplaoded) else 200,
+                "error_message": f"Some files {files_not_uplaoded} are not uploaded " if len(
+                    files_not_uplaoded) else "All files are uploaded to s3 Succesfully",
+                "data": {
+                    "files_uploaded": files_uploaded,
+                    "files_not_uploaded": files_not_uplaoded
+                }
+            })
+        except Exception as e:
+            logger.log(level="ERROR", message=f"files not uploaded,{e}")
+            return JsonResponse({'data': "Something went wrong"})
+
 
 class EmbedUploadedDocs(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
-        if self.request.GET.get('run_cron', False):
-            a = CronJob()
-            a.performOperation()
-            
-        device_id = request.GET.get('device_id', None)
-        device = Product.objects.filter(id = device_id).first()
-        if not device:
+        try:
+            if self.request.GET.get('run_cron', False):
+                a = CronJob()
+                a.performOperation()
+
+            device_id = request.GET.get('device_id', None)
+            device = Product.objects.filter(id=device_id).first()
+            if not device:
+                logger.log(level="ERROR", message=f"Device not found")
+                return Response(
+                    {
+                        "status": 400,
+                        "error_message": "Please pass valid device_id in queryparams",
+                        "data": {}
+                    }
+                )
+            CronExecution.objects.create(
+                name="CREATE_VECTOR_EMBEDDINGS",
+                customer=request.user.customer,
+                created_by=request.user,
+                params={
+                    "device_id": device_id
+                },
+                request_id=request.request_id
+            )
+            logger.log(level='INFO', message=f'file data fetched sucessfully.')
             return Response(
                 {
-                    "status" : 400,
-                    "error_message" : "Please pass valid device_id in queryparams",
-                    "data" : {}
+                    "status": 200,
+                    "error_message": "",
+                    "data": {
+                        "message": "Creation of Embeddings will take atleast 20 mins."
+                    }
                 }
             )
-        CronExecution.objects.create(
-            name = "CREATE_VECTOR_EMBEDDINGS",
-            customer = request.user.customer,
-            created_by = request.user,
-            params = {
-                "device_id" : device_id
-            },
-            request_id = request.request_id
-        )
-        return Response(
-            {
-                "status" : 200,
-                "error_message" : "",
-                "data" : {
-                    "message" : "Creation of Embeddings will take atleast 20 mins."
-                }
-            }
-        )
+        except Exception as e:
+            logger.log(level="ERROR", message=f"fetching docs failed,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
 
 class ExtractTextFromPDFView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
-    # Function to extract table as matrix
-    def extract_table_as_matrix(self, page):
-        table = page.extract_table()
-        if table is None:
-            return None
-
-        # Convert table to matrix
-        matrix = []
-        for row in table:
-            matrix_row = []
-            for cell in row:
-                if cell:
-                    matrix_row.append(cell)
-            if matrix_row:
-                matrix.append(matrix_row)
-
-        return matrix
-
     def post(self, request, *args, **kwargs):
-        bucket_name = 'testmx480'
-
-        # Establish connection with S3
-        s3 = boto3.client('s3', aws_access_key_id='AKIA3MUTZS7BNCEROH24',
-                          aws_secret_access_key='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', region_name='us-west-2')
-        pdf_file_name = request.GET.get('file_name')
-
-        # Download PDF from S3
-        s3_response_object = s3.get_object(Bucket=bucket_name, Key=pdf_file_name)
-        pdf_content = s3_response_object['Body'].read()
-
-        # Process PDF content and write to S3
-        with pdfplumber.open(BytesIO(pdf_content)) as pdf:
-            processed_text = ""
-            for page in pdf.pages:
-                string = ""
-                # Extract text from the page
-                text = page.extract_text()
-                processed_text += text + "\n"
-                matrix = self.extract_table_as_matrix(page)
-                if matrix:
-                    for row in matrix[1:-1]:
-                        # Iterate over each column other than the first one
-                        for i in range(1, len(row)):
-                            string += f"{matrix[0][0]}, {row[0]}, {matrix[0][i]}, {row[i]},"
-                    if string:
-                        processed_text += string[:-1] + "\n"
-
-        # Convert processed text to BytesIO object
-        processed_text_bytes = BytesIO(processed_text.encode('utf-8'))
-        file_name = 'transcript-' + str(datetime.today()) + '.txt'
-
         try:
-            # Upload the processed file directly to S3
-            s3.put_object(Bucket=bucket_name, Key=file_name, Body=processed_text_bytes)
-            return JsonResponse({"message": "File extracted and uploaded to s3 successfully", "status": 200})
+            bucket_name = request.GET.get('bucket_name')
+            folder_path = request.GET.get('folder_path')
+            result = extract_pdf(bucket_name=bucket_name, folder_path=folder_path)
+            logger.log(level='INFO', message=f'Extract Text From PDF  inserted sucessfully.')
+            return JsonResponse(result)
         except Exception as e:
-            return JsonResponse({"message": "File extraction failed", "status": 400})
+            logger.log(level="ERROR", message=f"Extract Text From PDF  inserted failed,{e}")
+            return JsonResponse({'data': "Something went wrong"})
 
 
 class CategoryDetailsView(generics.ListAPIView):
@@ -1146,15 +1318,20 @@ class CategoryDetailsView(generics.ListAPIView):
     authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request):
-        categories = ProductCategory.objects.all()
-        category_data = []
-        for category in categories:
-            sub_category_count = ProductSubCategory.objects.filter(product_category_id=category.id).count()
-            product_count = Product.objects.filter(product_category_id=category.id).count()
-            category_data.append({
-                'category_name': category.category,
-                'sub_category_count': sub_category_count,
-                'device_count': product_count
-            }
-            )
-        return JsonResponse({"data": category_data, "status": 200})
+        try:
+            categories = ProductCategory.objects.all()
+            category_data = []
+            for category in categories:
+                sub_category_count = ProductSubCategory.objects.filter(product_category_id=category.id).count()
+                product_count = Product.objects.filter(product_category_id=category.id).count()
+                category_data.append({
+                    'category_name': category.category,
+                    'sub_category_count': sub_category_count,
+                    'device_count': product_count
+                }
+                )
+            logger.log(level='INFO', message=f'fetching sucessfully CategoryDetails  .')
+            return JsonResponse({"data": category_data, "status": 200})
+        except Exception as e:
+            logger.log(level="ERROR", message=f" fetching CategoryDetails failed,{e}")
+            return JsonResponse({'data': "Something went wrong"})

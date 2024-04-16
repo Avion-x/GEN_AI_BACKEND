@@ -20,9 +20,13 @@ class Customer(DefaultModel, models.Model):
     code = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
     address = models.TextField()
-    comments = models.TextField()
+    comments = models.TextField(blank=True, null=True)
     last_updated_by = models.CharField(max_length=255)
     logo = models.URLField(blank=True, null=True)
+    created_by = models.CharField(max_length = 255, blank=True, null=True)
+    email = models.EmailField(default="")
+
+    objects = CustomManager()
 
     def __str__(self):
         return f"{self.code} - {self.name}"

@@ -3,7 +3,7 @@ from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from django.db import IntegrityError
 from django.contrib.auth.models import Group, Permission
-from user.filters import CustomUserFilter
+from user.filters import CustomUserFilter, CustomerFilter
 from .models import User, Customer, CustomerConfig, AccessType, Roles
 from product.models import TestType
 from .serializers import UserRetriveSerializer, UserSerializer, CustomerSerializer, CustomerConfigSerializer, TestTypeSerializer, AccessTypeSerializer
@@ -80,9 +80,9 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
-        request.data['customer'] = request.user.customer.id
+        if 'customer' not in request.data:
+            request.data['customer'] = request.user.customer.id
         request.data['last_updated_by'] = request.user.username
-        print(request.data['last_updated_by'])
         role_name = request.data.get('role_name')
         role_id = self.get_role_id(role_name)
         if role_id is None:
@@ -120,7 +120,6 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         instance = self.get_queryset({"id":id}).first()
         if not instance:
             return JsonResponse({"message":"No Record found", "status":400})
-        instance = self.get_queryset({"id": id}).first()
         instance.is_active = False
         instance.status = False
         instance.last_updated_by = self.request.user.username
@@ -128,42 +127,63 @@ class UserView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView
         return Response({"message":"User deleted Succesfully", "status":200})
 
 
-class CustomerOrEnterpriseView(generics.ListCreateAPIView):
+class CustomerOrEnterpriseView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend, rest_filters.OrderingFilter)
+    filterset_class = CustomerFilter
     serializer_class = CustomerSerializer
 
     ordering_fields = ['id', 'created_at', 'last_updated_at'] #for ordering or sorting replace with '__all__' for all fields
     ordering = [] # for default orderings
 
-    def get_queryset(self):
-        return Customer.objects.filter()
+    def get_queryset(self, filters={}):
+        return Customer.objects.filter(**filters)
 
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
+        request.data['last_updated_by'] = request.user.username
+        request.data['created_by'] = request.user.username
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=201)
-
+        customer_instance = serializer.save()
+        user_serializer = UserSerializer(data={"username": customer_instance.name, "password": customer_instance.name, "first_name": customer_instance.name, "last_name": customer_instance.name, "email": customer_instance.name+"@gmail.com", "is_active": 1, "is_staff": 1, "status": 1, "valid_till": customer_instance.valid_till, "customer": customer_instance.id, "last_updated_by": customer_instance.name, "role_name": "ADMIN", "role": 2})
+        if user_serializer.is_valid():
+            user_serializer.save()
+            return JsonResponse({"message": "Customer and User created successfully", "customer_data": serializer.data, "user_data": user_serializer.data, "status": 200})
+        else:
+            customer_instance.delete()  # Rollback customer creation if user creation fails
+            return JsonResponse({"error": "Failed to create Customer and User", "customer_data": serializer.data, "user_errors": user_serializer.errors, "status": 400})
+        
     def put(self, request, *args, **kwargs):
+        request.data['last_updated_by'] = request.user.username
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        id = request.data.get('id')
+        if not id:
+            return JsonResponse({"message":"Please pass id to update Customer", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()        
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400}) 
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data)
+        return JsonResponse({"message": "Customer updated successfully", "data": serializer.data, "status": 200})
 
     def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.is_active = False
+        id = request.GET.get('id')
+        if not id:
+            return JsonResponse({"message":"Please pass id to delete Customer", "status":400}) 
+        instance = self.get_queryset({"id":id}).first()
+        if not instance:
+            return JsonResponse({"message":"No Record found", "status":400})
+        instance.status = False
+        instance.last_updated_by = self.request.user.username
         instance.save()
-        return Response(status=204)
+        return JsonResponse({"message":"Customer deleted Succesfully", "status":200})
 
 
 class CheckUsernameExistsView(generics.ListAPIView):
