@@ -15,7 +15,7 @@ from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from .models import StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
     TestScriptExecResults, UserCreatedTestCases
-from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
+from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, \
     LatestTestTypesWithCategoriesOfProductFilter
 # import git
@@ -739,7 +739,32 @@ class UserCreatedTestCasesAndScripts(generics.ListAPIView):
         except Exception as e:
             return Response({"error": f"{e}", "status": 400, "response": {}})
         
+    def get(self, request):
+        try:
+            filters = {}
+            if request.GET.get('test_id'):
+                filters['test_id'] = request.GET.get('test_id')
+            
+            if request.GET.get('test_category_id'):
+                filters['test_category_id'] = request.GET.get('test_category_id')
+            
+            if request.GET.get('device_id'):
+                filters['product_id'] = request.GET.get('device_id')
 
+            if request.GET.get('test_type'):
+                filters['type'] = request.GET.get('test_type').upper()
+            
+            if request.GET.get('request_id'):
+                filters['request_id'] = request.GET.get('request_id')
+
+            if request.GET.get('test_type_id'):
+                filters['test_category__test_type_id'] = request.GET.get('test_type_id')
+            
+            queryset = UserCreatedTestCases.objects.filter(**filters)
+            serializer = UserCreatedTestCasesSerializer(queryset, many=True)
+            return Response({"data": serializer.data, "status": 200, "error": ""})
+        except Exception as e:
+            return Response({"error": f"{e}", "status": 400, "response": {}})
 
 
 class TestCasesAndScripts(generics.ListAPIView):
