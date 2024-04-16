@@ -1,0 +1,30 @@
+System Capacity—MX480 provides 9 Tbps of system capacity for a wide range of cloud,
+campus, enterprise, data center, service provider, cable, and mobile service core applications.
+Always-on Infrastructure Base—MX Series routers ensure network and service availability with
+a broad set of multilayered physical, logical, and protocol-level resiliency aspects. Junos
+Operating System Virtual Chassis technology on MX Series routers supports chassis-level
+redundancy and enables you to manage two routers as a single element. Multichasis link
+aggregation group (MC-LAG) implementation supports stateful chassis, card, and port
+redundancy. Application-Aware Networking—On MX Series routers, you can use deep packet
+inspection to detect applications, and by using the user-defined policies, you can determine
+traffic treatment for each application. This feature enables highly customized and differentiated
+services at scale.
+System Capacity—MX480 provides 15 Tbps of system capacity for a wide range of cloud,
+campus, enterprise, data center, service provider, cable, and mobile service core applications.
+Always-on Infrastructure Base—MX Series routers ensure network and service availability with
+a broad set of multilayered physical, logical, and protocol-level resiliency aspects. Multichasis
+link aggregation group (MC-LAG) implementation supports stateful chassis, card, and port
+redundancy. Application-Aware Networking—On MX Series routers, you can use deep packet
+inspection to detect applications, and by using the user-defined policies, you can determine
+traffic treatment for each application. This feature enables highly customized and differentiated
+services at scale.
+Always-on Infrastructure Base—MX Series routers ensure network and service availability with
+a broad set of multilayered physical, logical, and protocol-level resiliency aspects. Linux
+Operating System Virtual Chassis technology on MX Series routers supports chassis-level
+redundancy and enables you to manage two routers as a single element. Multichasis link
+aggregation group (MC-LAG) implementation supports stateful chassis, card, and port
+redundancy. Application-Aware Networking—On MX Series routers, you can use deep packet
+inspection to detect applications, and by using the user-defined policies, you can determine
+traffic treatment for each application. This feature enables highly customized and differentiated
+services at scale.
+

@@ -1,0 +1,56 @@
+### 1.1 Features and Capabilities
+#### 1.1.1 Scalability:
+The MX480 router offers exceptional scalability, supporting a wide range of interfaces, including
+Ethernet, SONET/SDH, and MPLS, to accommodate diverse network requirements and growth.
+#### 1.1.2 Performance:
+With high-density line cards and a powerful forwarding engine, the MX480 delivers
+industry-leading performance, capable of handling high volumes of traffic and demanding
+workloads.
+#### 1.1.3 Redundancy and Resiliency:
+Built-in redundancy features, such as hot-swappable components, redundant power supplies,
+and graceful restart mechanisms, ensure high availability and minimize downtime in
+mission-critical environments.
+### 1.2 Specifications
+#### 1.2.1 Chassis Dimensions:
+- Height: 30.13 in (76.52 cm)
+- Width: 17.38 in (44.15 cm)
+- Depth: 24.3 in (61.72 cm)
+- Weight: 104 lbs (47.17 kg) (fully configured)
+#### 1.2.2 Interface Slots:
+- Up to 8 line-card slots
+- 2 Routing Engine slots
+- 2 Switch Fabric slots
+- 1 craft interface
+#### 1.2.3 Performance Metrics:
+- Throughput: Up to 5 Tbps
+- Forwarding Capacity: Up to 2.4 Bpps (billion packets per second)
+- Maximum Interfaces: 960 10GbE, 240 40GbE, or 60 100GbE interfaces
+### 1.3 Supported Protocols
+#### 1.3.1 Routing Protocols:
+- BGP (Border Gateway Protocol)
+- OSPF (Open Shortest Path First)
+- IS-IS (Intermediate System to Intermediate System)
+- RIP (Routing Information Protocol)
+- MPLS (Multiprotocol Label Switching)
+- RSVP (Resource Reservation Protocol)
+
+#### 1.3.2 Security Protocols:
+- IPsec (Internet Protocol Security)
+- SSL/TLS (Secure Sockets Layer/Transport Layer Security)
+- MACsec (Media Access Control Security)
+#### 1.3.3 Multicast Protocols:
+- PIM (Protocol Independent Multicast)
+- IGMP (Internet Group Management Protocol)
+- MSDP (Multicast Source Discovery Protocol)
+### 1.4 Configuring and Managing MX480 Router
+#### 1.4.1 Junos OS:
+The MX480 router runs Junos OS, Juniper's industry-leading network operating system. Junos
+provides a rich set of features for configuring and managing router operations, including a
+modular architecture, commit model, and rollback capabilities.
+#### 1.4.2 Junos Space:
+Junos Space is a comprehensive network management platform that enables centralized
+management, monitoring, and automation of Juniper devices, including the MX480 router. It
+provides a user-friendly interface for configuration, provisioning, and troubleshooting tasks.
+#### 1.4.3 ports
+MX480 has only four ports, 2 Giga ethernet ports and 2 Fast ethernet Ports.
+
