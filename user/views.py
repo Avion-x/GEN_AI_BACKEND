@@ -20,6 +20,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
 from django.http import HttpResponse, JsonResponse
+from github import Github, BadCredentialsException, UnknownObjectException
 
 
 def get_request_body(request):
@@ -221,7 +222,7 @@ class CreateRoleWithGroupsAPIView(generics.CreateAPIView):
             return Response({"message": "Groups assigned to role successfully"})
 
 
-class InsertGitView(generics.ListAPIView):
+class GitDetailsView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
     filter_backends = (django_filters.DjangoFilterBackend, rest_filters.OrderingFilter)
@@ -230,3 +231,49 @@ class InsertGitView(generics.ListAPIView):
 
     ordering_fields = ['id', 'created_at', 'last_updated_at'] #for ordering or sorting replace with '__all__' for all fields
     ordering = [] # for default orderings
+
+    def get_queryset(self, filters={}):
+        return Customer.objects.filter(**filters)
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return JsonResponse({'data': serializer.data}, safe=False)
+    
+    def validate_inputs(self, access_key, branch, repository_name):
+        try:
+            # Initialize GitHub instance
+            g = Github(access_key)
+
+            # Get the repository
+            repo = g.get_repo(repository_name)
+
+            # Check if the branch exists
+            if branch not in [b.name for b in repo.get_branches()]:
+                return {'error': f"Branch '{branch}' does not exist in the repository", "status": 400}
+            return "True"
+        except BadCredentialsException:
+            return {'error': "Invalid access key", "status": 400}
+        except UnknownObjectException:
+            return {'error': f"Repository '{repository_name}' not found", "status": 400}
+        except Exception as e:
+            return {"error": e, "satus": 400}
+
+    def post(self, request, *args, **kwargs):
+        id = request.GET.get('id')
+        access_key = request.GET.get('access_key')
+        branch = request.GET.get('branch')
+        repository = request.GET.get('repository')
+        if not id:
+            return Response({"message": "Please pass id to add details to customer", "status": 400})
+        instance = self.get_queryset({"id": id}).first()
+        if not instance:
+            return JsonResponse({"message": "No Record found", "status": 400})
+        result = self.validate_inputs(access_key=access_key,branch=branch,repository_name=repository)
+        if result == "True":
+            instance.data = {"access_key": access_key, "branch": branch, "repository": repository}
+            instance.last_updated_by = self.request.user.username
+            instance.save()
+            return JsonResponse({"message": "Github credentials are valid and successfully inserted", "status": 200})
+        else:
+            return JsonResponse(result)
