@@ -70,3 +70,13 @@ class CronJob(CronJobRegistry):
             "message": str(exception)
         }
         self.update_status_in_db(job_data, exception_data)
+
+
+
+def run():
+    try:
+        a = CronJob()
+        a.performOperation()
+    except Exception as e:
+        print("Exception in calling cronjob: ", e)
+        raise e

@@ -35,7 +35,7 @@ class CronJobRegistry():
                 raise Exception(f"Please pass valid device_id in input_params. Passed {product_id}")
             
             bucket_name = 'genaidev'
-            key_prefix = f'devices/{product.product_code}/'
+            key_prefix = f'devices/{product.product_code}/processed/'
 
             extract_pdf(bucket_name=bucket_name, folder_path=key_prefix)
 

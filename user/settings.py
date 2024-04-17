@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    'django_crontab',
     'user',
     'product',
     'event_manager'
@@ -216,3 +217,9 @@ LOGGING = {
         'level': 'NOTSET',  # Accept log messages of all levels, You can Adjust the logging level as needed (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     },
 }
+
+
+
+CRONJOBS = [
+('*/5 * * * *', 'event_manager.services.cronjob.run')
+]

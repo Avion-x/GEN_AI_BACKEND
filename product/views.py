@@ -686,16 +686,11 @@ class UserCreatedTestCasesAndScripts(generics.ListAPIView):
             "type": str,
             "convert_type": False,
         },
-        "test_type": {
-            "is_mandatory": True,
-            "type": str,
-            "convert_type": False,
-        },
-        "test_case_data": {
-            "is_mandatory": True,
-            "type": dict,
-            "convert_type": False,
-        },
+        # "test_case_data": {
+        #     "is_mandatory": True,
+        #     "type": dict,
+        #     "convert_type": False,
+        # },
         "comment": {
             "is_mandatory": False,
             "type": dict,
@@ -713,14 +708,23 @@ class UserCreatedTestCasesAndScripts(generics.ListAPIView):
             test_category = TestCategories.objects.filter(id= input_data.get('test_category_id')).first()
             if not test_category:
                 raise Exception("Please provide valid test_category_id")
-            test_id = f"user_created_{request.user.customer.name}_{test_category.test_type.name}_{test_category.name}_{device.product_code}_{name}".replace(" ", "_").lower()
-            if UserCreatedTestCases.objects.filter(test_id=test_id).exists():
+            test_id = f"{request.user.customer.name}_{test_category.test_type.name}_{test_category.name}_{device.product_code}_{name}".replace(" ", "_").lower()
+            if UserCreatedTestCases.objects.filter(test_id=test_id).exists() or StructuredTestCases.objects.filter(test_id=test_id).exists():
                 raise Exception("Test case already exists")
+            
+            test_case_file = request.FILES.get('test_case_file', None)
+            test_case_file_data = test_case_file.read()
+            test_case_file_data = test_case_file_data.decode('utf-8')
+
+            test_script_file = request.FILES.get('script_file', None)
+            test_script_file_data = test_script_file.read()
+            test_script_file_data = test_script_file_data.decode('utf-8')
+            # push_file_to_github(file=file, file_name=f"{name}")
             _test_case = {
                 "test_id": test_id,
                 "test_name" : f"{name}",
                 "objective" : input_data.get("objective", ""),
-                "data" : input_data.get("test_case_data", {}),
+                "data" : test_case_file_data,
                 "type" : input_data.get("test_type", "TESTCASE").upper(),
                 "test_category_id" : test_category.id,
                 "product" : device,
@@ -729,16 +733,32 @@ class UserCreatedTestCasesAndScripts(generics.ListAPIView):
                 "created_by" : request.user,
                 "comment" : input_data.get("comment", "user created").upper()
             }
+            _test_script = {
+                "test_id": test_id,
+                "test_name" : f"{name}",
+                "objective" : input_data.get("objective", ""),
+                "data" : test_script_file_data,
+                "type" : "TESTSCRIPT",
+                "test_category_id" : test_category.id,
+                "product" : device,
+                "customer" : request.user.customer,
+                "request_id" : request.request_id,
+                "created_by" : request.user,
+                "comment" : input_data.get("comment", "user created").upper()
+            }
             UserCreatedTestCases.objects.create(**_test_case)
+            UserCreatedTestCases.objects.create(**_test_script)
             return Response({"response" : {
                 "message": "Test case created successfully",
                 "test_id": test_id,
-                "data" : _test_case.get("data"),
+                "test_case_data" : test_case_file_data,
+                "test_scripts_data" : test_script_file_data,
                 "request_id": request.request_id
             }, "status": 200, "error": ""})
         except Exception as e:
             return Response({"error": f"{e}", "status": 400, "response": {}})
         
+
     def get(self, request):
         try:
             filters = {}
