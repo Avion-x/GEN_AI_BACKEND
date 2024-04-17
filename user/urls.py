@@ -1,7 +1,7 @@
 from django.urls import path, include
 from django.contrib import admin
 
-from .views import (UserView, LoginView, LogoutView, CustomerOrEnterpriseView, CheckUsernameExistsView, CreateRoleWithGroupsAPIView, CheckEmailExistsView)
+from .views import (UserView, LoginView, LogoutView, CustomerOrEnterpriseView, CheckUsernameExistsView, CreateRoleWithGroupsAPIView, CheckEmailExistsView, GitDetailsView)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -13,6 +13,7 @@ urlpatterns = [
     path('customers/', CustomerOrEnterpriseView.as_view(), name='customers'),
     path('check_username/', CheckUsernameExistsView.as_view(), name='check-username'),
     path('check_email/', CheckEmailExistsView.as_view(), name='check-email'),
+    path('git_details/', GitDetailsView.as_view(), name='git-details'),
 ]
 
 

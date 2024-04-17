@@ -1,4 +1,5 @@
 import django_filters
+from django.db import models
 from rest_framework import filters
 from user.models import User, Customer
 
@@ -19,4 +20,12 @@ class CustomerFilter(django_filters.FilterSet):
     class Meta:
         model = Customer
         fields = '__all__'
-        
+        filter_overrides = {
+            models.JSONField: {
+                'filter_class': django_filters.CharFilter,
+                'extra': lambda f: {
+                    'lookup_expr': 'exact',
+                },
+            },
+        }
+   
