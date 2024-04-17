@@ -14,8 +14,8 @@ from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from .models import StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
-    TestScriptExecResults, UserCreatedTestCases
-from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
+    TestScriptExecResults
+from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, \
     LatestTestTypesWithCategoriesOfProductFilter
 # import git
@@ -396,13 +396,8 @@ class ProductView(generics.ListAPIView):
 
 
 class GenerateTestCases(generics.ListAPIView):
-    """
-    This class is responsible for generating test cases and scripts based on the provided input data.
-    """
-
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
-
     validation_checks = {
         "device_id": {
             "is_mandatory": True,
@@ -420,8 +415,8 @@ class GenerateTestCases(generics.ListAPIView):
             "type": str,
             "convert_type": False,
         },
-    }
 
+    }
     AiModels = {
         "open_ai": CustomOpenAI,
         "anthropic.claude-v2:1": AwsBedrock,
@@ -430,18 +425,12 @@ class GenerateTestCases(generics.ListAPIView):
     }
 
     def set_device(self, device_id):
-        """
-        Sets the device based on the provided device_id.
-        """
         try:
             self.device = Product.objects.get(id=device_id)
         except Exception as e:
             raise e
 
     def get_ai_obj(self, data):
-        """
-        Returns the AI model object based on the provided ai_model.
-        """
         try:
             model = data.get('ai_model', "open_ai")
             ai_model = self.AiModels.get(model, None)
@@ -454,9 +443,6 @@ class GenerateTestCases(generics.ListAPIView):
             raise e
 
     def post(self, request):
-        """
-        Handles the POST request to generate test cases and scripts.
-        """
         try:
             data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
             self.ai_obj = self.get_ai_obj(data)
@@ -465,14 +451,16 @@ class GenerateTestCases(generics.ListAPIView):
 
             print(prompts_data)
 
-            self.lang_chain = Langchain_(prompt_data=prompts_data, request=request, vector_namespace=self.device.pinecone_name_space)
+            self.lang_chain = Langchain_(prompt_data=prompts_data, request=request, vector_namespace = self.device.pinecone_name_space)
 
             thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
             thread.start()
 
+            # self.process_request(request, prompts_data)
+
             response = {
                 "request_id": request.request_id,
-                "Message": "Processing request will take some time. Please come back in 5 minutes.",
+                "Message": "Processing request will take some time Please come here in 5 mins",
             }
             logger.log(level='INFO', message="Generated test cases successfully.")
             return Response({
@@ -493,9 +481,6 @@ class GenerateTestCases(generics.ListAPIView):
             })
 
     def process_request(self, request, prompts_data):
-        """
-        Processes the request by executing the tests for each test type and test category.
-        """
         try:
             response = {}
             for test_type, tests in prompts_data.items():
@@ -507,9 +492,6 @@ class GenerateTestCases(generics.ListAPIView):
             raise e
 
     def execute(self, request, test_type, test_category, input_data):
-        """
-        Executes the tests for a specific test type and test category.
-        """
         try:
             response = {}
             insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
@@ -521,9 +503,10 @@ class GenerateTestCases(generics.ListAPIView):
 
                 file_path = self.get_file_path(request, test_type, test_category, test_code)
                 response[test_code] = self.generate_tests(prompts=prompts, context=kb_data)
-                self.store_parsed_tests(request=request, data=response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
+                self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
                 insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
                 insert_test_case(request, data=insert_data.copy())
+            # response['test_category'] = test_category
             return response
         except Exception as e:
             raise e
@@ -545,9 +528,6 @@ class GenerateTestCases(generics.ListAPIView):
     #         raise e
 
     def store_parsed_tests(self, request, data, test_type, test_category, test_category_id):
-        """
-        Stores the parsed tests in the database.
-        """
         for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
             name = test_case.get('testname', test_case.get('name', "")).replace(" ", "_").lower()
             test_id = f"{request.user.customer.name}_{test_type}_{test_category}_{self.device.product_code}_{name}".replace(
@@ -593,9 +573,6 @@ class GenerateTestCases(generics.ListAPIView):
     #         pass
 
     def get_file_path(self, request, test_type, test_category, test_code):
-        """
-        Returns the file path based on the provided parameters.
-        """
         try:
             device_code = self.device.product_code
             path = CustomerConfig.objects.filter(config_type='repo_folder_path',
@@ -608,9 +585,6 @@ class GenerateTestCases(generics.ListAPIView):
             return f"data/{request.user.customer.code}/{test_type}/{test_code}"
 
     def generate_tests(self, prompts, context, **kwargs):
-        """
-        Generates the tests based on the provided prompts and context.
-        """
         try:
             response_text = ""
             for prompt in prompts:
@@ -623,9 +597,6 @@ class GenerateTestCases(generics.ListAPIView):
             raise e
 
     def get_test_data(self, text_data):
-        """
-        Extracts the test data from the provided text data.
-        """
         result = {"raw_text": text_data, "test_cases": [], "test_scripts": []}
         data = parseModelDataToList(text_data)
         for _test in data:
@@ -660,111 +631,6 @@ def insert_test_case(request, data):
         return TestCases.objects.create(**record)
     except Exception as e:
         raise Exception(e)
-
-class UserCreatedTestCasesAndScripts(generics.ListAPIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (BasicAuthentication, TokenAuthentication)
-    validation_checks = {
-        "testname": {
-            "is_mandatory": True,
-            "type": str,
-            "convert_type": False,
-        },
-        "device_id": {
-            "is_mandatory": True,
-            "type": str,
-            "convert_type": False,
-            "convert_expression": str
-        },
-        "test_category_id": {
-            "is_mandatory": True,
-            "type": str,
-            "convert_type": False,
-        },
-        "objective": {
-            "is_mandatory": True,
-            "type": str,
-            "convert_type": False,
-        },
-        "test_type": {
-            "is_mandatory": True,
-            "type": str,
-            "convert_type": False,
-        },
-        "test_case_data": {
-            "is_mandatory": True,
-            "type": dict,
-            "convert_type": False,
-        },
-        "comment": {
-            "is_mandatory": False,
-            "type": dict,
-            "convert_type": False,
-        },
-    }
-
-    def post(self, request, *args, **kwargs):
-        try:
-            input_data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
-            name = input_data.get('testname', input_data.get('name', "")).replace(" ", "_").lower()
-            device = Product.objects.filter(id=input_data.get('device_id')).first()
-            if not device:
-                raise Exception("Please provide valid device_id")
-            test_category = TestCategories.objects.filter(id= input_data.get('test_category_id')).first()
-            if not test_category:
-                raise Exception("Please provide valid test_category_id")
-            test_id = f"user_created_{request.user.customer.name}_{test_category.test_type.name}_{test_category.name}_{device.product_code}_{name}".replace(" ", "_").lower()
-            if UserCreatedTestCases.objects.filter(test_id=test_id).exists():
-                raise Exception("Test case already exists")
-            _test_case = {
-                "test_id": test_id,
-                "test_name" : f"{name}",
-                "objective" : input_data.get("objective", ""),
-                "data" : input_data.get("test_case_data", {}),
-                "type" : input_data.get("test_type", "TESTCASE").upper(),
-                "test_category_id" : test_category.id,
-                "product" : device,
-                "customer" : request.user.customer,
-                "request_id" : request.request_id,
-                "created_by" : request.user,
-                "comment" : input_data.get("comment", "user created").upper()
-            }
-            UserCreatedTestCases.objects.create(**_test_case)
-            return Response({"response" : {
-                "message": "Test case created successfully",
-                "test_id": test_id,
-                "data" : _test_case.get("data"),
-                "request_id": request.request_id
-            }, "status": 200, "error": ""})
-        except Exception as e:
-            return Response({"error": f"{e}", "status": 400, "response": {}})
-        
-    def get(self, request):
-        try:
-            filters = {}
-            if request.GET.get('test_id'):
-                filters['test_id'] = request.GET.get('test_id')
-            
-            if request.GET.get('test_category_id'):
-                filters['test_category_id'] = request.GET.get('test_category_id')
-            
-            if request.GET.get('device_id'):
-                filters['product_id'] = request.GET.get('device_id')
-
-            if request.GET.get('test_type'):
-                filters['type'] = request.GET.get('test_type').upper()
-            
-            if request.GET.get('request_id'):
-                filters['request_id'] = request.GET.get('request_id')
-
-            if request.GET.get('test_type_id'):
-                filters['test_category__test_type_id'] = request.GET.get('test_type_id')
-            
-            queryset = UserCreatedTestCases.objects.filter(**filters)
-            serializer = UserCreatedTestCasesSerializer(queryset, many=True)
-            return Response({"data": serializer.data, "status": 200, "error": ""})
-        except Exception as e:
-            return Response({"error": f"{e}", "status": 400, "response": {}})
 
 
 class TestCasesAndScripts(generics.ListAPIView):

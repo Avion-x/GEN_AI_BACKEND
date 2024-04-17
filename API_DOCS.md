@@ -59,7 +59,3 @@ The API's processing is asynchronous, with the initial response including a `req
 - **Scalability**: Design backend processes with scalability in mind to accommodate large data volumes and concurrent requests.
 ### Conclusion
 The "Generate Test Case" API represents a significant advancement in automated test case generation, combining AI models with efficient backend processing to deliver high-quality test cases and scripts. By adhering to the best practices outlined in this documentation, developers can effectively incorporate this API into their testing workflows, thereby enhancing testing efficiency and reliability.
-
-
-
-## 2. 

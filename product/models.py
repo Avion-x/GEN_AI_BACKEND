@@ -226,30 +226,6 @@ class StructuredTestCases(DefaultModel, models.Model):
     def __str__(self):
         return f"{self.test_id}"
     
-class UserCreatedTestCases(DefaultModel, models.Model):
-    id = models.AutoField(primary_key=True)
-    test_id = models.CharField(max_length=100, null=False, blank=False, db_index=True)
-    test_name = models.CharField(max_length=255)
-    objective = models.CharField(max_length=500)
-    customer = models.ForeignKey(Customer, related_name="user_created_test_cases", on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, related_name="user_created_test_cases", on_delete=models.CASCADE)
-    data=models.JSONField()
-    test_category = models.ForeignKey(TestCategories, related_name="user_created_test_cases", on_delete=models.CASCADE, db_index=True)
-    test_type = models.ForeignKey(TestType, related_name="user_created_test_cases", on_delete=models.CASCADE, db_index=True)
-    type = models.CharField(max_length=20)
-    request = models.ForeignKey(RequestTracking, to_field="request_id", on_delete=models.CASCADE, related_name="user_created_test_cases", db_index=True)
-    created_by = models.ForeignKey(User, related_name="user_created_test_cases", on_delete=models.CASCADE)
-    comment = models.CharField(max_length=255, default="USER CREATED")
-
-    objects = CustomManager()
-
-    def save(self,*args, **kwargs):
-        self.test_type = self.test_category.test_type
-        return super().save()
-    
-    def __str__(self):
-        return f"{self.test_id}"
-    
 
 class KnowledgeBasePrompts(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)

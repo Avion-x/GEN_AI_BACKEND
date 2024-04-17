@@ -28,42 +28,8 @@ import json
 
 default_prompt = ". Provide data with markdown compatable for headers, sub headers, paragraphs, and code snippets in the output."
 
-import boto3
-import json
-
-
 class AwsBedrock():
-    """
-        This module provides a class called AwsBedrock that interacts with the AWS Bedrock service to send prompts and receive responses from AI models.
-
-        Usage:
-            aws = AwsBedrock()
-            response = aws.send_prompt(prompt="Generate unit test cases for the router MX480.", modelId='anthropic.claude-v2:1')
-            print(response)
-
-        Attributes:
-            bedrock_runtime (boto3.client): The AWS Bedrock runtime client.
-            default_prompt_suffix (str): The default suffix to be appended to the prompt.
-            models_body_registry (dict): A dictionary mapping model IDs to their respective input bodies.
-            modelId (str): The ID of the AI model to be used.
-            kwargs (dict): Additional keyword arguments passed to the class constructor.
-
-        Methods:
-            set_default_values: Sets the default values for the class attributes.
-            get_body: Retrieves the input body for the specified model.
-            replace_placeholders: Replaces placeholders in the input body with actual values.
-            send_prompt: Sends a prompt to the AI model and returns the response.
-            format_streeming_response: Formats the streaming response from the AI model.
-    """
-
     def __init__(self, **kwargs):
-        """
-        Initializes an instance of the AwsBedrock class.
-
-        Args:
-            **kwargs: Additional keyword arguments to be passed to the class.
-
-        """
         self.bedrock_runtime = boto3.client('bedrock-runtime',
             aws_access_key_id='AKIA3MUTZS7BNCEROH24',
             aws_secret_access_key='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',
@@ -113,13 +79,6 @@ class AwsBedrock():
         self.kwargs = kwargs
 
     def set_default_values(self):
-        """
-        Sets the default values for the class attributes.
-
-        Raises:
-            Exception: If there is an error while setting the default values.
-
-        """
         try:
             self.context = self.kwargs.get("context", None)
             self.prompt = self.kwargs.get("prompt", "") 
@@ -135,16 +94,6 @@ class AwsBedrock():
             raise Exception("Failed to set default values for Aws Bedrock")
     
     def get_body(self):
-        """
-        Retrieves the input body for the specified model.
-
-        Returns:
-            dict: The input body for the specified model.
-
-        Raises:
-            Exception: If there is an error while retrieving the input body.
-
-        """
         try:
             self.model_data = self.models_body_registry.get(self.modelId, None)
             if not self.model_data:
@@ -158,16 +107,6 @@ class AwsBedrock():
             raise Exception(f"Failed to get body for aws bedrock. Error is {e}")
         
     def replace_placeholders(self, data={}):
-        """
-        Replaces placeholders in the input body with actual values.
-
-        Args:
-            data (dict): The input body data.
-
-        Returns:
-            dict: The input body with placeholders replaced.
-
-        """
         if isinstance(data, dict):
             for key, value in data.items():
                 data[key] = self.replace_placeholders(value)
@@ -178,19 +117,6 @@ class AwsBedrock():
             return data
         
     def send_prompt(self, **kwargs):
-        """
-        Sends a prompt to the AI model and returns the response.
-
-        Args:
-            **kwargs: Additional keyword arguments to be passed to the method.
-
-        Returns:
-            str: The response from the AI model.
-
-        Raises:
-            Exception: If there is an error while sending the prompt.
-
-        """
         try:
             self.kwargs.update(kwargs)
             self.modelId = self.modelId or kwargs.get('modelId', None)
@@ -204,26 +130,13 @@ class AwsBedrock():
                 "contentType": kwargs.get('contentType', 'application/json'),
                 "body": json.dumps(body)
             }
-            print(params)
+
             model_response = self.bedrock_runtime.invoke_model_with_response_stream(**params)
             return self.format_streeming_response(model_response)
         except Exception as e:
             raise Exception(f"Failed to send prompt to Aws Bedrock. Error is {e}")
         
     def format_streeming_response(self, model_response):
-        """
-        Formats the streaming response from the AI model.
-
-        Args:
-            model_response (dict): The streaming response from the AI model.
-
-        Returns:
-            str: The formatted response from the AI model.
-
-        Raises:
-            Exception: If there is an error while formatting the response.
-
-        """
         try:
             output = ""
             for response in model_response["body"]:
@@ -232,3 +145,9 @@ class AwsBedrock():
             return output
         except Exception as e:
             raise Exception("Failed to format response from Aws Bedrock. Error is {e}")
+        
+
+# aws = AwsBedrock()
+# response = aws.send_prompt(prompt = "Genereate unit test cases for the router MX480.", modelId='anthropic.claude-v2:1')
+
+# print(response)

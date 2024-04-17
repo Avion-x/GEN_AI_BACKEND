@@ -25,6 +25,7 @@ class Customer(DefaultModel, models.Model):
     logo = models.URLField(blank=True, null=True)
     created_by = models.CharField(max_length = 255, blank=True, null=True)
     email = models.EmailField(default="")
+    data = models.JSONField(default=dict())
 
     objects = CustomManager()
 

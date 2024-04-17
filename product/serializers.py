@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, \
-    ProductSubCategory, Prompt, TestCases, TestCategories, Customer, TestScriptExecResults, UserCreatedTestCases
+    ProductSubCategory, Prompt, TestCases, TestCategories, Customer, TestScriptExecResults
 from django.contrib.auth.hashers import make_password
 from django.db.models import F
 import pytz
@@ -165,47 +165,6 @@ class ProductCategorySerializer(serializers.ModelSerializer, ISTTimestamp):
     def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
 
-class UserCreatedTestCasesSerializer(serializers.ModelSerializer, ISTTimestamp):
-    test_type_name = serializers.SerializerMethodField()
-    test_category_name = serializers.SerializerMethodField()
-    product_code = serializers.SerializerMethodField()
-    sub_category_name = serializers.SerializerMethodField()
-    main_category_name = serializers.SerializerMethodField()
-    username = serializers.SerializerMethodField()
-    created_at = serializers.SerializerMethodField()
-    last_updated_at = serializers.SerializerMethodField()
-
-    class Meta:
-        model = UserCreatedTestCases
-        fields = '__all__'
-
-    def get_test_type_name(self, obj):
-        return obj.test_category.test_type.code
-
-    def get_test_category_name(self, obj):
-        return obj.test_category.name
-
-    def get_product_code(self, obj):
-        return obj.product.product_code
-
-    def get_sub_category_name(self, obj):
-        return obj.product.product_sub_category.sub_category
-
-    def get_main_category_name(self, obj):
-        return obj.product.product_sub_category.product_category.category
-
-    def get_username(self, obj):
-        return obj.created_by.username
-
-    def get_created_at(self, obj):
-        timestamp = obj.created_at
-        ist_timestamp = self.get_ist_timestamp(timestamp)
-        return ist_timestamp
-
-    def get_last_updated_at(self, obj):
-        timestamp = obj.last_updated_at
-        ist_timestamp = self.get_ist_timestamp(timestamp)
-        return ist_timestamp
 
 class TestCasesSerializer(serializers.ModelSerializer, ISTTimestamp):
     test_type_name = serializers.SerializerMethodField()
