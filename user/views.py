@@ -230,18 +230,3 @@ class InsertGitView(generics.ListAPIView):
 
     ordering_fields = ['id', 'created_at', 'last_updated_at'] #for ordering or sorting replace with '__all__' for all fields
     ordering = [] # for default orderings
-
-    def post
-
-
-class InsertGitView(generics.ListAPIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (BasicAuthentication, TokenAuthentication)
-    filter_backends = (django_filters.DjangoFilterBackend, rest_filters.OrderingFilter)
-    filterset_class = CustomerFilter
-    serializer_class = CustomerSerializer
-
-    ordering_fields = ['id', 'created_at', 'last_updated_at'] #for ordering or sorting replace with '__all__' for all fields
-    ordering = [] # for default orderings
-
-    def post
