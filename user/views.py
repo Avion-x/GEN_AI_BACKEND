@@ -242,18 +242,24 @@ class GitDetailsView(generics.ListAPIView):
         return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
-        id = request.GET.get('id')
-        if not id:
-            return Response({"message": "Please pass id to add details to customer", "status": 400})
-        instance = self.get_queryset({"id": id}).first()
-        if not instance:
-            return JsonResponse({"message": "No Record found", "status": 400})
-        git = CustomGithub(**request.GET)
-        result = git.validate_inputs()
-        if result.pop("status", False) == True:
-            instance.data = result
-            instance.last_updated_by = self.request.user.username
-            instance.save()
-            return JsonResponse({"message": "Github credentials are valid and successfully inserted", "status": 200})
-        else:
-            return JsonResponse(result)
+        try:
+            id = request.GET.get('id')
+            if not id:
+                return Response({"message": "Please pass id to add details to customer", "status": 400})
+            instance = self.get_queryset({"id": id}).first()
+            if not instance:
+                return JsonResponse({"message": "No Record found", "status": 400})
+            git = CustomGithub(**request.GET)
+            result = git.validate_inputs()
+            if result.get("status", False) == True:
+                result.pop("status")
+                instance.data = result
+                instance.last_updated_by = self.request.user.username
+                instance.save()
+                return JsonResponse({"message": "Github credentials are valid and successfully inserted", "status": 200})
+            else:
+                return JsonResponse(result)
+        except BadCredentialsException:
+            return JsonResponse({'error': "Invalid access key", "status": 400})
+        except UnknownObjectException:
+            return JsonResponse({'error': f"Repository '{request.GET.get('repository')}' not found", "status": 400})

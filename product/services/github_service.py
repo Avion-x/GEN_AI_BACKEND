@@ -84,9 +84,8 @@ def get_files_in_commit(commit_sha):
     return file_names
 
 
-
 class CustomGithub(Github):
-    validatation_checks = {
+    validation_checks = {
         "access_key": {
             "is_mandatory": True,
             "type": str,
@@ -103,17 +102,16 @@ class CustomGithub(Github):
             "convert_type": False,
         },
     }
+
     def __init__(self, *args, **kwargs):
         try:
             input_params = validate_mandatory_checks(input_data=kwargs, checks=self.validation_checks)
-            super_data = {
-                "login_or_token" : input_params.get('access_key')
-            }
-            self.access_key = input_params.get('access_key')
-            self.branch = input_params.get('branch')
-            self.repository_name = input_params.get('repository')            
-            super().__init__(*args, super_data)
-            self.repo= self.get_repo(self.repository_name)
+            access_token = input_params.get('access_key')[0]
+            super().__init__(access_token)
+            self.access_key = input_params.get('access_key')[0]
+            self.branch = input_params.get('branch')[0]
+            self.repository = input_params.get('repository')[0]            
+            self.repo = self.get_repo(self.repository)
         except Exception as e:
             print(f"Error in initializing Github object: {e}")
             raise e
@@ -124,10 +122,6 @@ class CustomGithub(Github):
             if self.branch not in [b.name for b in self.repo.get_branches()]:
                 return {'error': f"Branch '{self.branch}' does not exist in the repository", "status": 400}
             return {"status":True, "access_key": self.access_key, "branch": self.branch, "repository": self.repository}
-        except BadCredentialsException:
-            return {'error': "Invalid access key", "status": 400}
-        except UnknownObjectException:
-            return {'error': f"Repository '{self.repository_name}' not found", "status": 400}
         except Exception as e:
             return {"error": e, "satus": 400}
         
