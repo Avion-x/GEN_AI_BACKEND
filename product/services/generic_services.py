@@ -1,4 +1,5 @@
 
+import shutil
 from product.models import ProductPrompt, TestType, ProductSubCategory, Customer, ProductCategoryPromptCode, Prompt, ProductCategoryPrompt
 from product.serializers import ProductSubCategorySerializer, CustomerSerializer, PromptSerializer
 import datetime
@@ -121,6 +122,8 @@ def download_files_from_s3(bucket_name, key_prefix, local_directory):
             # Iterate over objects and download them
             for obj in response['Contents']:
                 key = obj['Key']
+                if key == key_prefix:
+                    continue
                 file_name = os.path.basename(key)
                 local_path = os.path.join(local_directory, file_name)
                 # Download file from S3 to local filesystem
@@ -131,16 +134,26 @@ def download_files_from_s3(bucket_name, key_prefix, local_directory):
     except Exception as e:
         raise e
 
-    
-
 
 def delete_local_directory(local_directory):
-    # Delete the local
+    # Delete the local directory along with all its contents
     if os.path.exists(local_directory):
-        os.rmdir(local_directory)
-        return (True, f"Local directory '{local_directory}' deleted.")
+        try:
+            shutil.rmtree(local_directory)
+            return (True, f"Local directory '{local_directory}' deleted.")
+        except Exception as e:
+            return (False, f"Failed to delete '{local_directory}'. Reason: {str(e)}")
     else:
-        return (False, f"Local directory '{local_directory}' not found")
+        return (False, f"Local directory '{local_directory}' not found")  
+
+
+# def delete_local_directory(local_directory):
+#     # Delete the local
+#     if os.path.exists(local_directory):
+#         os.rmdir(local_directory)
+#         return (True, f"Local directory '{local_directory}' deleted.")
+#     else:
+#         return (False, f"Local directory '{local_directory}' not found")
 
 
 def parseModelDataToList(text):

@@ -221,5 +221,5 @@ LOGGING = {
 
 
 CRONJOBS = [
-('*/5 * * * *', 'event_manager.services.cronjob.run')
+('*/5 * * * *', 'event_manager.service.cronjob.run')
 ]

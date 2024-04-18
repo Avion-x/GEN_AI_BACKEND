@@ -17,44 +17,45 @@ class CronJob(CronJobRegistry):
         super().__init__()
 
     def performOperation(self):
-        job = {}
+        self.job_data = {}
         try:
             cronjobs = self.getPendingCronjobs()
             for job in cronjobs:
-                self.executeCronJob(job)
+                self.job_data = job
+                self.executeCronJob()
         except Exception as e:
-            self.handleException(job, e)
+            self.handleException(e)
 
     def getPendingCronjobs(self):
         cronjobs = CronExecution.objects.filter(pickup_time__lte=datetime.now(), is_executable=True, execution_status=PENDING_STATUS)
         return cronjobs
 
-    def executeCronJob(self, job_data):
+    def executeCronJob(self):
         try:
-            cron_job_name = job_data.name
+            cron_job_name = self.job_data.name
             if not cron_job_name:
                 raise Exception('CronJobName not specified')
             cronFucntion = self.registry.get(cron_job_name, None)
             if not cronFucntion:
                 raise Exception('CronJobName is incorrect')
-            result = cronFucntion(job_data.params)
-            self.update_status_in_db(job_data, result)
+            result = cronFucntion(self.job_data.params)
+            self.update_status_in_db(result)
         except Exception as e:
             raise e
 
-    def update_status_in_db(self, job_data, result):
+    def update_status_in_db(self, result):
         try:
             result = self.processResult(result)
             status = result.get('status').upper()
-            result = json.dumps(result).replace("'", '')
+            # result = json.dumps(result).replace("'", '')
             if status != PENDING_STATUS:
-                job_data.execution_status = status
-                job_data.result = result
-                job_data.is_executable=False
-                job_data.save()
+                self.job_data.execution_status = status
+                self.job_data.results = result
+                self.job_data.is_executable=False
+            self.job_data.save()
             return True
         except Exception as e:
-            print(f"unable to update db with job_data \n{job_data}\n Exception: {e}")
+            print(f"unable to update db with self.job_data \n{self.job_data}\n Exception: {e}")
 
     def processResult(self, result):
         if isinstance(result, dict):
@@ -64,12 +65,12 @@ class CronJob(CronJobRegistry):
                 "status": SUCCESS_STATUS if result else FAILED_STATUS
             }
 
-    def handleException(self, job_data, exception):
+    def handleException(self, exception):
         exception_data = {
             "status": FAILED_STATUS,
             "message": str(exception)
         }
-        self.update_status_in_db(job_data, exception_data)
+        self.update_status_in_db(exception_data)
 
 
 
