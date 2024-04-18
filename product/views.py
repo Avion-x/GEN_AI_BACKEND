@@ -5,7 +5,7 @@ import threading
 from product.services.aws_bedrock import AwsBedrock
 from user.models import CustomerConfig, User
 from product.services.custom_logger import logger
-from product.services.github_service import push_to_github, get_commits_for_file, get_changes_in_file, \
+from product.services.github_service import CustomGithub, push_to_github, get_commits_for_file, get_changes_in_file, \
     get_files_in_commit
 from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, parseModelDataToList, \
     validate_mandatory_checks
@@ -15,7 +15,7 @@ from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from .models import StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
     TestScriptExecResults, UserCreatedTestCases
-from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer
+from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, \
     LatestTestTypesWithCategoriesOfProductFilter
 # import git
@@ -503,9 +503,11 @@ class GenerateTestCases(generics.ListAPIView):
 
                 file_path = self.get_file_path(request, test_type, test_category, test_code)
                 response[test_code] = self.generate_tests(prompts=prompts, context=kb_data)
+
                 self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
                 insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
                 insert_test_case(request, data=insert_data.copy())
+
             # response['test_category'] = test_category
             return response
         except Exception as e:
@@ -626,7 +628,6 @@ def insert_test_case(request, data):
             "test_category_id": data.pop("test_category_id"),
             "data": data,
             "request_id": request.request_id
-
         }
         return TestCases.objects.create(**record)
     except Exception as e:
@@ -679,8 +680,10 @@ class UserCreatedTestCasesAndScripts(generics.ListAPIView):
             test_category = TestCategories.objects.filter(id= input_data.get('test_category_id')).first()
             if not test_category:
                 raise Exception("Please provide valid test_category_id")
-            test_id = f"{request.user.customer.name}_{test_category.test_type.name}_{test_category.name}_{device.product_code}_{name}".replace(" ", "_").lower()
-            if UserCreatedTestCases.objects.filter(test_id=test_id).exists() or StructuredTestCases.objects.filter(test_id=test_id).exists():
+            self.device=device
+            self.test_category = test_category
+            self.test_id = f"{request.user.customer.name}_{test_category.test_type.name}_{test_category.name}_{device.product_code}_{name}".replace(" ", "_").lower()
+            if UserCreatedTestCases.objects.filter(test_id=self.test_id).exists() or StructuredTestCases.objects.filter(test_id=self.test_id).exists():
                 raise Exception("Test case already exists")
             
             test_case_file = request.FILES.get('test_case_file', None)
@@ -690,10 +693,12 @@ class UserCreatedTestCasesAndScripts(generics.ListAPIView):
             test_script_file = request.FILES.get('script_file', None)
             test_script_file_data = test_script_file.read()
             test_script_file_data = test_script_file_data.decode('utf-8')
-            # push_file_to_github(file=test_case_file, file_name=f"{name}")
-            # push_file_to_github(file=test_script_file, file_name=f"{name}")
+            file_path = self.get_file_path(request, test_category.test_type, test_category, test_code="CustomerCreated")
+
+            self.push_to_git(data = [{"file_name": f"{file_path}/{test_case_file.name}", "content": test_case_file_data}, {"file_name": f"{file_path}/{test_script_file.name}", "content": test_script_file_data}])
+
             _test_case = {
-                "test_id": test_id,
+                "test_id": self.test_id,
                 "test_name" : f"{name}",
                 "objective" : input_data.get("objective", ""),
                 "data" : test_case_file_data,
@@ -706,7 +711,7 @@ class UserCreatedTestCasesAndScripts(generics.ListAPIView):
                 "comment" : input_data.get("comment", "user created").upper()
             }
             _test_script = {
-                "test_id": test_id,
+                "test_id": self.test_id,
                 "test_name" : f"{name}",
                 "objective" : input_data.get("objective", ""),
                 "data" : test_script_file_data,
@@ -722,13 +727,37 @@ class UserCreatedTestCasesAndScripts(generics.ListAPIView):
             UserCreatedTestCases.objects.create(**_test_script)
             return Response({"response" : {
                 "message": "Test case created successfully",
-                "test_id": test_id,
+                "test_id": self.test_id,
                 "test_case_data" : test_case_file_data,
                 "test_scripts_data" : test_script_file_data,
                 "request_id": request.request_id
             }, "status": 200, "error": ""})
         except Exception as e:
             return Response({"error": f"{e}", "status": 400, "response": {}})
+    
+    def get_file_path(self, request, test_type, test_category, test_code):
+        try:
+            device_code = self.device.product_code
+            path = CustomerConfig.objects.filter(config_type='repo_folder_path',
+                                                 customer=request.user.customer).first().config_value
+            return path.replace("${device_code}", device_code) \
+                .replace("${test_type}", test_type) \
+                .replace("${test_category}", test_category) \
+                .replace("${test_code}", test_code)
+        except Exception as e:
+            return f"data/{request.user.customer.code}/{test_type}/{test_code}"
+        
+    def push_to_git(self, data):
+        try:
+            git = CustomGithub(**self.request.user.customer.data)
+            for item in data:
+                file_name = item.get('file_name', None)
+                content = item.get('content', "")
+                git_response = git.push_to_github(data = content, file_path=file_name)
+                data = ({"device_id": self.device.id, "test_category_id": self.test_category.id, "test_id": self.test_id, "git_data": git_response})
+                insert_test_case(request=self.request, data=data)
+        except Exception as e:
+            raise e
         
 
     def get(self, request):

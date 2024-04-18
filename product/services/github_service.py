@@ -4,6 +4,7 @@ from datetime import datetime
 import requests
 from github import Github, BadCredentialsException, UnknownObjectException
 from product.services.generic_services import validate_mandatory_checks
+from user.models import Customer
 
 
 g = Github('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')
@@ -106,14 +107,22 @@ class CustomGithub(Github):
     def __init__(self, *args, **kwargs):
         try:
             input_params = validate_mandatory_checks(input_data=kwargs, checks=self.validation_checks)
-            access_token = input_params.get('access_key')[0]
+            access_token = input_params.get('access_key')
             super().__init__(access_token)
-            self.access_key = input_params.get('access_key')[0]
-            self.branch = input_params.get('branch')[0]
-            self.repository = input_params.get('repository')[0]            
+            self.access_key = input_params.get('access_key')
+            self.branch = input_params.get('branch')
+            self.repository = input_params.get('repository')          
             self.repo = self.get_repo(self.repository)
         except Exception as e:
             print(f"Error in initializing Github object: {e}")
+            raise e
+        
+    def set_defaults(self, customer):
+        try:
+            if isinstance(customer, Customer):
+                data = customer.data
+        except Exception as e:
+            print(f"Error in setting defaults: {e}")
             raise e
         
     def validate_inputs(self):
@@ -126,40 +135,43 @@ class CustomGithub(Github):
             return {"error": e, "satus": 400}
         
     def push_to_github(self, data = "", file_path = None, comment = None,):
-        if file_path is None:
-            current_datetime = datetime.now()
-            file_path = current_datetime.strftime("%Y-%m-%d %H:%M:%S") + ".md"
-        if comment is None:
-            comment = f"{file_path} uploaded to Github using GEN_AI project"
-
         try:
-            file = self.repo.get_contents(file_path, ref=self.branch)
-            # Update the file content
-            file = self.repo.update_file(
-                path=file_path,
-                message=comment,
-                content=data,
-                branch=self.branch,
-                sha=file.sha
-            )
-        except:
-            # File does not exist, create the file
-            file = self.repo.create_file(
-                path=file_path,
-                message=comment,
-                content=data,
-                branch=self.branch
-            )
-        files = file['commit'].files or [file]
-        return {
-            "url" : file['commit'].url,
-            "html_url" : file['commit'].html_url,
-            "sha" : file['commit'].sha,
-            "file": [{
-                "git_url" : _file['content'].git_url,
-                "download_url" : _file['content'].download_url,
-                "sha" : _file['content'].sha,
-                "url" : _file['content'].url
-                } for _file in files]
-        }
+            if file_path is None:
+                current_datetime = datetime.now()
+                file_path = current_datetime.strftime("%Y-%m-%d %H:%M:%S") + ".md"
+            if comment is None:
+                comment = f"{file_path} uploaded to Github using GEN_AI project"
 
+            try:
+                file = self.repo.get_contents(file_path, ref=self.branch)
+                # Update the file content
+                file = self.repo.update_file(
+                    path=file_path,
+                    message=comment,
+                    content=data,
+                    branch=self.branch,
+                    sha=file.sha
+                )
+            except:
+                # File does not exist, create the file
+                file = self.repo.create_file(
+                    path=file_path,
+                    message=comment,
+                    content=data,
+                    branch=self.branch
+                )
+            files = file['commit'].files or [file]
+            return {
+                "url" : file['commit'].url,
+                "html_url" : file['commit'].html_url,
+                "sha" : file['commit'].sha,
+                "file": [{
+                    "git_url" : _file['content'].git_url,
+                    "download_url" : _file['content'].download_url,
+                    "sha" : _file['content'].sha,
+                    "url" : _file['content'].url
+                    } for _file in files]
+            }
+        except Exception as e:
+            print(f"Error in pushing file to Github: {e}")
+            return {"error": e, "status": 400}
