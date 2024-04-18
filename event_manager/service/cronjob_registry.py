@@ -35,12 +35,12 @@ class CronJobRegistry():
                 raise Exception(f"Please pass valid device_id in input_params. Passed {product_id}")
             
             bucket_name = 'genaidev'
-            key_prefix = f'devices/{product.product_code}/processed/'
+            key_prefix = f'devices/{product.product_code}/'
 
             extract_pdf(bucket_name=bucket_name, folder_path=key_prefix)
 
             local_directory = os.path.join(os.getcwd(), 'data', product.product_code)
-            download_files_from_s3(bucket_name, key_prefix, local_directory)
+            download_files_from_s3(bucket_name, key_prefix+'/processed', local_directory)
 
             job_data['pinecone_namespace'] = product.pinecone_name_space
             job_data['data_dir'] = local_directory

@@ -43,7 +43,7 @@ class VectorStoreService():
     def get_data_dir(self):
         data_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
         print(data_dir)
-        return dself.ata_dir
+        return self.data_dir
 
     def execute(self, *args):
         try:
