@@ -829,10 +829,13 @@ class TestCasesAndScripts(generics.ListAPIView):
 
     def get_test_types_with_categories(self, filters):
         try:
-            queryset = self.get_queryset(filters).values("test_category_id").annotate(
+            max_dates_subquery = self.get_queryset(filters).values('test_category_id').annotate(
+                max_created_at=Max('created_at')).order_by("test_category")
+            
+            queryset = self.get_queryset(filters).filter(test_category_id__in=max_dates_subquery.values('test_category_id'),
+                created_at__in=max_dates_subquery.values('max_created_at')).values("test_category_id").annotate(
                 count=Count(F("test_category_id"))).values("test_category_id", "request_id", test_id=F("test_type_id"),
-                                                        test_name=F("test_type__code"),
-                                                        category_name=F("test_category__name")).order_by("test_type")
+                test_name=F("test_type__code"), category_name=F("test_category__name")).order_by("test_type", "test_category")
 
             test_data = {}
             for item in list(queryset):
