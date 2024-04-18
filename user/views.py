@@ -243,13 +243,13 @@ class GitDetailsView(generics.ListAPIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            id = request.GET.get('id')
+            id = request.data.pop('id')
             if not id:
                 return Response({"message": "Please pass id to add details to customer", "status": 400})
             instance = self.get_queryset({"id": id}).first()
             if not instance:
                 return JsonResponse({"message": "No Record found", "status": 400})
-            git = CustomGithub(**request.GET)
+            git = CustomGithub(**request.data)
             result = git.validate_inputs()
             if result.get("status", False) == True:
                 result.pop("status")
