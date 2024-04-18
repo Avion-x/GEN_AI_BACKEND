@@ -690,7 +690,8 @@ class UserCreatedTestCasesAndScripts(generics.ListAPIView):
             test_script_file = request.FILES.get('script_file', None)
             test_script_file_data = test_script_file.read()
             test_script_file_data = test_script_file_data.decode('utf-8')
-            # push_file_to_github(file=file, file_name=f"{name}")
+            # push_file_to_github(file=test_case_file, file_name=f"{name}")
+            # push_file_to_github(file=test_script_file, file_name=f"{name}")
             _test_case = {
                 "test_id": test_id,
                 "test_name" : f"{name}",

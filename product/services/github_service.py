@@ -2,6 +2,8 @@
 from github import Github
 from datetime import datetime
 import requests
+from github import Github, BadCredentialsException, UnknownObjectException
+from product.services.generic_services import validate_mandatory_checks
 
 
 g = Github('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')
@@ -80,3 +82,90 @@ def get_files_in_commit(commit_sha):
     # Prepare a list of file names
     file_names = [file.filename for file in files]
     return file_names
+
+
+
+class CustomGithub(Github):
+    validatation_checks = {
+        "access_key": {
+            "is_mandatory": True,
+            "type": str,
+            "convert_type": False,
+        },
+        "branch": {
+            "is_mandatory": True,
+            "type": str,
+            "convert_type": False,
+        },
+        "repository": {
+            "is_mandatory": True,
+            "type": str,
+            "convert_type": False,
+        },
+    }
+    def __init__(self, *args, **kwargs):
+        try:
+            input_params = validate_mandatory_checks(input_data=kwargs, checks=self.validation_checks)
+            super_data = {
+                "login_or_token" : input_params.get('access_key')
+            }
+            self.access_key = input_params.get('access_key')
+            self.branch = input_params.get('branch')
+            self.repository_name = input_params.get('repository')            
+            super().__init__(*args, super_data)
+            self.repo= self.get_repo(self.repository_name)
+        except Exception as e:
+            print(f"Error in initializing Github object: {e}")
+            raise e
+        
+    def validate_inputs(self):
+        try:
+            # Check if the branch exists
+            if self.branch not in [b.name for b in self.repo.get_branches()]:
+                return {'error': f"Branch '{self.branch}' does not exist in the repository", "status": 400}
+            return {"status":True, "access_key": self.access_key, "branch": self.branch, "repository": self.repository}
+        except BadCredentialsException:
+            return {'error': "Invalid access key", "status": 400}
+        except UnknownObjectException:
+            return {'error': f"Repository '{self.repository_name}' not found", "status": 400}
+        except Exception as e:
+            return {"error": e, "satus": 400}
+        
+    def push_to_github(self, data = "", file_path = None, comment = None,):
+        if file_path is None:
+            current_datetime = datetime.now()
+            file_path = current_datetime.strftime("%Y-%m-%d %H:%M:%S") + ".md"
+        if comment is None:
+            comment = f"{file_path} uploaded to Github using GEN_AI project"
+
+        try:
+            file = self.repo.get_contents(file_path, ref=self.branch)
+            # Update the file content
+            file = self.repo.update_file(
+                path=file_path,
+                message=comment,
+                content=data,
+                branch=self.branch,
+                sha=file.sha
+            )
+        except:
+            # File does not exist, create the file
+            file = self.repo.create_file(
+                path=file_path,
+                message=comment,
+                content=data,
+                branch=self.branch
+            )
+        files = file['commit'].files or [file]
+        return {
+            "url" : file['commit'].url,
+            "html_url" : file['commit'].html_url,
+            "sha" : file['commit'].sha,
+            "file": [{
+                "git_url" : _file['content'].git_url,
+                "download_url" : _file['content'].download_url,
+                "sha" : _file['content'].sha,
+                "url" : _file['content'].url
+                } for _file in files]
+        }
+
