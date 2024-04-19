@@ -262,4 +262,4 @@ class GitDetailsView(generics.ListAPIView):
         except BadCredentialsException:
             return JsonResponse({'error': "Invalid access key", "status": 400})
         except UnknownObjectException:
-            return JsonResponse({'error': f"Repository '{request.GET.get('repository')}' not found", "status": 400})
+            return JsonResponse({'error': f"Repository '{request.data.get('repository')}' not found", "status": 400})
