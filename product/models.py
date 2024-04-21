@@ -328,5 +328,23 @@ class DocumentUploads(DefaultModel, models.Model):
 
 
 
+class TestSubCategories(DefaultModel, models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    number_of_test_cases = models.IntegerField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    is_approved = models.BooleanField(default=True)
+    approved_by = models.ForeignKey(User, related_name="test_sub_category", on_delete=models.CASCADE, null=True)
+    customer = models.ForeignKey(Customer, related_name="test_sub_category", on_delete=models.CASCADE)
+    test_type = models.ForeignKey(TestType, related_name="test_sub_category", on_delete=models.CASCADE)
+    test_category = models.ForeignKey(TestCategories, related_name="test_sub_category", on_delete=models.CASCADE)
+    last_updated_by = models.ForeignKey(User, related_name="test_category_sub_last_updated", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name="test_category_sub_created_at", on_delete=models.CASCADE)
+    executable_codes = models.JSONField(default=dict())
+    comments =  models.TextField()
 
+    objects = CustomManager()
+
+    def __str__(self) -> str:
+        return f"{self.name}-{self.test_type.code}-{self.test_category.name}"
 

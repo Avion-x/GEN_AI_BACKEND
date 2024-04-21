@@ -1,6 +1,6 @@
 
 import shutil
-from product.models import ProductPrompt, TestType, ProductSubCategory, Customer, ProductCategoryPromptCode, Prompt, ProductCategoryPrompt
+from product.models import ProductPrompt, TestType, ProductSubCategory, Customer, ProductCategoryPromptCode, Prompt, ProductCategoryPrompt, TestSubCategories
 from product.serializers import ProductSubCategorySerializer, CustomerSerializer, PromptSerializer
 import datetime
 import os, re, json
@@ -39,30 +39,36 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], 
             test_id = _test.get("test_type_id", None)
             if test_id is None:
                 raise Exception(f"Could not find test type id for tests")
-            test_categories = _test.get("test_category_ids", [])
+            test_category = _test.get("test_category_ids", {}).get('test_category_id', [])
+            test_categories = test_category if isinstance(test_category, list) else [test_category]
             if len(test_categories):
                 category_filters = {'id__in':test_categories}
+            test_sub_categories = _test.get("test_category_ids", {}).get('test_sub_categoy_ids', [])
             test_type = TestType.objects.filter(id=test_id).first()
             if test_type:
                 response[test_type.code] = {}
                 for test_category in test_type.test_category.filter(status=1, is_approved=1, **category_filters).all():
-                    for test_code, test_code_details in test_category.executable_codes.items():
-                        test_prompts = [prompt.replace('${TestType}', test_code_details.get("code", test_code)) for prompt in  prompts] if test_code_details.get("code", None) else []
-                        test_prompts += test_code_details.get("default", [])
-                        test_prompts = {"kb_query":get_knowledge_base_query(test_category), "prompts" : test_prompts}
-                        if not len(test_prompts):
-                            continue
-                        if response.get(test_type.code) and response[test_type.code].get(test_category.name):
-                            response[test_type.code][test_category.name][test_code] = test_prompts
-                        else:
-                            response[test_type.code][test_category.name] = {"test_category_id": test_category.id}
-                            response[test_type.code][test_category.name][test_code] = test_prompts
+                    test_type_replace = []
+                    for test_sub_category in TestSubCategories.objects.filter(status=1, is_approved=1, test_category_id=test_category.id).all():
+                        for test_code, test_code_details in test_sub_category.executable_codes.items():
+                            test_codes = test_code_details.get("code", test_code)
+                            test_codes = test_codes.replace("${testcase}", test_sub_category.name)
+                            test_type_replace.append(test_codes)
+                    test_prompts = [prompt.replace('${TestType}', ",".join(test_type_replace)) for prompt in  prompts] if test_code_details.get("code", None) else []
+                    #test_prompts += test_code_details.get("default", [])
+                    test_prompts = {"kb_query":get_knowledge_base_query(test_category), "prompts" : test_prompts}
+                    if not len(test_prompts):
+                        continue
+                    if response.get(test_type.code) and response[test_type.code].get(test_category.name):
+                        response[test_type.code][test_category.name][test_code] = test_prompts
+                    else:
+                        response[test_type.code][test_category.name] = {"test_category_id": test_category.id}
+                        response[test_type.code][test_category.name][test_code] = test_prompts
         if not response:
             raise Exception(f"Incorrect configuration of test types, Please verify once")
         return response
     except Exception as e:
         raise e
-
 def get_knowledge_base_query(test_category):
     kb_queries = test_category.knowledge_base_prompts.all()
     data = []
