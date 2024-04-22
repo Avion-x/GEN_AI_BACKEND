@@ -39,11 +39,11 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], 
             test_id = _test.get("test_type_id", None)
             if test_id is None:
                 raise Exception(f"Could not find test type id for tests")
-            test_category = _test.get("test_category_ids", {}).get('test_category_id', [])
+            test_category = _test.get('test_category_ids', [])
             test_categories = test_category if isinstance(test_category, list) else [test_category]
             if len(test_categories):
                 category_filters = {'id__in':test_categories}
-            test_sub_categories = _test.get("test_category_ids", {}).get('test_sub_categoy_ids', [])
+            test_sub_categories = _test.get('test_sub_categoy_ids', [])
             test_type = TestType.objects.filter(id=test_id).first()
             if test_type:
                 response[test_type.code] = {}
