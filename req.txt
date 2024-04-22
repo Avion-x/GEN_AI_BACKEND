@@ -16,6 +16,7 @@ llama-index
 llama-index-vector-stores-pinecone
 python-dotenv
 llama-index-embeddings-langchain
-cohere
+llama-index-embeddings-cohere==0.1.4
+cohere==4.56
 openai
 pdfplumber
