@@ -77,6 +77,73 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], 
         category_filters = {}
         if not device_id and not device_name:
             raise Exception(f"send device id or device name to get prompts")
+        if device_def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], **kwargs):
+    try:
+        filters = {}
+        category_filters = {}
+        sub_category_filters = {}
+        if not device_id and not device_name:
+            raise Exception(f"send device id or device name to get prompts")
+        if device_id:
+            filters['product_id'] = device_id
+        elif device_name:
+            filters['product__product_code'] = device_name
+
+        prompts = ProductPrompt.objects.filter(**filters, status=1).values_list('executable_prompt', flat=True)
+        response = {}
+
+        for _test in test_type_data:
+            test_id = _test.get("test_type_id", None)
+            if test_id is None:
+                raise Exception(f"Could not find test type id for tests")
+            test_category = _test.get("test_category_ids", {}).get('test_category_id', [])
+            test_categories = test_category if isinstance(test_category, list) else [test_category]
+            if len(test_categories):
+                category_filters = {'id__in': test_categories}
+            test_type = TestType.objects.filter(id=test_id).first()
+            test_sub_category = _test["test_category_ids"].get("test_sub_category_id", [])
+            test_sub_categories = test_sub_category if isinstance(test_sub_category, list) else [test_sub_category]
+            if len(test_sub_categories):
+                sub_category_filters = {'id__in': test_sub_categories}
+
+            if test_type:
+                if test_type.code not in response.keys():
+                    response[test_type.code] = []
+
+                for test_category in test_type.test_category.filter(status=1, is_approved=1, **category_filters).all():
+                    test_type_replace = []
+                    for test_sub_category in TestSubCategories.objects.filter(status=1, is_approved=1, test_category=test_category.id, **sub_category_filters).all():
+                        for test_code, test_code_details in test_sub_category.executable_codes.items():
+                            test_codes = test_code_details.get("code", test_code)
+                            test_codes = test_codes.replace("${testcase}", test_sub_category.name)
+                            test_type_replace.append(test_codes)
+                    test_prompts = [prompt.replace('${TestType}', ",".join(test_type_replace)) for prompt in
+                                        prompts] if test_code_details.get("code", None) else []
+                    # test_prompts += test_code_details.get("default", [])
+                    test_prompts = {"kb_query": get_knowledge_base_query(test_category), "prompts": test_prompts}
+                    if not len(test_prompts):
+                        continue
+                    temp_response = {}
+
+                    if response.get(test_type.code) and test_category.name in temp_response.keys():
+                        temp_response[test_category.name][test_code] = test_prompts
+                        response[test_type.code].append(temp_response)
+                    else:
+                        temp_response[test_category.name] = {"test_category_id": test_category.id}
+                        temp_response[test_category.name][test_code] = test_prompts
+                        response[test_type.code].append(temp_response)
+        if not response:
+            raise Exception(f"Incorrect configuration of test types, Please verify once")
+        return response
+    except Exception as e:
+        raise e
+
+def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], **kwargs):
+    try:
+        filters = {}
+        category_filters = {}
+        if not device_id and not device_name:
+            raise Exception(f"send device id or device name to get prompts")
         if device_id:
             filters['product_id'] = device_id
         elif device_name:
@@ -88,37 +155,24 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], 
             test_id = _test.get("test_type_id", None)
             if test_id is None:
                 raise Exception(f"Could not find test type id for tests")
-            test_category = _test.get("test_category_ids", {}).get('test_category_id', [])
-            test_categories = test_category if isinstance(test_category, list) else [test_category]
+            test_categories = _test.get("test_category_ids", [])
             if len(test_categories):
                 category_filters = {'id__in':test_categories}
-            test_sub_category = _test.get("test_category_ids", {}).get('test_sub_categoy_ids', [])
             test_type = TestType.objects.filter(id=test_id).first()
-            test_sub_categories = test_sub_category if isinstance(test_sub_category, list) else [test_sub_category]
-            if len(test_sub_categories):
-                sub_category_filters = {'id__in':test_sub_categories}
-
             if test_type:
                 response[test_type.code] = {}
                 for test_category in test_type.test_category.filter(status=1, is_approved=1, **category_filters).all():
-                    test_type_replace = []
-                    for test_sub_category in TestSubCategories.objects.filter(status=1, is_approved=1,
-                                                                              **sub_category_filters).all():
-                        for test_code, test_code_details in test_sub_category.executable_codes.items():
-                            test_codes = test_code_details.get("code", test_code)
-                            test_codes = test_codes.replace("${testcase}", test_sub_category.name)
-                            test_type_replace.append(test_codes)
-                    test_prompts = [prompt.replace('${TestType}', ",".join(test_type_replace)) for prompt in
-                                    prompts] if test_code_details.get("code", None) else []
-                    # test_prompts += test_code_details.get("default", [])
-                    test_prompts = {"kb_query": get_knowledge_base_query(test_category), "prompts": test_prompts}
-                    if not len(test_prompts):
-                        continue
-                    if response.get(test_type.code) and response[test_type.code].get(test_category.name):
-                        response[test_type.code][test_category.name][test_code] = test_prompts
-                    else:
-                        response[test_type.code][test_category.name] = {"test_category_id": test_category.id}
-                        response[test_type.code][test_category.name][test_code] = test_prompts
+                    for test_code, test_code_details in test_category.executable_codes.items():
+                        test_prompts = [prompt.replace('${TestType}', test_code_details.get("code", test_code)) for prompt in  prompts] if test_code_details.get("code", None) else []
+                        test_prompts += test_code_details.get("default", [])
+                        test_prompts = {"kb_query":get_knowledge_base_query(test_category), "prompts" : test_prompts}
+                        if not len(test_prompts):
+                            continue
+                        if response.get(test_type.code) and response[test_type.code].get(test_category.name):
+                            response[test_type.code][test_category.name][test_code] = test_prompts
+                        else:
+                            response[test_type.code][test_category.name] = {"test_category_id": test_category.id}
+                            response[test_type.code][test_category.name][test_code] = test_prompts
         if not response:
             raise Exception(f"Incorrect configuration of test types, Please verify once")
         return response
