@@ -237,29 +237,25 @@ class GitDetailsView(generics.ListAPIView):
         return Customer.objects.filter(**filters)
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.filter_queryset(self.get_queryset({"id": request.user.customer.id}))
         serializer = self.get_serializer(queryset, many=True)
         return JsonResponse({'data': serializer.data}, safe=False)
 
     def post(self, request, *args, **kwargs):
         try:
-            id = request.data.pop('id')
-            if not id:
-                return Response({"message": "Please pass id to add details to customer", "status": 400})
-            instance = self.get_queryset({"id": id}).first()
+            instance = self.get_queryset({"id": request.user.customer.id}).first()
             if not instance:
-                return JsonResponse({"message": "No Record found", "status": 400})
+                return JsonResponse({"message": "No Record found"}, status=400)
             git = CustomGithub(**request.data)
             result = git.validate_inputs()
-            if result.get("status", False) == True:
-                result.pop("status")
+            if result.pop("status", False) == True:
                 instance.data = result
                 instance.last_updated_by = self.request.user.username
                 instance.save()
-                return JsonResponse({"message": "Github credentials are valid and successfully inserted", "status": 200})
+                return JsonResponse({"message": "Github credentials are valid and successfully inserted"}, status=200)
             else:
-                return JsonResponse(result)
+                return JsonResponse(result, status=400)
         except BadCredentialsException:
-            return JsonResponse({'error': "Invalid access key", "status": 400})
+            return JsonResponse({'error': "Invalid access key"}, status=400)
         except UnknownObjectException:
-            return JsonResponse({'error': f"Repository '{request.data.get('repository')}' not found", "status": 400})
+            return JsonResponse({'error': f"Repository '{request.data.get('repository')}' not found"}, status=400)
