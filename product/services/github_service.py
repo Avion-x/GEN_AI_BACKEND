@@ -129,10 +129,10 @@ class CustomGithub(Github):
         try:
             # Check if the branch exists
             if self.branch not in [b.name for b in self.repo.get_branches()]:
-                return {'error': f"Branch '{self.branch}' does not exist in the repository", "status": 400}
+                return {'error': f"Branch '{self.branch}' does not exist in the repository '{self.repository}'"}
             return {"status":True, "access_key": self.access_key, "branch": self.branch, "repository": self.repository}
         except Exception as e:
-            return {"error": e, "satus": 400}
+            return {"error": e}
         
     def push_to_github(self, data = "", file_path = None, comment = None,):
         try:
