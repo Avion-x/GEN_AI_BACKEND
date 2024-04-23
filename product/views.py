@@ -54,6 +54,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from botocore.exceptions import ClientError
 from boto3.s3.transfer import S3Transfer
+from sentence_transformers import SentenceTransformer, util
 
 import boto3
 
@@ -448,12 +449,13 @@ class GenerateTestCases(generics.ListAPIView):
             self.ai_obj = self.get_ai_obj(data)
             self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
+            test_names = list(StructuredTestCases.objects.filter(type='TESTCASE').values_list('test_name', flat = True))
 
             print(prompts_data)
 
             self.lang_chain = Langchain_(prompt_data=prompts_data, request=request, vector_namespace = self.device.pinecone_name_space)
 
-            thread = threading.Thread(target=self.process_request, args=(request, prompts_data))
+            thread = threading.Thread(target=self.process_request, args=(request, prompts_data, test_names))
             thread.start()
 
             # self.process_request(request, prompts_data)
@@ -480,18 +482,18 @@ class GenerateTestCases(generics.ListAPIView):
                 "response": {}
             })
 
-    def process_request(self, request, prompts_data):
+    def process_request(self, request, prompts_data, test_names):
         try:
             response = {}
             for test_type, tests in prompts_data.items():
                 response[test_type] = {}
                 for test, test_data in tests.items():
-                    response[test_type][test] = self.execute(request, test_type, test, test_data)
+                    response[test_type][test] = self.execute(request, test_type, test, test_data, test_names)
             return response
         except Exception as e:
             raise e
 
-    def execute(self, request, test_type, test_category, input_data):
+    def execute(self, request, test_type, test_category, input_data, test_names):
         try:
             response = {}
             insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
@@ -504,9 +506,10 @@ class GenerateTestCases(generics.ListAPIView):
                 file_path = self.get_file_path(request, test_type, test_category, test_code)
                 response[test_code] = self.generate_tests(prompts=prompts, context=kb_data)
 
-                self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
-                insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
-                insert_test_case(request, data=insert_data.copy())
+                result = self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"), test_names=test_names)
+                if result:
+                    insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
+                    insert_test_case(request, data=insert_data.copy())
 
             # response['test_category'] = test_category
             return response
@@ -529,7 +532,7 @@ class GenerateTestCases(generics.ListAPIView):
     #     except Exception as e:
     #         raise e
 
-    def store_parsed_tests(self, request, data, test_type, test_category, test_category_id):
+    def store_parsed_tests(self, request, data, test_type, test_category, test_category_id, test_names):
         for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
             name = test_case.get('testname', test_case.get('name', "")).replace(" ", "_").lower()
             test_id = f"{request.user.customer.name}_{test_type}_{test_category}_{self.device.product_code}_{name}".replace(
@@ -560,9 +563,43 @@ class GenerateTestCases(generics.ListAPIView):
                 "created_by": request.user
             }
 
-            StructuredTestCases.objects.create(**_test_case)
-            StructuredTestCases.objects.create(**_test_script)
-        return True
+            similarity = self.check_semantic_similarity(name=name, test_names=test_names)
+            if similarity:
+                StructuredTestCases.objects.create(**_test_case)
+                StructuredTestCases.objects.create(**_test_script)
+                return True
+            return False
+    
+    def check_semantic_similarity(self, name, test_names, threshold=95):
+        try:
+            model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+            embedding1 = model.encode(name, convert_to_tensor=True)
+
+            # Print current heading1 being compared
+            logger.log(level='INFO', message="Checking '{}' for similarities:".format(name.strip()))
+            # print("Checking '{}' for similarities:".format(name.strip()))        
+
+            embedding1 = model.encode(name.strip(), convert_to_tensor=True)
+
+            for heading2 in test_names:
+                embedding2 = model.encode(heading2.strip(), convert_to_tensor=True)
+
+                cosine_score = util.pytorch_cos_sim(embedding1, embedding2).item()
+                similarity_percentage = cosine_score * 100
+
+                logger.log(level='INFO', message="Similarity between '{}' and '{}': {:.2f}%".format(name.strip(), heading2.strip(), similarity_percentage))
+
+                # Print similarity percentage for current combination
+                # print("Similarity between '{}' and '{}': {:.2f}%".format(name.strip(), heading2.strip(), similarity_percentage))
+
+                if similarity_percentage >= threshold:
+                    logger.log(level='INFO', message="Above similarity is greater than 95% so no need to add that value".format(name.strip()))
+                    return False
+            else:
+                return True
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while checking similarity,{e}")
+            return False
 
     # def store_in_github(self, data, file_path ):
     #     response = []
