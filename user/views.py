@@ -245,17 +245,18 @@ class GitDetailsView(generics.ListAPIView):
         try:
             instance = self.get_queryset({"id": request.user.customer.id}).first()
             if not instance:
-                return JsonResponse({"message": "No Record found"}, status=400)
+                return JsonResponse({"error": "No Record found", "status": 400})
             git = CustomGithub(**request.data)
             result = git.validate_inputs()
-            if result.pop("status", False) == True:
+            if result.get("status", False) == True:
+                result.pop("status")
                 instance.data = result
                 instance.last_updated_by = self.request.user.username
                 instance.save()
-                return JsonResponse({"message": "Github credentials are valid and successfully inserted"}, status=200)
+                return JsonResponse({"success": "Github credentials are valid and successfully inserted", "status": 200})
             else:
-                return JsonResponse(result, status=400)
+                return JsonResponse(result)
         except BadCredentialsException:
-            return JsonResponse({'error': "Invalid access key"}, status=400)
+            return JsonResponse({'error': "Invalid access key", "status": 400})
         except UnknownObjectException:
-            return JsonResponse({'error': f"Repository '{request.data.get('repository')}' not found"}, status=400)
+            return JsonResponse({'error': f"Repository '{request.data.get('repository')}' not found", "status": 400})
