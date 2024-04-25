@@ -6,6 +6,8 @@ import boto3
 from datetime import datetime
 from event_manager.service.cronjob_registry import CronJobRegistry
 from event_manager.models import CronExecution
+from product.services.generic_services import rebuild_request
+from user.middleware.request_tracking_middleware import set_current_request, delete_current_request
 
 PENDING_STATUS = 'PENDING'
 EXECUTING_STATUS = 'EXECUTING'
@@ -38,8 +40,11 @@ class CronJob(CronJobRegistry):
             cronFucntion = self.registry.get(cron_job_name, None)
             if not cronFucntion:
                 raise Exception('CronJobName is incorrect')
-            result = cronFucntion(self.job_data.params)
+            self.request = rebuild_request(self.job_data.request.request_id)
+            set_current_request(self.request)
+            result = cronFucntion(self.job_data.params, self.request)
             self.update_status_in_db(result)
+            delete_current_request()
         except Exception as e:
             raise e
 

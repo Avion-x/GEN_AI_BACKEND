@@ -20,3 +20,5 @@ llama-index-embeddings-cohere==0.1.4
 cohere==4.56
 openai
 pdfplumber
+boto3
+pip install sentence-transformers==2.7.0
