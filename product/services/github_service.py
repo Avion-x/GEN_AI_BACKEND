@@ -113,6 +113,7 @@ class CustomGithub(Github):
             self.branch = input_params.get('branch')
             self.repository = input_params.get('repository')          
             self.repo = self.get_repo(self.repository)
+            self.valid_till = kwargs.get('valid_till')
         except Exception as e:
             print(f"Error in initializing Github object: {e}")
             raise e
@@ -129,8 +130,8 @@ class CustomGithub(Github):
         try:
             # Check if the branch exists
             if self.branch not in [b.name for b in self.repo.get_branches()]:
-                return {'error': f"Branch '{self.branch}' does not exist in the repository '{self.repository}'", "status": 400}
-            return {"status":True, "access_key": self.access_key, "branch": self.branch, "repository": self.repository}
+                return {'error': "Invalid Access key or Repository or Branch", "status": 400}
+            return {"valid": True, "access_key": self.access_key, "branch": self.branch, "repository": self.repository, "valid_till": self.valid_till}
         except Exception as e:
             return {"error": e, "status": 400}
         

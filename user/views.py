@@ -22,6 +22,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
 from django.http import HttpResponse, JsonResponse
 from github import Github, BadCredentialsException, UnknownObjectException
+from datetime import datetime
 
 
 def get_request_body(request):
@@ -239,7 +240,7 @@ class GitDetailsView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset({"id": request.user.customer.id}))
         serializer = self.get_serializer(queryset, many=True)
-        return JsonResponse({'data': serializer.data}, safe=False)
+        return JsonResponse({'data': serializer.data[0].get('data').get('github')}, safe=False)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -248,15 +249,55 @@ class GitDetailsView(generics.ListAPIView):
                 return JsonResponse({"error": "No Record found", "status": 400})
             git = CustomGithub(**request.data)
             result = git.validate_inputs()
-            if result.get("status", False) == True:
-                result.pop("status")
-                instance.data = result
+            if result.get("valid", False) == True:
+                result.pop("valid")
+                result["created_at"] = str(datetime.now().strftime("%Y-%m-%d %H:%M"))
+                result["created_by_id"] = self.request.user.id
+                result["created_by"] = self.request.user.username
+                result['status'] = "INACTIVE"
+                result['valid_till'] = result['valid_till'].split('T')[0]
+                if "github" in instance.data:
+                    result["id"] = instance.data['github'][-1].get("id") + 1
+                    instance.data['github'].append(result)
+                else:
+                    result["id"] = 1
+                    instance.data['github'] = [result]
                 instance.last_updated_by = self.request.user.username
                 instance.save()
                 return JsonResponse({"success": "Github credentials are valid and successfully inserted", "status": 200})
             else:
                 return JsonResponse(result)
-        except BadCredentialsException:
-            return JsonResponse({'error': "Invalid access key", "status": 400})
-        except UnknownObjectException:
-            return JsonResponse({'error': f"Repository '{request.data.get('repository')}' not found", "status": 400})
+        except Exception as e:
+            return JsonResponse({'error': "Invalid Access key or Repository or Branch", "status": 400})
+
+class GitConfigStatusView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend, rest_filters.OrderingFilter)
+    filterset_class = CustomerFilter
+    serializer_class = CustomerSerializer
+
+    def get_queryset(self, filters={}):
+        return Customer.objects.filter(**filters)
+
+    def put(self, request, *args, **kwargs):
+        try:
+            instance = self.get_queryset({"id": request.user.customer.id}).first()
+            if not instance:
+                return JsonResponse({"error": "No Record found", "status": 400})
+            for i, item in enumerate(instance.data['github']):
+                print(i)
+                if item['id'] == request.data['id']:
+                    if request.data['status'] == "ACTIVE":
+                        instance.data['github'][i]['status'] = "ACTIVE"
+                    else:
+                        instance.data['github'][i]['status'] = "INACTIVE"
+                        instance.save()
+                        return JsonResponse({"success": "Github configuration status is deactivated", "status": 200})
+                elif request.data['status'] == "ACTIVE":
+                    instance.data['github'][i]['status'] = "INACTIVE"
+            instance.last_updated_by = self.request.user.username
+            instance.save()
+            return JsonResponse({"success": "Github configuration status is activated", "status": 200})
+        except Exception as e:
+            return JsonResponse({"error": f"Error occurred: {e}", "status": 400})
