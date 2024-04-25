@@ -129,7 +129,7 @@ class CustomGithub(Github):
         try:
             # Check if the branch exists
             if self.branch not in [b.name for b in self.repo.get_branches()]:
-                return {'error': f"Branch '{self.branch}' does not exist in the repository '{self.repository}'", "status": 400}
+                return {'error': "Invalid Access key or Repository or Branch", "status": 400}
             return {"status":True, "access_key": self.access_key, "branch": self.branch, "repository": self.repository}
         except Exception as e:
             return {"error": e, "status": 400}

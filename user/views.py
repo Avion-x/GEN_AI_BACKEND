@@ -256,7 +256,5 @@ class GitDetailsView(generics.ListAPIView):
                 return JsonResponse({"success": "Github credentials are valid and successfully inserted", "status": 200})
             else:
                 return JsonResponse(result)
-        except BadCredentialsException:
-            return JsonResponse({'error': "Invalid access key", "status": 400})
-        except UnknownObjectException:
-            return JsonResponse({'error': f"Repository '{request.data.get('repository')}' not found", "status": 400})
+        except Exception as e:
+            return JsonResponse({'error': "Invalid Access key or Repository or Branch", "status": 400})
