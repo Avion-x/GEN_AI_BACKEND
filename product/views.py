@@ -55,8 +55,9 @@ from django.core.files.storage import default_storage
 from botocore.exceptions import ClientError
 from boto3.s3.transfer import S3Transfer
 
-import boto3
+from constants import OPEN_API_REGISTRY, GITHUB_API_REGISTRY
 
+import boto3
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
