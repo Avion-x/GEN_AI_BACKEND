@@ -1098,12 +1098,8 @@ class TestCategoriesView(generics.ListAPIView):
         try:
             request.data['customer'] = request.user.customer.id
             request.data['last_updated_by'] = request.user.id
-            if request.user.role_name == "ADMIN":
-                request.data['is_approved'] = True
-                request.data['approved_by'] = request.user.id
-            else:
-                request.data['is_approved'] = False
-                request.data['approved_by'] = None
+            request.data['is_approved'] = False
+            request.data['approved_by'] = None
             data = request.data
             if data:
                 test_type_name = TestType.objects.get(id=data['test_type']).code
