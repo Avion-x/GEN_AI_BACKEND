@@ -15,7 +15,7 @@ from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from .models import StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
     TestScriptExecResults, UserCreatedTestCases
-from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
+from .serializers import GenereateTestCaseJobDataSerializer, TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, \
     LatestTestTypesWithCategoriesOfProductFilter
 # import git
@@ -419,30 +419,6 @@ class GenerateTestCases(generics.ListAPIView):
         },
 
     }
-    AiModels = {
-        "open_ai": CustomOpenAI,
-        "anthropic.claude-v2:1": AwsBedrock,
-        "anthropic.claude-v2": AwsBedrock,
-        'amazon.titan-text-express-v1': AwsBedrock,
-    }
-
-    def set_device(self, device_id):
-        try:
-            self.device = Product.objects.get(id=device_id)
-        except Exception as e:
-            raise e
-
-    def get_ai_obj(self, data):
-        try:
-            model = data.get('ai_model', "open_ai")
-            ai_model = self.AiModels.get(model, None)
-            if not ai_model:
-                message = f"Please provide valid ai_model, Available models are {list(self.AiModels.keys())}"
-                logger.log(level="ERROR", message=message)
-                raise Exception(message)
-            return ai_model(modelId=model)
-        except Exception as e:
-            raise e
 
     def post(self, request):
         try:
@@ -464,9 +440,6 @@ class GenerateTestCases(generics.ListAPIView):
                 params=job_data,
                 request_id=request.request_id
             )
-
-            # self.ai_obj = self.get_ai_obj(data)
-            # self.set_device(data['device_id'])
 
             a = CronJob()
             thread = threading.Thread(target=a.performOperation, args=())
@@ -494,6 +467,34 @@ class GenerateTestCases(generics.ListAPIView):
                 "status": 400,
                 "response": {}
             })
+        
+    def get(self, request):
+        try:
+            filters = self.get_filters(request)
+            jobs = CronExecution.objects.filter(name="GENERATE_TEST_CASES", **filters).order_by('-id')
+            serializer = GenereateTestCaseJobDataSerializer(jobs, many=True)
+            return Response({
+                "error": "",
+                "status": 200,
+                "response": serializer.data
+            })
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while getting generated test cases ,{e}")
+            return Response({
+                "error": f"{e}",
+                "status": 400,
+                "response": {}
+            })
+        
+    def get_filters(self, request):
+        filters = {}
+        if request.GET.get('request_id', None):
+            filters["request_id"] = request.GET.get('request_id')
+        if request.GET.get('status', None):
+            filters["execution_status"] = request.GET.get('status')
+        if request.GET.get('is_admin', False):
+            filters['created_by'] = request.user
+        return filters
 
 
 def insert_test_case(request, data):
@@ -1343,3 +1344,5 @@ class CategoryDetailsView(generics.ListAPIView):
         except Exception as e:
             logger.log(level="ERROR", message=f" fetching CategoryDetails failed,{e}")
             return JsonResponse({'data': "Something went wrong"})
+
+ 
