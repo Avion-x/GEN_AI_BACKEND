@@ -6,6 +6,7 @@ import boto3
 from datetime import datetime
 from product.models import Product
 
+from product.services.generate_tests import GenerateTests
 from product.services.lammaindex import VectorStoreService
 from product.services.generic_services import delete_local_directory, download_files_from_s3, extract_pdf
 
@@ -24,9 +25,22 @@ class CronJobRegistry():
     def __init__(self):
         self.registry = {
             "CREATE_VECTOR_EMBEDDINGS": self.create_vector_embeddings,
+            "GENERATE_TEST_CASES" : self.generate_test_cases
         }
 
-    def create_vector_embeddings(self, job_data):
+    def generate_test_cases(self, job_data, request, *args, **kwargs):
+        try:
+            generate_test = GenerateTests(request, **job_data)
+            result = generate_test.process_request()
+            return {
+                "status": SUCCESS_STATUS,
+                "message" : "Test cases generated successfully.",
+                "result" : result
+            }
+        except Exception as e:
+            raise e
+
+    def create_vector_embeddings(self, job_data, reqeust, *args, **kwargs):
         try:
             product_id = job_data.get('device_id',None) or job_data.params.get('product_id', None)
             

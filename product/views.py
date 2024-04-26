@@ -15,7 +15,7 @@ from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from .models import StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
     TestScriptExecResults, UserCreatedTestCases
-from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
+from .serializers import GenereateTestCaseJobDataSerializer, TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, \
     LatestTestTypesWithCategoriesOfProductFilter
 # import git
@@ -419,46 +419,31 @@ class GenerateTestCases(generics.ListAPIView):
         },
 
     }
-    AiModels = {
-        "open_ai": CustomOpenAI,
-        "anthropic.claude-v2:1": AwsBedrock,
-        "anthropic.claude-v2": AwsBedrock,
-        'amazon.titan-text-express-v1': AwsBedrock,
-    }
-
-    def set_device(self, device_id):
-        try:
-            self.device = Product.objects.get(id=device_id)
-        except Exception as e:
-            raise e
-
-    def get_ai_obj(self, data):
-        try:
-            model = data.get('ai_model', "open_ai")
-            ai_model = self.AiModels.get(model, None)
-            if not ai_model:
-                message = f"Please provide valid ai_model, Available models are {list(self.AiModels.keys())}"
-                logger.log(level="ERROR", message=message)
-                raise Exception(message)
-            return ai_model(modelId=model)
-        except Exception as e:
-            raise e
 
     def post(self, request):
         try:
             data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
-            self.ai_obj = self.get_ai_obj(data)
-            self.set_device(data['device_id'])
             prompts_data = get_prompts_for_device(**data)
             test_names = list(StructuredTestCases.objects.filter(type='TESTCASE').values_list('test_name', flat = True))
 
-            print(prompts_data)
+            job_data = {
+                "body" : data,
+                "prompts_data" : prompts_data,
+                "test_names" : test_names,
+                "request_id" : request.request_id
+            }
 
-            self.lang_chain = Langchain_(prompt_data=prompts_data, request=request, vector_namespace = self.device.pinecone_name_space)
+            CronExecution.objects.create(
+                name="GENERATE_TEST_CASES",
+                customer=request.user.customer,
+                created_by=request.user,
+                params=job_data,
+                request_id=request.request_id
+            )
 
-            thread = threading.Thread(target=self.process_request, args=(request, prompts_data, test_names))
+            a = CronJob()
+            thread = threading.Thread(target=a.performOperation, args=())
             thread.start()
-
             # self.process_request(request, prompts_data)
 
             response = {
@@ -473,186 +458,43 @@ class GenerateTestCases(generics.ListAPIView):
             })
 
         except Exception as e:
-            # request.request_tracking.status_code = 400
-            # request.request_tracking.error_message = str(e)
-            # request.request_tracking.save()
+            request.request_tracking.status_code = 400
+            request.request_tracking.error_message = str(e)
+            request.request_tracking.save()
             logger.log(level="ERROR", message=f"Error while generating test cases ,{e}")
             return Response({
                 "error": f"{e}",
                 "status": 400,
                 "response": {}
             })
-
-    def process_request(self, request, prompts_data, test_names):
+        
+    def get(self, request):
         try:
-            response = {}
-            for test_type, tests in prompts_data.items():
-                response[test_type] = {}
-                for test, test_data in tests.items():
-                    response[test_type][test] = self.execute(request, test_type, test, test_data, test_names)
-            return response
+            filters = self.get_filters(request)
+            jobs = CronExecution.objects.filter(name="GENERATE_TEST_CASES", **filters).order_by('-id')
+            serializer = GenereateTestCaseJobDataSerializer(jobs, many=True)
+            return Response({
+                "error": "",
+                "status": 200,
+                "response": serializer.data
+            })
         except Exception as e:
-            raise e
-
-    def execute(self, request, test_type, test_category, input_data, test_names):
-        try:
-            response = {}
-            insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
-                           "prompts": input_data}
-            for test_code, details in input_data.items():
-                kb_data = self.lang_chain.execute_kb_queries(details.get('kb_query', []))
-                print("\n\n kb data is :", kb_data)
-                prompts = details.get('prompts', [])
-
-                file_path = self.get_file_path(request, test_type, test_category, test_code)
-                response[test_code] = self.generate_tests(prompts=prompts, context=kb_data)
-
-                result = self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"), test_names=test_names)
-                if result:
-                    insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
-                    insert_test_case(request, data=insert_data.copy())
-
-            # response['test_category'] = test_category
-            return response
-        except Exception as e:
-            raise e
-
-    # def execute(self, request, test_type, test_category, input_data):
-    #     try:
-    #         response = {}
-    #         insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
-    #                        "prompts": input_data}
-    #         for test_code, propmts in input_data.items():
-    #             file_path = self.get_file_path(request, test_type, test_category, test_code)
-    #             response[test_code] = self.generate_tests(prompts=propmts)
-    #             self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"))
-    #             insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
-    #             insert_test_case(request, data=insert_data.copy())
-    #         # response['test_category'] = test_category
-    #         return response
-    #     except Exception as e:
-    #         raise e
-
-    def store_parsed_tests(self, request, data, test_type, test_category, test_category_id, test_names):
-        for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
-            name = test_case.get('testname', test_case.get('name', "")).replace(" ", "_").lower()
-            test_id = f"{request.user.customer.name}_{test_type}_{test_category}_{self.device.product_code}_{name}".replace(
-                " ", "_").lower()
-            _test_case = {
-                "test_id": test_id,
-                "test_name": f"{name}",
-                "objective": test_case.get("objective", ""),
-                "data": test_case,
-                "type": "TESTCASE",
-                "test_category_id": test_category_id,
-                "product": self.device,
-                "customer": request.user.customer,
-                "request_id": self.request.request_id,
-                "created_by": request.user
-            }
-
-            _test_script = {
-                "test_id": test_id,
-                "test_name": f"{name}",
-                "objective": test_script.get("objective", ""),
-                "data": test_script,
-                "type": "TESTSCRIPT",
-                "test_category_id": test_category_id,
-                "product": self.device,
-                "customer": request.user.customer,
-                "request_id": self.request.request_id,
-                "created_by": request.user
-            }
-
-            similarity = self.check_semantic_similarity(name=name, test_names=test_names)
-            if similarity:
-                StructuredTestCases.objects.create(**_test_case)
-                StructuredTestCases.objects.create(**_test_script)
-                return True
-            return False
-    
-    def check_semantic_similarity(self, name, test_names, threshold=95):
-        try:
-            model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-            embedding1 = model.encode(name, convert_to_tensor=True)
-
-            # Print current heading1 being compared
-            logger.log(level='INFO', message="Checking '{}' for similarities:".format(name.strip()))
-            # print("Checking '{}' for similarities:".format(name.strip()))        
-
-            embedding1 = model.encode(name.strip(), convert_to_tensor=True)
-
-            for heading2 in test_names:
-                embedding2 = model.encode(heading2.strip(), convert_to_tensor=True)
-
-                cosine_score = util.pytorch_cos_sim(embedding1, embedding2).item()
-                similarity_percentage = cosine_score * 100
-
-                logger.log(level='INFO', message="Similarity between '{}' and '{}': {:.2f}%".format(name.strip(), heading2.strip(), similarity_percentage))
-
-                # Print similarity percentage for current combination
-                # print("Similarity between '{}' and '{}': {:.2f}%".format(name.strip(), heading2.strip(), similarity_percentage))
-
-                if similarity_percentage >= threshold:
-                    logger.log(level='INFO', message="Above similarity is greater than 95% so no need to add that value".format(name.strip()))
-                    return False
-            else:
-                return True
-        except Exception as e:
-            logger.log(level="ERROR", message=f"Error while checking similarity,{e}")
-            return False
-
-    # def store_in_github(self, data, file_path ):
-    #     response = []
-    #     registry = {
-    #         'raw' : "raw.md",
-    #         'test_cases': "TestCases.md",
-    #         'test_scripts': "TestScripts.py",
-    #     }
-    #     for key, file_name in registry.items():
-    #         pass
-
-    def get_file_path(self, request, test_type, test_category, test_code):
-        try:
-            device_code = self.device.product_code
-            path = CustomerConfig.objects.filter(config_type='repo_folder_path',
-                                                 customer=request.user.customer).first().config_value
-            return path.replace("${device_code}", device_code) \
-                .replace("${test_type}", test_type) \
-                .replace("${test_category}", test_category) \
-                .replace("${test_code}", test_code)
-        except Exception as e:
-            return f"data/{request.user.customer.code}/{test_type}/{test_code}"
-
-    def generate_tests(self, prompts, context, **kwargs):
-        try:
-            response_text = ""
-            for prompt in prompts:
-                kwargs['prompt'] = prompt
-                kwargs['context'] = context
-                prompt_data = self.ai_obj.send_prompt(**kwargs)
-                response_text += prompt_data
-            return self.get_test_data(response_text)
-        except Exception as e:
-            raise e
-
-    def get_test_data(self, text_data):
-        result = {"raw_text": text_data, "test_cases": [], "test_scripts": []}
-        data = parseModelDataToList(text_data)
-        for _test in data:
-            test_case = _test.get('testcase', None)
-            test_scripts = _test.get('testscript', None)
-            if test_case and test_scripts:
-                if isinstance(test_case, list):
-                    result['test_cases'] += test_case
-                else:
-                    result['test_cases'].append(test_case)
-
-                if isinstance(test_scripts, list):
-                    result['test_scripts'] += test_scripts
-                else:
-                    result['test_scripts'].append(test_scripts)
-        return result
+            logger.log(level="ERROR", message=f"Error while getting generated test cases ,{e}")
+            return Response({
+                "error": f"{e}",
+                "status": 400,
+                "response": {}
+            })
+        
+    def get_filters(self, request):
+        filters = {}
+        if request.GET.get('request_id', None):
+            filters["request_id"] = request.GET.get('request_id')
+        if request.GET.get('status', None):
+            filters["execution_status"] = request.GET.get('status')
+        if request.GET.get('is_admin', False):
+            filters['created_by'] = request.user
+        return filters
 
 
 def insert_test_case(request, data):
@@ -1498,3 +1340,5 @@ class CategoryDetailsView(generics.ListAPIView):
         except Exception as e:
             logger.log(level="ERROR", message=f" fetching CategoryDetails failed,{e}")
             return JsonResponse({'data': "Something went wrong"})
+
+ 

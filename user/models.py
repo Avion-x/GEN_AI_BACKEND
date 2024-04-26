@@ -105,6 +105,13 @@ class RequestTracking(DefaultModel, models.Model):
     request_method = models.CharField(max_length=10)
     status_code = models.CharField(max_length=50)
     error_message = models.TextField(null=True, blank=True)  # New column for error message
+    meta_data = models.JSONField(default=dict)
+
+    def set_meta(self, meta_dict):
+        self.meta_data = meta_dict
+    
+    def get_meta(self):
+        return self.meta_data
 
     def save(self, *args, **kwargs):
         # Calculate time_taken before saving

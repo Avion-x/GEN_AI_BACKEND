@@ -4,9 +4,12 @@ from product.models import ProductPrompt, TestType, ProductSubCategory, Customer
 from product.serializers import ProductSubCategorySerializer, CustomerSerializer, PromptSerializer
 import datetime
 import os, re, json
+from user.models import RequestTracking
 from user.settings import BASE_DIR
 import boto3, pdfplumber
 from io import BytesIO
+from django.http import HttpRequest
+
 
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -21,10 +24,52 @@ session = boto3.Session(
 )
 s3 = session.client('s3')
 
+# def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], **kwargs):
+#     try:
+#         filters = {}
+#         category_filters = {}
+#         if not device_id and not device_name:
+#             raise Exception(f"send device id or device name to get prompts")
+#         if device_id:
+#             filters['product_id'] = device_id
+#         elif device_name:
+#             filters['product__product_code'] = device_name
+
+#         prompts = ProductPrompt.objects.filter(**filters, status=1).values_list('executable_prompt', flat=True)
+#         response = {}
+#         for _test in test_type_data:
+#             test_id = _test.get("test_type_id", None)
+#             if test_id is None:
+#                 raise Exception(f"Could not find test type id for tests")
+#             test_categories = _test.get("test_category_ids", [])
+#             if len(test_categories):
+#                 category_filters = {'id__in':test_categories}
+#             test_type = TestType.objects.filter(id=test_id).first()
+#             if test_type:
+#                 response[test_type.code] = {}
+#                 for test_category in test_type.test_category.filter(status=1, is_approved=1, **category_filters).all():
+#                     for test_code, test_code_details in test_category.executable_codes.items():
+#                         test_prompts = [prompt.replace('${TestType}', test_code_details.get("code", test_code)) for prompt in  prompts] if test_code_details.get("code", None) else []
+#                         test_prompts += test_code_details.get("default", [])
+#                         test_prompts = {"kb_query":get_knowledge_base_query(test_category), "prompts" : test_prompts}
+#                         if not len(test_prompts):
+#                             continue
+#                         if response.get(test_type.code) and response[test_type.code].get(test_category.name):
+#                             response[test_type.code][test_category.name][test_code] = test_prompts
+#                         else:
+#                             response[test_type.code][test_category.name] = {"test_category_id": test_category.id}
+#                             response[test_type.code][test_category.name][test_code] = test_prompts
+#         if not response:
+#             raise Exception(f"Incorrect configuration of test types, Please verify once")
+#         return response
+#     except Exception as e:
+#         raise e
+    
 def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], **kwargs):
     try:
         filters = {}
         category_filters = {}
+        sub_category_filters = {}
         if not device_id and not device_name:
             raise Exception(f"send device id or device name to get prompts")
         if device_id:
@@ -34,34 +79,53 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], 
 
         prompts = ProductPrompt.objects.filter(**filters, status=1).values_list('executable_prompt', flat=True)
         response = {}
+
         for _test in test_type_data:
             test_id = _test.get("test_type_id", None)
             if test_id is None:
                 raise Exception(f"Could not find test type id for tests")
-            test_categories = _test.get("test_category_ids", [])
+            test_category = _test.get("test_category_ids", {}).get('test_category_id', [])
+            test_categories = test_category if isinstance(test_category, list) else [test_category]
             if len(test_categories):
-                category_filters = {'id__in':test_categories}
+                category_filters = {'id__in': test_categories}
             test_type = TestType.objects.filter(id=test_id).first()
+            test_sub_category = _test["test_category_ids"].get("test_sub_category_id", [])
+            test_sub_categories = test_sub_category if isinstance(test_sub_category, list) else [test_sub_category]
+            if len(test_sub_categories):
+                sub_category_filters = {'id__in': test_sub_categories}
+
             if test_type:
-                response[test_type.code] = {}
+                if test_type.code not in response.keys():
+                    response[test_type.code] = []
+
                 for test_category in test_type.test_category.filter(status=1, is_approved=1, **category_filters).all():
-                    for test_code, test_code_details in test_category.executable_codes.items():
-                        test_prompts = [prompt.replace('${TestType}', test_code_details.get("code", test_code)) for prompt in  prompts] if test_code_details.get("code", None) else []
-                        test_prompts += test_code_details.get("default", [])
-                        test_prompts = {"kb_query":get_knowledge_base_query(test_category), "prompts" : test_prompts}
-                        if not len(test_prompts):
-                            continue
-                        if response.get(test_type.code) and response[test_type.code].get(test_category.name):
-                            response[test_type.code][test_category.name][test_code] = test_prompts
-                        else:
-                            response[test_type.code][test_category.name] = {"test_category_id": test_category.id}
-                            response[test_type.code][test_category.name][test_code] = test_prompts
+                    test_type_replace = []
+                    for test_sub_category in TestSubCategories.objects.filter(status=1, is_approved=1, test_category=test_category.id, **sub_category_filters).all():
+                        for test_code, test_code_details in test_sub_category.executable_codes.items():
+                            test_codes = test_code_details.get("code", test_code)
+                            test_codes = test_codes.replace("${testcase}", test_sub_category.name)
+                            test_type_replace.append(test_codes)
+                    test_prompts = [prompt.replace('${TestType}', ",".join(test_type_replace)) for prompt in
+                                        prompts] if test_code_details.get("code", None) else []
+                    # test_prompts += test_code_details.get("default", [])
+                    test_prompts = {"kb_query": get_knowledge_base_query(test_category), "prompts": test_prompts}
+                    if not len(test_prompts):
+                        continue
+                    temp_response = {}
+
+                    if response.get(test_type.code) and test_category.name in temp_response.keys():
+                        temp_response[test_category.name][test_code] = test_prompts
+                        response[test_type.code].append(temp_response)
+                    else:
+                        temp_response[test_category.name] = {"test_category_id": test_category.id}
+                        temp_response[test_category.name][test_code] = test_prompts
+                        response[test_type.code].append(temp_response)
         if not response:
             raise Exception(f"Incorrect configuration of test types, Please verify once")
         return response
     except Exception as e:
         raise e
-    
+
 def get_knowledge_base_query(test_category):
     kb_queries = test_category.knowledge_base_prompts.all()
     data = []
@@ -323,3 +387,30 @@ def extract_pdf(bucket_name, folder_path):
     
     except Exception as e:
         return {"message": f"Failed to upload text file for {file_name}", "status": 400}
+
+
+
+
+def rebuild_request(request_id):
+    stored_request = RequestTracking.objects.get(request_id=request_id)
+    request = HttpRequest()
+    request.method = stored_request.request_method
+    request.path = stored_request.api
+    request._body = stored_request.payload.encode('utf-8')
+    request.META = stored_request.get_meta()
+    request.user = stored_request.created_by
+
+     # Simulate the META attributes
+    meta_data = stored_request.get_meta()
+    for key, value in meta_data.items():
+        request.META[key] = value
+
+    # Simulate POST data if necessary
+    if request.method == 'POST' and 'application/json' in request.META.get('CONTENT_TYPE', ''):
+        request._stream = BytesIO(request._body)
+        request._read_started = False
+        request.POST = json.loads(request.body.decode('utf-8'))
+    request.request_id = request_id
+    request.request_tracking = stored_request
+    return request
+

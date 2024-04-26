@@ -1,9 +1,12 @@
 from rest_framework import serializers
+
+from event_manager.models import CronExecution
 from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, \
     ProductSubCategory, Prompt, TestCases, TestCategories, Customer, TestScriptExecResults, UserCreatedTestCases
 from django.contrib.auth.hashers import make_password
 from django.db.models import F
 import pytz
+from product.services.custom_logger import logger
 
 
 class ISTTimestamp:
@@ -349,3 +352,59 @@ class TestScriptExecResultsSerializer(serializers.ModelSerializer, ISTTimestamp)
         model = TestScriptExecResults
         fields = ['test_script_number', 'execution_result_details', 'product', 'customer', 'test_type', 'test_category',
                   'executed_by']
+
+
+
+class GenereateTestCaseJobDataSerializer(serializers.ModelSerializer, ISTTimestamp):
+    device_name = serializers.SerializerMethodField()
+    device_id = serializers.SerializerMethodField()
+    created_by_name = serializers.SerializerMethodField()
+    created_at = serializers.SerializerMethodField()
+    data = serializers.SerializerMethodField()
+    execution_result = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = CronExecution
+        fields = ['id', 'execution_status', 'device_id', 'device_name', 'data', 'execution_result', 'created_at', 'created_by', "created_by_name"]
+
+    def get_execution_result(self, obj):
+        data = obj.results
+        return data
+        # for 
+
+    def get_device_id(self, obj):
+        return obj.params.get('body', {}).get('device_id', None)
+
+    def get_device_name(self, obj):
+        try:
+            device_id = obj.params.get('body', {}).get('device_id', None)
+            if device_id:
+                return Product.objects.get(id=device_id).product_code
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error in getting device name from device id {device_id}. Error is {e}")
+            return ""
+    
+    def get_data(self, obj):
+        data = obj.params.get('body', {})
+        _data = []
+        _test_data = data.get('test_type_data',{})
+        for test_data in _test_data:
+            test_type_id = test_data.get('test_type_id', None)
+            test_category_data = test_data.get('test_category_ids', {})
+            test_category_ids = test_category_data.get('test_category_id', [])
+            test_sub_category_ids = test_category_data.get('test_sub_categoy_ids', [])
+            _data.append({
+                "test_type_id": test_type_id,
+                "test_type_name" : TestType.objects.get(id=test_type_id).code,
+                "test_category_data": [TestCategories.objects.filter(id__in=test_category_ids).values("id", "name")],
+                "test_sub_category_data": [ProductSubCategory.objects.filter(id__in=test_sub_category_ids).values("id", "sub_category")]
+            })
+        return _data
+    
+    def get_created_by_name(self, obj):
+        return obj.created_by.username
+
+    def get_created_at(self, obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp

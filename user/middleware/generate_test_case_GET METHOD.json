@@ -1,0 +1,915 @@
+{
+    "error": "",
+    "status": 200,
+    "response": [
+        {
+            "id": 33,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "CronJobName is incorrect"
+            },
+            "created_at": "2024-04-25 11:08",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 34,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "GenerateTests.__init__() takes 1 positional argument but 2 were given"
+            },
+            "created_at": "2024-04-25 13:40",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 35,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "Field 'id' expected a number but got {'ai_model': 'anthropic.claude-v2', 'device_id': '6', 'test_type_data': [{'test_type_id': 1, 'test_category_ids': {'test_category_id': [102], 'test_sub_categoy_ids': [2, 3, 4]}}]}."
+            },
+            "created_at": "2024-04-25 13:44",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 36,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "CronJobName is incorrect"
+            },
+            "created_at": "2024-04-25 13:59",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 37,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "Field 'id' expected a number but got {'ai_model': 'anthropic.claude-v2', 'device_id': '6', 'test_type_data': [{'test_type_id': 1, 'test_category_ids': {'test_category_id': [102], 'test_sub_categoy_ids': [2, 3, 4]}}]}."
+            },
+            "created_at": "2024-04-25 14:00",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 38,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "Field 'id' expected a number but got {'ai_model': 'anthropic.claude-v2', 'device_id': '6', 'test_type_data': [{'test_type_id': 1, 'test_category_ids': {'test_category_id': [102], 'test_sub_categoy_ids': [2, 3, 4]}}]}."
+            },
+            "created_at": "2024-04-25 14:02",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 39,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "Product matching query does not exist."
+            },
+            "created_at": "2024-04-25 14:03",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 40,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "CronJobName is incorrect"
+            },
+            "created_at": "2024-04-25 14:05",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 41,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "CronJobName is incorrect"
+            },
+            "created_at": "2024-04-25 14:06",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 42,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "Product matching query does not exist."
+            },
+            "created_at": "2024-04-25 17:38",
+            "created_by": 19,
+            "created_by_name": "damodar_cisco"
+        },
+        {
+            "id": 43,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "Product matching query does not exist."
+            },
+            "created_at": "2024-04-25 17:40",
+            "created_by": 19,
+            "created_by_name": "damodar_cisco"
+        },
+        {
+            "id": 44,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "'NoneType' object has no attribute 'old_request'"
+            },
+            "created_at": "2024-04-25 17:52",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 45,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "Product matching query does not exist."
+            },
+            "created_at": "2024-04-25 18:03",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 46,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "CronJobName is incorrect"
+            },
+            "created_at": "2024-04-25 18:07",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 47,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "'list' object has no attribute 'items'"
+            },
+            "created_at": "2024-04-25 18:12",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 48,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "'list' object has no attribute 'items'"
+            },
+            "created_at": "2024-04-25 18:15",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 49,
+            "execution_status": "SUCCESS",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "result": {
+                    "Unit Test": {
+                        "Bootup process": {
+                            "Tests": {
+                                "raw_text": " Here are 5 unit test cases and Python test scripts for bootup configuration and initialization testing for MX240 Juniper devices:\n\n```python\n###STARTLIST###\n[\n{\"testname\":\"Bootup Configuration Retrieval Test\",\n\"testcase\":{\n  \"testname\":\"Bootup Configuration Retrieval Test\",\n  \"objective\":\"Verify that the device retrieves the correct bootup configuration from persistent storage\",\n  \"steps\":[\"1. Power on the device\",\n           \"2. Check that the bootup configuration file is retrieved from persistent storage\", \n           \"3. Validate that the running configuration matches the bootup configuration file\"]\n },\n\"testscript\":{\n  \"testname\":\"test_bootup_config_retrieval\",  \n  \"objective\":\"Bootup Configuration Retrieval Test\",\n  \"file_name\":\"test_bootup_config_retrieval.py\",\n  \"init_scripts\":[\"import unittest\",\n                  \"from mocks import MagicMock\"],\n  \"script\":\"\\n\\nclass TestBootupConfigRetrieval(unittest.TestCase):\\n\\n def test_bootup_config_retrieval(self):\\n   mock_device = MagicMock()\\n   mock_device.get_bootup_config.return_value = \\\"bootup_config\\\"\\n   mock_device.get_running_config.return_value = \\\"bootup_config\\\"\\n\\n   self.assertEqual(mock_device.get_bootup_config(), \\\"bootup_config\\\") \\n   self.assertEqual(mock_device.get_running_config(), \\\"bootup_config\\\")\\n\",\n  \"run_command\":\"python test_bootup_config_retrieval.py\",\n  \"expected_result\":\"OK\"\n}\n},\n\n{\"testname\":\"Bootup Hardware Initialization Test\",\n\"testcase\":{\n  \"testname\":\"Bootup Hardware Initialization Test\",\n  \"objective\":\"Verify hardware components are detected and initialized during bootup\",\n  \"steps\":[\"1. Power on the device\", \n           \"2. Check hardware inventory for components\",\n           \"3. Verify hardware components are initialized\"]\n},  \n\"testscript\":{\n  \"testname\":\"test_bootup_hardware_init\",\n  \"objective\":\"Bootup Hardware Initialization Test\",  \n  \"file_name\":\"test_bootup_hardware_init.py\",\n  \"init_scripts\":[\"import unittest\",\n                  \"from mocks import MagicMock\"],\n  \"script\":\"\\n\\nclass TestBootupHardwareInit(unittest.TestCase):\\n\\n  def test_bootup_hardware_init(self):\\n    mock_device = MagicMock()\\n    mock_device.get_hardware_inventory.return_value = [\\\"CPU\\\", \\\"Memory\\\", \\\"NIC\\\"]\\n\\n    for component in [\\\"CPU\\\", \\\"Memory\\\", \\\"NIC\\\"]:\\n      self.assertIn(component, mock_device.get_hardware_inventory())\\n      self.assertTrue(mock_device.is_hardware_initialized(component))\\n\",\n  \"run_command\":\"python test_bootup_hardware_init.py\",\n  \"expected_result\":\"OK\"  \n}\n},\n\n{\"testname\":\"Bootup Firmware Verification Test\",\n\"testcase\":{\n  \"testname\":\"Bootup Firmware Verification Test\",\n  \"objective\":\"Validate firmware integrity during bootup\",\n  \"steps\":[\"1. Power on the device\",\n           \"2. Calculate checksum of firmware image\",\n           \"3. Compare calculated checksum against stored checksum\",\n           \"4. Verify firmware if checksums match\"]\n},\n\"testscript\":{\n  \"testname\":\"test_bootup_firmware_verification\",\n  \"objective\":\"Bootup Firmware Verification Test\",\n  \"file_name\":\"test_bootup_firmware_verification.py\",\n  \"init_scripts\":[\"import unittest\",\n                  \"from mocks import MagicMock\"],\n  \"script\":\"\\n\\nclass TestBootupFirmwareVerification(unittest.TestCase):\\n\\n  def test_bootup_firmware_verification(self):\\n    mock_device = MagicMock()\\n    mock_device.calculate_firmware_checksum.return_value = \\\"abcd1234\\\"\\n    mock_device.get_stored_firmware_checksum.return_value = \\\"abcd1234\\\"\\n  \\n    self.assertEqual(mock_device.calculate_firmware_checksum(), mock_device.get_stored_firmware_checksum())\\n    mock_device.verify_firmware.assert_called_with()\",\n  \"run_command\":\"python test_bootup_firmware_verification.py\",\n  \"expected_result\":\"OK\"\n}\n},\n\n{\"testname\":\"Bootup Interface Initialization Test\",  \n\"testcase\":{\n  \"testname\":\"Bootup Interface Initialization Test\",\n  \"objective\":\"Verify interfaces are detected and initialized during bootup\",\n  \"steps\":[\"1. Power on the device\",\n           \"2. Retrieve interface names from device\",\n           \"3. Check interface status and parameters\",\n           \"4. Verify interfaces are in expected initialized state\"]   \n},\n\"testscript\":{\n  \"testname\":\"test_bootup_interface_init\",\n  \"objective\":\"Bootup Interface Initialization Test\",\n  \"file_name\":\"test_bootup_interface_init.py\",\n  \"init_scripts\":[\"import unittest\",\n                  \"from mocks import MagicMock\"],\n  \"script\":\"\\n\\nclass TestBootupInterfaceInit(unittest.TestCase):\\n\\n  def test_bootup_interface_init(self):\\n    mock_device = MagicMock()\\n    mock_device.get_interface_names.return_value = [\\\"ge-0/0/0\\\", \\\"ge-0/0/1\\\"]\\n\\n    for interface in mock_device.get_interface_names():\\n      self.assertEqual(mock_device.get_interface_status(interface), \\\"up\\\")\\n      self.assertEqual(mock_device.get_interface_speed(interface), \\\"1G\\\")\\n      # Additional checks\\n\",  \n  \"run_command\":\"python test_bootup_interface_init.py\",\n  \"expected_result\":\"OK\"\n}\n},\n\n{\"testname\":\"Bootup Bootloader Verification Test\",\n\"testcase\":{\n  \"testname\":\"Bootup Bootloader Verification Test\",\n  \"objective\":\"Validate bootloader during bootup for secure booting\",\n  \"steps\":[\"1. Power on device\",\n           \"2. Calculate checksum of bootloader\",\n           \"3. Compare calculated checksum against stored checksum\",\n           \"4. Verify bootloader if checksums match\"]\n},\n\"testscript\":{\n  \"testname\":\"test_bootup_bootloader_verification\",\n  \"objective\":\"Bootup Bootloader Verification Test\",\n  \"file_name\":\"test_bootup_bootloader_verification.py\",  \n  \"init_scripts\":[\"import unittest\",\n                  \"from mocks import MagicMock\"],\n  \"script\":\"\\n\\nclass TestBootupBootloaderVerification(unittest.TestCase):\\n\\n  def test_bootup_bootloader_verification(self):\\n    mock_device = MagicMock()\\n    mock_device.calculate_bootloader_checksum.return_value = \\\"abcd1234\\\"\\n    mock_device.get_stored_bootloader_checksum.return_value = \\\"abcd1234\\\"\\n\\n    self.assertEqual(mock_device.calculate_bootloader_checksum(), mock_device.get_stored_bootloader_checksum()) \\n    mock_device.verify_bootloader.assert_called_with()\",\n  \"run_command\":\"python test_bootup_bootloader_verification.py\",\n  \"expected_result\":\"OK\" \n}\n}]\n###ENDLIST###\n```\n\nThe above contains:\n\n2 Unit Test and Python test scripts for Bootup Configuration Retrieval Test\n\n2 Unit Test and Python test scripts for Bootup Hardware Initialization Test\n\nPython test scripts for Bootup Firmware Verification Test\n\nPython test scripts for Bootup Interface Initialization Test \n\nPython test scripts for Bootup Bootloader Verification Test\n\nEach test case and test script is encapsulated in a JSON object with the required fields. The Python list contains 5 JSON objects for 5 unit test cases and scripts focused on bootup configuration and initialization testing for MX240 Juniper devices.",
+                                "test_cases": [
+                                    {
+                                        "steps": [
+                                            "1. Power on the device",
+                                            "2. Check that the bootup configuration file is retrieved from persistent storage",
+                                            "3. Validate that the running configuration matches the bootup configuration file"
+                                        ],
+                                        "testname": "Bootup Configuration Retrieval Test",
+                                        "objective": "Verify that the device retrieves the correct bootup configuration from persistent storage"
+                                    },
+                                    {
+                                        "steps": [
+                                            "1. Power on the device",
+                                            "2. Check hardware inventory for components",
+                                            "3. Verify hardware components are initialized"
+                                        ],
+                                        "testname": "Bootup Hardware Initialization Test",
+                                        "objective": "Verify hardware components are detected and initialized during bootup"
+                                    },
+                                    {
+                                        "steps": [
+                                            "1. Power on the device",
+                                            "2. Calculate checksum of firmware image",
+                                            "3. Compare calculated checksum against stored checksum",
+                                            "4. Verify firmware if checksums match"
+                                        ],
+                                        "testname": "Bootup Firmware Verification Test",
+                                        "objective": "Validate firmware integrity during bootup"
+                                    },
+                                    {
+                                        "steps": [
+                                            "1. Power on the device",
+                                            "2. Retrieve interface names from device",
+                                            "3. Check interface status and parameters",
+                                            "4. Verify interfaces are in expected initialized state"
+                                        ],
+                                        "testname": "Bootup Interface Initialization Test",
+                                        "objective": "Verify interfaces are detected and initialized during bootup"
+                                    },
+                                    {
+                                        "steps": [
+                                            "1. Power on device",
+                                            "2. Calculate checksum of bootloader",
+                                            "3. Compare calculated checksum against stored checksum",
+                                            "4. Verify bootloader if checksums match"
+                                        ],
+                                        "testname": "Bootup Bootloader Verification Test",
+                                        "objective": "Validate bootloader during bootup for secure booting"
+                                    }
+                                ],
+                                "test_scripts": [
+                                    {
+                                        "script": "\n\nclass TestBootupConfigRetrieval(unittest.TestCase):\n\n def test_bootup_config_retrieval(self):\n   mock_device = MagicMock()\n   mock_device.get_bootup_config.return_value = \"bootup_config\"\n   mock_device.get_running_config.return_value = \"bootup_config\"\n\n   self.assertEqual(mock_device.get_bootup_config(), \"bootup_config\") \n   self.assertEqual(mock_device.get_running_config(), \"bootup_config\")\n",
+                                        "testname": "test_bootup_config_retrieval",
+                                        "file_name": "test_bootup_config_retrieval.py",
+                                        "objective": "Bootup Configuration Retrieval Test",
+                                        "run_command": "python test_bootup_config_retrieval.py",
+                                        "init_scripts": [
+                                            "import unittest",
+                                            "from mocks import MagicMock"
+                                        ],
+                                        "expected_result": "OK"
+                                    },
+                                    {
+                                        "script": "\n\nclass TestBootupHardwareInit(unittest.TestCase):\n\n  def test_bootup_hardware_init(self):\n    mock_device = MagicMock()\n    mock_device.get_hardware_inventory.return_value = [\"CPU\", \"Memory\", \"NIC\"]\n\n    for component in [\"CPU\", \"Memory\", \"NIC\"]:\n      self.assertIn(component, mock_device.get_hardware_inventory())\n      self.assertTrue(mock_device.is_hardware_initialized(component))\n",
+                                        "testname": "test_bootup_hardware_init",
+                                        "file_name": "test_bootup_hardware_init.py",
+                                        "objective": "Bootup Hardware Initialization Test",
+                                        "run_command": "python test_bootup_hardware_init.py",
+                                        "init_scripts": [
+                                            "import unittest",
+                                            "from mocks import MagicMock"
+                                        ],
+                                        "expected_result": "OK"
+                                    },
+                                    {
+                                        "script": "\n\nclass TestBootupFirmwareVerification(unittest.TestCase):\n\n  def test_bootup_firmware_verification(self):\n    mock_device = MagicMock()\n    mock_device.calculate_firmware_checksum.return_value = \"abcd1234\"\n    mock_device.get_stored_firmware_checksum.return_value = \"abcd1234\"\n  \n    self.assertEqual(mock_device.calculate_firmware_checksum(), mock_device.get_stored_firmware_checksum())\n    mock_device.verify_firmware.assert_called_with()",
+                                        "testname": "test_bootup_firmware_verification",
+                                        "file_name": "test_bootup_firmware_verification.py",
+                                        "objective": "Bootup Firmware Verification Test",
+                                        "run_command": "python test_bootup_firmware_verification.py",
+                                        "init_scripts": [
+                                            "import unittest",
+                                            "from mocks import MagicMock"
+                                        ],
+                                        "expected_result": "OK"
+                                    },
+                                    {
+                                        "script": "\n\nclass TestBootupInterfaceInit(unittest.TestCase):\n\n  def test_bootup_interface_init(self):\n    mock_device = MagicMock()\n    mock_device.get_interface_names.return_value = [\"ge-0/0/0\", \"ge-0/0/1\"]\n\n    for interface in mock_device.get_interface_names():\n      self.assertEqual(mock_device.get_interface_status(interface), \"up\")\n      self.assertEqual(mock_device.get_interface_speed(interface), \"1G\")\n      # Additional checks\n",
+                                        "testname": "test_bootup_interface_init",
+                                        "file_name": "test_bootup_interface_init.py",
+                                        "objective": "Bootup Interface Initialization Test",
+                                        "run_command": "python test_bootup_interface_init.py",
+                                        "init_scripts": [
+                                            "import unittest",
+                                            "from mocks import MagicMock"
+                                        ],
+                                        "expected_result": "OK"
+                                    },
+                                    {
+                                        "script": "\n\nclass TestBootupBootloaderVerification(unittest.TestCase):\n\n  def test_bootup_bootloader_verification(self):\n    mock_device = MagicMock()\n    mock_device.calculate_bootloader_checksum.return_value = \"abcd1234\"\n    mock_device.get_stored_bootloader_checksum.return_value = \"abcd1234\"\n\n    self.assertEqual(mock_device.calculate_bootloader_checksum(), mock_device.get_stored_bootloader_checksum()) \n    mock_device.verify_bootloader.assert_called_with()",
+                                        "testname": "test_bootup_bootloader_verification",
+                                        "file_name": "test_bootup_bootloader_verification.py",
+                                        "objective": "Bootup Bootloader Verification Test",
+                                        "run_command": "python test_bootup_bootloader_verification.py",
+                                        "init_scripts": [
+                                            "import unittest",
+                                            "from mocks import MagicMock"
+                                        ],
+                                        "expected_result": "OK"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "status": "SUCCESS",
+                "message": "Test cases generated successfully."
+            },
+            "created_at": "2024-04-25 18:32",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 50,
+            "execution_status": "SUCCESS",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "result": {
+                    "Unit Test": {
+                        "Bootup process": {
+                            "Tests": {
+                                "raw_text": " ```python\nimport json\n\ntest_cases = [\n###STARTLIST###\n{\n  \"testname\": \"Bootup Configuration Retrieval Test\",\n  \"testcase\": {\n    \"testname\": \"Bootup Configuration Retrieval Test\", \n    \"objective\": \"To verify the device retrieves the correct configuration from persistent storage during bootup\",\n    \"steps\": [\n      \"1. Power on the device\",\n      \"2. Verify bootup logs show configuration being loaded from persistent storage\", \n      \"3. Verify running configuration matches startup configuration\"\n    ],\n    \"test_data\": {\n      \"startup_config\": \"sample_startup_config.txt\", \n      \"running_config\": \"sample_running_config.txt\"  \n    }\n  },\n  \"testscript\": {\n    \"testname\": \"Bootup Configuration Retrieval Test\",\n    \"objective\": \"To verify the device retrieves the correct configuration from persistent storage during bootup\", \n    \"file_name\": \"test_bootup_config_retrieval.py\",\n    \"init_scripts\": [\n      \"pip install paramiko\",\n      \"pip install netmiko\"\n    ],\n    \"script\": \"\"\"\nimport unittest\nfrom netmiko import ConnectHandler\n\nclass TestBootupConfigRetrieval(unittest.TestCase):\n\n    def test_config_retrieval(self):\n        device = {\n            'device_type': 'juniper',\n            'ip': '192.168.1.1',\n            'username': 'testuser',\n            'password': 'testpass'\n        }\n        \n        net_connect = ConnectHandler(**device)\n        bootup_logs = net_connect.send_command('show log messages | include bootup')\n        self.assertIn('Loading configuration from', bootup_logs)\n        \n        startup_config = open('sample_startup_config.txt').read()\n        running_config = net_connect.send_command('show configuration')\n        self.assertEqual(startup_config, running_config)\n\nif __name__ == '__main__':\n    unittest.main()\n    \"\"\",\n    \"run_command\": \"python test_bootup_config_retrieval.py\",\n    \"expected_result\": \"OK\"\n  }\n},\n\n{\n  \"testname\": \"Bootup Hardware Initialization Test\",\n  \"testcase\": {\n    \"testname\": \"Bootup Hardware Initialization Test\",\n    \"objective\": \"To verify hardware components are properly initialized during bootup\",\n    \"steps\": [\n      \"1. Power on the device\",\n      \"2. Verify bootup logs show hardware initialization messages\",\n      \"3. Verify show interface status indicates all interfaces are up\" \n    ],\n    \"test_data\": {\n      \"bootup_logs\": \"sample_bootup.log\",\n      \"interface_status\": \"sample_interface_status.txt\"  \n    }\n  },\n  \"testscript\": {\n    \"testname\": \"Bootup Hardware Initialization Test\",\n    \"objective\": \"To verify hardware components are properly initialized during bootup\",\n    \"file_name\": \"test_bootup_hardware_init.py\", \n    \"init_scripts\": [\n      \"pip install paramiko\"\n    ],\n    \"script\": \"\"\"  \nimport unittest\nfrom paramiko import SSHClient\n  \nclass TestBootupHardwareInit(unittest.TestCase):\n      \n    def test_hardware_initialization(self):\n        client = SSHClient()\n        client.load_system_host_keys()\n        client.connect('192.168.1.1', username='testuser', password='testpass')\n          \n        stdin, stdout, stderr = client.exec_command('show log messages | include initialization')  \n        self.assertIn('Initializing hardware components', stdout.read().decode())\n          \n        stdin, stdout, stderr = client.exec_command('show interfaces status')\n        interface_status = stdout.read().decode()\n        self.assertNotIn('down', interface_status)\n  \nif __name__ == '__main__':\n    unittest.main()\n    \"\"\",\n    \"run_command\": \"python test_bootup_hardware_init.py\", \n    \"expected_result\": \"OK\"\n  }\n},\n\n{\n  \"testname\": \"Bootup Firmware Verification Test\",\n  \"testcase\": {\n    \"testname\": \"Bootup Firmware Verification Test\",\n    \"objective\": \"To verify firmware integrity and compatibility during bootup\",\n    \"steps\": [\n      \"1. Power on the device\",\n      \"2. Verify bootup logs indicate firmware is verified\",\n      \"3. Verify show version shows expected firmware version running\"\n    ],\n    \"test_data\": {\n      \"bootup_logs\": \"sample_bootup.log\",\n      \"running_firmware\": \"19.2R1.9\"\n    }\n  },\n  \n  \"testscript\": {\n    \"testname\": \"Bootup Firmware Verification Test\", \n    \"objective\": \"To verify firmware integrity and compatibility during bootup\",\n    \"file_name\": \"test_bootup_firmware_check.py\",\n    \"init_scripts\": [\n      \"pip install paramiko\"  \n    ],\n    \"script\": \"\"\"\nimport re\nimport unittest\nfrom paramiko import SSHClient\n\nclass TestBootupFirmwareCheck(unittest.TestCase):\n\n  def test_firmware_verification(self):\n    client = SSHClient()\n    client.load_system_host_keys()\n    client.connect('192.168.1.1', username='testuser', password='testpass')\n    \n    stdin, stdout, stderr = client.exec_command('show log messages | include firmware')\n    self.assertRegex(stdout.read().decode(), r'Verifying firmware integrity')\n\n    stdin, stdout, stderr = client.exec_command('show version')\n    firmware = re.search(r'JUNOS Software Release \\[(\\d+\\.\\d+)\\]', \n                         stdout.read().decode()).group(1)\n    self.assertEqual(firmware, '19.2R1.9')\n    \nif __name__ == '__main__':\n    unittest.main()\n    \"\"\",\n    \"run_command\": \"python test_bootup_firmware_check.py\",\n    \"expected_result\": \"OK\"\n  }\n},\n\n{\n  \"testname\": \"Bootup Interface Initialization Test\", \n  \"testcase\": {\n    \"testname\": \"Bootup Interface Initialization Test\",\n    \"objective\": \"To verify interfaces are properly initialized during bootup\",\n    \"steps\": [\n      \"1. Power on the device\",\n      \"2. Verify bootup logs show interface initialization messages\",\n      \"3. Verify show interfaces terse shows all expected interfaces\"\n    ],\n    \"test_data\": {\n      \"bootup_logs\": \"sample_bootup.log\",\n      \"interface_list\": [\"ge-0/0/0\", \"ge-0/0/1\"] \n    }\n  },\n\n  \"testscript\": {\n    \"testname\": \"Bootup Interface Initialization Test\",\n    \"objective\": \"To verify interfaces are properly initialized during bootup\",\n    \"file_name\": \"test_bootup_interface_init.py\",\n    \"init_scripts\": [\n      \"pip install paramiko\"\n    ],\n    \"script\": \"\"\"\nimport re \nimport unittest\nfrom paramiko import SSHClient\n\nclass TestBootupInterfaceInit(unittest.TestCase):\n\n  def test_interface_initialization(self):\n    client = SSHClient()\n    client.load_system_host_keys()\n    client.connect('192.168.1.1', username='testuser', password='testpass')\n    \n    stdin, stdout, stderr = client.exec_command('show log messages | include interface')\n    self.assertIn('Initializing interface', stdout.read().decode())\n    \n    stdin, stdout, stderr = client.exec_command('show interfaces terse')\n    interfaces = re.findall(r'^(ge-\\S+)', stdout.read().decode(), re.M)\n    self.assertEqual(sorted(interfaces), ['ge-0/0/0', 'ge-0/0/1'])\n    \nif __name__ == '__main__':\n    unittest.main()\n    \"\"\",\n    \"run_command\": \"python test_bootup_interface_init.py\",\n    \"expected_result\": \"OK\"\n  }\n},\n\n{\n  \"testname\": \"Bootup Self-Test Diagnostics Test\",\n  \"testcase\": {\n    \"testname\": \"Bootup Self-Test Diagnostics Test\",\n    \"objective\": \"To verify self-test diagnostics complete successfully during bootup\",\n    \"steps\": [\n      \"1. Power on the device\",\n      \"2. Verify bootup logs show self-test diagnostics completing successfully\",\n      \"3. Verify show chassis hardware shows all hardware components are OK\"\n    ],\n    \"test_data\": {\n      \"bootup_logs\": \"sample_bootup.log\",\n      \"hardware_status\": \"sample_chassis_hardware.txt\"\n    }\n  },\n  \n  \"testscript\": {\n    \"testname\": \"Bootup Self-Test Diagnostics Test\",\n    \"objective\": \"To verify self-test diagnostics complete successfully during bootup\",\n    \"file_name\": \"test_bootup_diagnostics.py\",\n    \"init_scripts\": [\n      \"pip install paramiko\"\n    ],\n    \"script\": \"\"\"\nimport unittest\nfrom paramiko import SSHClient\n\nclass TestBootupDiagnostics(unittest.TestCase):\n\n  def test_self_test_diagnostics(self):\n    client = SSHClient()\n    client.load_system_host_keys() \n    client.connect('192.168.1.1', username='testuser', password='testpass')\n    \n    stdin, stdout, stderr = client.exec_command('show log messages",
+                                "test_cases": [],
+                                "test_scripts": []
+                            }
+                        }
+                    }
+                },
+                "status": "SUCCESS",
+                "message": "Test cases generated successfully."
+            },
+            "created_at": "2024-04-25 18:39",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 51,
+            "execution_status": "INPROGRESS",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {},
+            "created_at": "2024-04-25 18:54",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        },
+        {
+            "id": 52,
+            "execution_status": "FAILED",
+            "device_id": "6",
+            "device_name": "MX240",
+            "data": [
+                {
+                    "test_type_id": 1,
+                    "test_type_name": "Unit Test",
+                    "test_category_data": [
+                        [
+                            {
+                                "id": 102,
+                                "name": "Bootup process"
+                            }
+                        ]
+                    ],
+                    "test_sub_category_data": [
+                        [
+                            {
+                                "id": 2,
+                                "sub_category": "MX series"
+                            },
+                            {
+                                "id": 3,
+                                "sub_category": "EX series"
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "execution_result": {
+                "status": "FAILED",
+                "message": "CronJobName is incorrect"
+            },
+            "created_at": "2024-04-25 21:27",
+            "created_by": 2,
+            "created_by_name": "damodar"
+        }
+    ]
+}

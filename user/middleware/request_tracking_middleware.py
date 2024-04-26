@@ -14,6 +14,13 @@ _thread_locals = threading.local()
 def get_current_request():
     return getattr(_thread_locals, 'request', None)
 
+def set_current_request(request):
+    setattr(_thread_locals, 'request', request)
+
+def delete_current_request():
+    if hasattr(_thread_locals, 'request'):
+        del _thread_locals.request
+
 class RequestIDMiddleware(MiddlewareMixin):
     def process_request(self, request):
         request_id = uuid.uuid4().hex
@@ -33,6 +40,7 @@ class RequestIDMiddleware(MiddlewareMixin):
             api=request.path,
             request_method=request.method,
         )
+        request_tracking.set_meta({key: value for key, value in request.META.items() if isinstance(value, str)})
         if request.user.is_authenticated:
             request_tracking.created_by = request.user
         request_tracking.save()
