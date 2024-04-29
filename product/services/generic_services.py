@@ -98,7 +98,11 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], 
                 if test_type.code not in response.keys():
                     response[test_type.code] = []
 
-                for test_category in test_type.test_category.filter(status=1, is_approved=1, **category_filters).all():
+                test_categories_from_db = test_type.test_category.filter(status=1, is_approved=1, test_type_id=test_id, **category_filters).all()
+                if not test_categories_from_db:
+                    response['error'] = "No approved categories for the selected test type, please approve the categories"
+                    return response
+                for test_category in test_categories_from_db:
                     test_type_replace = []
                     for test_sub_category in TestSubCategories.objects.filter(status=1, is_approved=1, test_category=test_category.id, **sub_category_filters).all():
                         for test_code, test_code_details in test_sub_category.executable_codes.items():

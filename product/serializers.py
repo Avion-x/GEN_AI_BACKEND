@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from event_manager.models import CronExecution
 from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, \
-    ProductSubCategory, Prompt, TestCases, TestCategories, Customer, TestScriptExecResults, UserCreatedTestCases
+    ProductSubCategory, Prompt, TestCases, TestCategories, Customer, TestScriptExecResults, UserCreatedTestCases, TestSubCategories
 from django.contrib.auth.hashers import make_password
 from django.db.models import F
 import pytz
@@ -414,3 +414,40 @@ class GenereateTestCaseJobDataSerializer(serializers.ModelSerializer, ISTTimesta
         timestamp = obj.created_at
         ist_timestamp = self.get_ist_timestamp(timestamp)
         return ist_timestamp
+
+class TestSubCategoriesSerializer(serializers.ModelSerializer, ISTTimestamp):
+    created_at = serializers.SerializerMethodField()
+    last_updated_at = serializers.SerializerMethodField()
+    last_updated_by_name = serializers.SerializerMethodField()
+    approved_by_name = serializers.SerializerMethodField()
+    test_type_name = serializers.SerializerMethodField()
+    test_category_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TestSubCategories
+        fields = '__all__'
+
+    def get_created_at(self, obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+
+    def get_last_updated_at(self, obj):
+        timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+
+    def get_last_updated_by_name(self, obj):
+        return obj.last_updated_by.username
+
+    def get_approved_by_name(self, obj):
+        if obj.approved_by:
+            return obj.approved_by.username
+        else:
+            return obj.approved_by
+
+    def get_test_type_name(self, obj):
+        return obj.test_type.code
+
+    def get_test_category_name(self, obj):
+        return obj.test_category.name

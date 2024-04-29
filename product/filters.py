@@ -2,7 +2,7 @@ import django_filters
 from django.db import models
 from rest_framework import filters
 from .models import StructuredTestCases, TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, \
-    ProductSubCategory, Prompt, TestCases, TestCategories, TestScriptExecResults
+    ProductSubCategory, Prompt, TestCases, TestCategories, TestScriptExecResults, TestSubCategories
 
 
 class TestTypeFilter(django_filters.FilterSet):
@@ -114,6 +114,22 @@ class TestExecutionResultsFilter(django_filters.FilterSet):
     class Meta:
         model = TestScriptExecResults
         fields = ['id', 'test_script_number', 'created_by']
+        filter_overrides = {
+            models.JSONField: {
+                'filter_class': django_filters.CharFilter,
+                'extra': lambda f: {
+                    'lookup_expr': 'exact',
+                },
+            },
+        }
+
+
+class TestSubCategoriesFilter(django_filters.FilterSet):
+    test_type_id = django_filters.NumberFilter(lookup_expr='exact')
+
+    class Meta:
+        model = TestSubCategories
+        fields = '__all__'
         filter_overrides = {
             models.JSONField: {
                 'filter_class': django_filters.CharFilter,
