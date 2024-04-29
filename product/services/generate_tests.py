@@ -116,8 +116,8 @@ class GenerateTests:
                 "created_by": request.user
             }
 
-            # similarity = self.check_semantic_similarity(name=name, test_names=test_names)
-            similarity = True
+            similarity = self.check_semantic_similarity(name=name, test_names=test_names)
+            # similarity = True
             if similarity:
                 StructuredTestCases.objects.create(**_test_case)
                 StructuredTestCases.objects.create(**_test_script)
@@ -128,6 +128,7 @@ class GenerateTests:
         try:
             model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
             embedding1 = model.encode(name, convert_to_tensor=True)
+            # test_names = list(StructuredTestCases.objects.filter(type='TESTCASE').values_list('test_name', flat = True))
 
             # Print current heading1 being compared
             logger.log(level='INFO', message="Checking '{}' for similarities:".format(name.strip()))
