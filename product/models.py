@@ -43,6 +43,7 @@ class TestCategories(DefaultModel, models.Model):
     customer = models.ForeignKey(Customer, related_name = "test_category", on_delete=models.CASCADE)
     test_type = models.ForeignKey(TestType, related_name = "test_category", on_delete=models.CASCADE)
     last_updated_by = models.ForeignKey(User, related_name="test_category_last_updated", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name="test_category_created_by", on_delete=models.CASCADE)
     executable_codes = models.JSONField(default=dict())
 
     objects = CustomManager()
