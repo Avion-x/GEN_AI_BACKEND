@@ -942,12 +942,13 @@ class TestCategoriesView(generics.ListAPIView):
             return JsonResponse({'data': serializer.data}, safe=False)
         except Exception as e:
             logger.log(level="ERROR", message=f"Error while retriving TestCategories,{e}")
-            return JsonResponse({'data': "Something went wrong"})
+            return JsonResponse({'error': f"Something went wrong: {e}"})
 
     def post(self, request, *args, **kwargs):
         try:
             request.data['customer'] = request.user.customer.id
             request.data['last_updated_by'] = request.user.id
+            request.data['created_by'] = request.user.id
             request.data['is_approved'] = False
             request.data['approved_by'] = None
             data = request.data
@@ -960,10 +961,10 @@ class TestCategoriesView(generics.ListAPIView):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             logger.log(level='INFO', message=f'TestCategories stored sucessfully.')
-            return JsonResponse({"message": "Test Category created successfully", "data": serializer.data, "status": 200})
+            return JsonResponse({"success": "Test Category Created successfully", "data": serializer.data, "status": 200})
         except Exception as e:
             logger.log(level="ERROR", message=f"Error while creating Test Caregorie,{e}")
-            return JsonResponse({'data': "Something went wrong"})
+            return JsonResponse({'error': f"Test Category Creation failed: {e}", "status": 400})
 
     def put(self, request, *args, **kwargs):
         try:
@@ -973,38 +974,38 @@ class TestCategoriesView(generics.ListAPIView):
             id = request.data.get('id')
             if not id:
                 logger.log(level="ERROR", message=f"id not found in TestCategory.")
-                return Response({"message": "Please pass id to update Test Category", "status": 400})
+                return Response({"error": "Please pass id to update Test Category", "status": 400})
             instance = self.get_queryset({"id": id}).first()
             if not instance:
                 logger.log(level="ERROR", message=f"instance not found in TestCategory.")
-                return JsonResponse({"message": "No Record found", "status": 400})
+                return JsonResponse({"error": "No Record found", "status": 400})
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             logger.log(level='INFO', message=f'TestCategories updated sucessfully.')
-            return JsonResponse({"message": "Test Category updated successfully", "data": serializer.data, "status": 200})
+            return JsonResponse({"success": "Test Category updated successfully", "data": serializer.data, "status": 200})
         except Exception as e:
             logger.log(level="ERROR", message=f"Error while Updating TestCategory,{e}")
-            return JsonResponse({'data': "Something went wrong"})
+            return JsonResponse({"error": f"Test Category update failed: {e}", "status": 400})
 
     def delete(self, request, *args, **kwargs):
         try:
             id = request.GET.get('id')
             if not id:
                 logger.log(level="ERROR", message=f"Deletion failed in test Category")
-                return Response({"message": "Please pass id to delete Test Category", "status": 400})
+                return JsonResponse({"error": "Please pass id to delete Test Category", "status": 400})
             instance = self.get_queryset({"id": id}).first()
             if not instance:
                 logger.log(level="ERROR", message=f"Not a valid instance of Approve test Category")
-                return JsonResponse({"message": "No Record found", "status": 400})
+                return JsonResponse({"error": "No Record found", "status": 400})
             instance.status = 0
             instance.last_updated_by = self.request.user
             instance.save()
             logger.log(level='INFO', message=f'TestCategories Deleted sucessfully.')
-            return JsonResponse({"message": "Test Category deleted successfully", "status": 200})
+            return JsonResponse({"success": "Test Category deleted successfully", "status": 200})
         except Exception as e:
             logger.log(level="ERROR", message=f"Error while deleting Test Category,{e}")
-            return JsonResponse({'data': "Something went wrong"})
+            return JsonResponse({"error": f"Test Category deletion failed: {e}"})
 
 
 class TestScriptExecResultsView(generics.ListAPIView):
@@ -1141,26 +1142,30 @@ class ApproveTestCategoryView(generics.ListAPIView):
             return TestCategories.objects.filter(**filters)
         except Exception as e:
             logger.log(level="ERROR", message=f"Connectivity issues,{e}")
-            return JsonResponse({'data': "Something went wrong"})
+            return JsonResponse({'error': f"Something went wrong: {e}"})
 
     def put(self, request, *args, **kwargs):
         try:
+            if request.user.role_name == "USER":
+                return Response({"error": "Test Category can approved only by an ADMIN", "status": 400})
             id = request.GET.get('id')
             if not id:
                 logger.log(level="ERROR", message=f"Getting id failed in test Category")
-                return Response({"message": "Please pass id to Approve Test Category", "status": 400})
+                return Response({"error": "Please pass id to Approve Test Category", "status": 400})
             instance = self.get_queryset({"id": id}).first()
             if not instance:
                 logger.log(level="ERROR", message=f"Not a valid instance of Approve test Category")
-                return JsonResponse({"message": "No Record found", "status": 400})
+                return JsonResponse({"error": "No Record found", "status": 400})
+            if request.user.id == instance.created_by_id:
+                return Response({"error": "Test Category cannot approved by Created User", "status": 400})
             instance.is_approved = True
             instance.approved_by = self.request.user
             instance.save()
             logger.log(level='INFO', message=f'ApproveTestCategory updated sucessfully.')
-            return JsonResponse({"message": "Test Category Approved successfully", "status": 200})
+            return JsonResponse({"success": "Test Category Approved successfully", "status": 200})
         except Exception as e:
             logger.log(level="ERROR", message=f"ApproveTestCategory update failed,{e}")
-            return JsonResponse({'data': "Something went wrong"})
+            return JsonResponse({'error': f"Test Category Approval failed: {e}"})
 
 
 class DashboardChart(generics.ListAPIView):
