@@ -15,10 +15,10 @@ from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from .models import StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
-    TestScriptExecResults, UserCreatedTestCases
+    TestScriptExecResults, UserCreatedTestCases, TestSubCategories
 from .serializers import GenereateTestCaseJobDataSerializer, TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, \
-    LatestTestTypesWithCategoriesOfProductFilter
+    LatestTestTypesWithCategoriesOfProductFilter, TestSubCategoriesFilter
 # import git
 import os
 from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanField, ExpressionWrapper, CharField, Case, \
@@ -27,7 +27,7 @@ from django.db.models.functions import Cast
 
 from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories, DocumentUploads
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, \
-    TestCasesSerializer, TestCategoriesSerializer, TestScriptExecResultsSerializer
+    TestCasesSerializer, TestCategoriesSerializer, TestScriptExecResultsSerializer, TestSubCategoriesSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, TestCasesFilter, \
     TestCategoriesFilter, TestExecutionResultsFilter
 from django.contrib.auth import authenticate, login, logout
@@ -1350,4 +1350,33 @@ class CategoryDetailsView(generics.ListAPIView):
             logger.log(level="ERROR", message=f" fetching CategoryDetails failed,{e}")
             return JsonResponse({'data': "Something went wrong"})
 
- 
+
+class TestSubCategoriesView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+    filter_backends = (django_filters.DjangoFilterBackend,)
+    filterset_class = TestSubCategoriesFilter
+    serializer_class = TestSubCategoriesSerializer
+    ordering_fields = ['id', 'created_at', 'last_updated_at']
+    ordering = []  # for default orderings
+
+    def get_queryset(self, filters={}):
+        try:
+            return TestSubCategories.objects.filter(**filters)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Connectivity issues,{e}")
+            return JsonResponse({'data': "Something went wrong"})
+
+    def get(self, request, *args, **kwargs):
+        try:
+            filters = {"is_approved": True,
+                       "status": True,
+                       "test_type_id": request.query_params.get('test_type_id', None),
+                       "test_category_id": request.query_params.get('test_category_id', None)}
+            queryset = self.filter_queryset(self.get_queryset(filters))
+            serializer = self.get_serializer(queryset, many=True)
+            logger.log(level='INFO', message=f'TestSubCategories fetched sucessfully.')
+            return JsonResponse({'data': serializer.data}, safe=False)
+        except Exception as e:
+            logger.log(level="ERROR", message=f"Error while retriving TestSubCategories,{e}")
+            return JsonResponse({'data': "Something went wrong"})

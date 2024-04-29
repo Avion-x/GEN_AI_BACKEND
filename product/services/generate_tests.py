@@ -72,7 +72,7 @@ class GenerateTests:
                 kb_data = self.lang_chain.execute_kb_queries(details.get('kb_query', []))
                 print("\n\n kb data is :", kb_data)
                 prompts = details.get('prompts', [])
-
+                prompts = [prompts[0].replace('${a.content}', kb_data)]
                 file_path = self.get_file_path(request, test_type, test_category, test_code)
                 response[test_code] = self.generate_tests(prompts=prompts, context=kb_data)
 

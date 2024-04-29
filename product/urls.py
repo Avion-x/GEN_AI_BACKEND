@@ -4,7 +4,7 @@ from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, 
     ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, \
     GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, \
     PendingApprovalTestCategoryView, ApproveTestCategoryView, DashboardChart, ExtractTextFromPDFView, \
-    CategoryDetailsView, UploadDeviceDocsView, EmbedUploadedDocs, UserCreatedTestCasesAndScripts
+    CategoryDetailsView, UploadDeviceDocsView, EmbedUploadedDocs, UserCreatedTestCasesAndScripts, TestSubCategoriesView
     
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,7 +32,8 @@ urlpatterns = [
     path('upload_device_docs/', UploadDeviceDocsView.as_view(), name = "upload_device_docs"),
     path('extract_pdf/', ExtractTextFromPDFView.as_view(), name='extract_pdf'),
     path('category_details/', CategoryDetailsView.as_view(), name='category_details'),
-    path('embed_uploaded_docs/', EmbedUploadedDocs.as_view(), name='embed_uploaded_docs')
+    path('embed_uploaded_docs/', EmbedUploadedDocs.as_view(), name='embed_uploaded_docs'),
+    path('test_sub_categories/', TestSubCategoriesView.as_view(), name='test_sub_categories')
 
 ]
 
