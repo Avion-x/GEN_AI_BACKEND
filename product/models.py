@@ -278,7 +278,6 @@ class KnowledgeBaseResults(DefaultModel, models.Model):
     customer = models.ForeignKey(Customer, related_name="knowledge_base_results", on_delete=models.CASCADE)
     kb_prompt = models.ForeignKey(KnowledgeBasePrompts, related_name="knowledge_base_results", on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, related_name="knowledge_base_results_created_by", on_delete=models.CASCADE)
-    # updated_by = models.ForeignKey(User, related_name="knowledge_base_results_updated_by", on_delete=models.CASCADE)
     request = models.ForeignKey(RequestTracking, to_field='request_id', related_name="knowledge_base_results", on_delete=models.CASCADE)
     query = models.TextField()
     top_k_docs = models.JSONField()

@@ -492,7 +492,6 @@ class GenerateTestCases(generics.ListAPIView):
                 "data": {}
             })
 
-
     def get_filters(self, request):
         filters = {}
         if request.GET.get('request_id', None):
