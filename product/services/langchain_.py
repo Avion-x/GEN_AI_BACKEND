@@ -81,15 +81,15 @@ class Langchain_():
         except Exception as e:
             raise e
 
-    def execute(self):
-        response = {}
-        for test_type, test_categories in self.prompt_data.items():
-            response[test_type] = {}
-            for test_category_name, details in test_categories.items():
-                test_category_id = details.get('test_category_id')
-                for test in details.get('Tests', []):
-                    kb_data = self.execute_kb_queries(test.get('kb_query',[]))
-                    print(kb_data)
+    # def execute(self):
+    #     response = {}
+    #     for test_type, test_categories in self.prompt_data.items():
+    #         response[test_type] = {}
+    #         for test_category_name, details in test_categories.items():
+    #             test_category_id = details.get('test_category_id')
+    #             for test in details.get('Tests', []):
+    #                 kb_data = self.execute_kb_queries(test.get('kb_query',[]))
+    #                 print(kb_data)
 
                     
                     

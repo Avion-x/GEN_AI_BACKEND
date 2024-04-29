@@ -80,7 +80,6 @@ class GenerateTests:
                 if result:
                     insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
                     insert_test_case(request, data=insert_data.copy())
-
             # response['test_category'] = test_category
             return response
         except Exception as e:

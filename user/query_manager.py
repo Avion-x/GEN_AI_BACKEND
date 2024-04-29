@@ -41,7 +41,6 @@ class CustomManager(Manager):
             raise e
         
 class UserManager(Manager):
-
     def get_by_natural_key(self, username):
         return self.get(username=username)
     

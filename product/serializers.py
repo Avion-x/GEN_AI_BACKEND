@@ -365,7 +365,13 @@ class GenereateTestCaseJobDataSerializer(serializers.ModelSerializer, ISTTimesta
     
     class Meta:
         model = CronExecution
-        fields = ['id', 'execution_status', 'device_id', 'device_name', 'data', 'execution_result', 'created_at', 'created_by', "created_by_name"]
+        fields = ['request_id', 'execution_status', 'device_id', 'device_name', 'data', 'execution_result', 'created_at', 'created_by', "created_by_name"]
+
+    def __init__(self, *args, **kwargs):
+        exclude_fields = kwargs.pop('exclude_fields', [])
+        super(GenereateTestCaseJobDataSerializer, self).__init__(*args, **kwargs)
+        for field_name in exclude_fields:
+            self.fields.pop(field_name, None)
 
     def get_execution_result(self, obj):
         data = obj.results

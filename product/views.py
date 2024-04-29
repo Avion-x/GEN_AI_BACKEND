@@ -2,6 +2,7 @@ import asyncio
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 import threading
+from product.paginator import CustomPagination
 from product.services.aws_bedrock import AwsBedrock
 from user.models import CustomerConfig, User
 from product.services.custom_logger import logger
@@ -400,11 +401,12 @@ class ProductView(generics.ListAPIView):
 class GenerateTestCases(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
+    pagination_class = CustomPagination
     validation_checks = {
         "device_id": {
             "is_mandatory": True,
             "type": str,
-            "convert_type": True,
+            "convert_type": False,
         },
         "test_type_data": {
             "is_mandatory": True,
@@ -417,7 +419,6 @@ class GenerateTestCases(generics.ListAPIView):
             "type": str,
             "convert_type": False,
         },
-
     }
 
     def post(self, request):
@@ -471,21 +472,27 @@ class GenerateTestCases(generics.ListAPIView):
     def get(self, request):
         try:
             filters = self.get_filters(request)
+            print(filters)
             jobs = CronExecution.objects.filter(name="GENERATE_TEST_CASES", **filters).order_by('-id')
-            serializer = GenereateTestCaseJobDataSerializer(jobs, many=True)
-            return Response({
+            page = self.paginate_queryset(jobs)
+            if page is not None:
+                serializer = GenereateTestCaseJobDataSerializer(page, many=True, exclude_fields= [] if 'request_id' in filters else ['execution_result'])
+            else:
+                serializer = GenereateTestCaseJobDataSerializer(jobs, many=True, exclude_fields= [] if 'request_id' in filters else ['execution_result'])
+            return self.get_paginated_response(data={
                 "error": "",
                 "status": 200,
-                "response": serializer.data
+                "data": serializer.data
             })
         except Exception as e:
             logger.log(level="ERROR", message=f"Error while getting generated test cases ,{e}")
             return Response({
                 "error": f"{e}",
                 "status": 400,
-                "response": {}
+                "data": {}
             })
-        
+
+
     def get_filters(self, request):
         filters = {}
         if request.GET.get('request_id', None):
@@ -494,6 +501,8 @@ class GenerateTestCases(generics.ListAPIView):
             filters["execution_status"] = request.GET.get('status')
         if request.GET.get('is_admin', False):
             filters['created_by'] = request.user
+        if request.GET.get('device_id', None):
+            filters['params__body__device_id'] = request.GET.get('device_id')
         return filters
 
 
