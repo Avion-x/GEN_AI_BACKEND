@@ -1156,8 +1156,6 @@ class ApproveTestCategoryView(generics.ListAPIView):
             if not instance:
                 logger.log(level="ERROR", message=f"Not a valid instance of Approve test Category")
                 return JsonResponse({"error": "No Record found", "status": 400})
-            if request.user.id == instance.created_by_id:
-                return Response({"error": "Test Category cannot approved by Created User", "status": 400})
             instance.is_approved = True
             instance.approved_by = self.request.user
             instance.save()
