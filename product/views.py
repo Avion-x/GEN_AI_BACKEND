@@ -637,7 +637,7 @@ class UserCreatedTestCasesAndScripts(generics.ListAPIView):
         
     def push_to_git(self, data):
         try:
-            git = CustomGithub(**self.request.user.customer.data)
+            git = CustomGithub(self.request.user.customer)
             for item in data:
                 file_name = item.get('file_name', None)
                 content = item.get('content', "")

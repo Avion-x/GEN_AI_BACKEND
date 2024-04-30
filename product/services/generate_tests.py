@@ -3,7 +3,7 @@
 from product.models import Product, StructuredTestCases
 from product.services.aws_bedrock import AwsBedrock
 from product.services.generic_services import parseModelDataToList, rebuild_request
-from product.services.github_service import push_to_github
+from product.services.github_service import push_to_github, CustomGithub
 from product.services.langchain_ import Langchain_
 from product.services.open_ai import CustomOpenAI
 from user.models import CustomerConfig
@@ -78,7 +78,8 @@ class GenerateTests:
 
                 result = self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"), test_names=test_names)
                 if result:
-                    insert_data['git_data'] = push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
+                    git = CustomGithub(request.user.customer)
+                    insert_data['git_data'] = git.push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
                     insert_test_case(request, data=insert_data.copy())
             # response['test_category'] = test_category
             return response

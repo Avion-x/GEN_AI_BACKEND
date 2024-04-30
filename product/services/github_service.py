@@ -106,18 +106,39 @@ class CustomGithub(Github):
 
     def __init__(self, *args, **kwargs):
         try:
-            input_params = validate_mandatory_checks(input_data=kwargs, checks=self.validation_checks)
-            access_token = input_params.get('access_key')
-            super().__init__(access_token)
-            self.access_key = input_params.get('access_key')
-            self.branch = input_params.get('branch')
-            self.repository = input_params.get('repository')          
-            self.repo = self.get_repo(self.repository)
-            self.valid_till = kwargs.get('valid_till')
+            if kwargs:
+                input_params = validate_mandatory_checks(input_data=kwargs, checks=self.validation_checks)
+                access_token = input_params.get('access_key')
+                super().__init__(access_token)
+                self.access_key = input_params.get('access_key')
+                self.branch = input_params.get('branch')
+                self.repository = input_params.get('repository')          
+                self.repo = self.get_repo(self.repository)
+                self.valid_till = kwargs.get('valid_till')
+            else:
+                config = self.get_git_cofig(args[0])
+                self.access_key = config.get('access_key')
+                super().__init__(self.access_key)
+                self.branch = config.get('branch')
+                self.repository = config.get('repository')          
+                self.repo = self.get_repo(self.repository)
         except Exception as e:
             print(f"Error in initializing Github object: {e}")
             raise e
         
+    def get_git_cofig(self, customer):
+        try:
+            if not customer.data:
+                raise Exception("Please add atleast one github conguration and activate it")
+            for i , config in enumerate(customer.data['github']):
+                        if config['status'] == "ACTIVE":
+                            return config
+            else:
+                raise Exception("Please activate a github conguration")
+        except Exception as e:
+            print(f"Error in get git config: {e}")
+            raise e
+
     def set_defaults(self, customer):
         try:
             if isinstance(customer, Customer):

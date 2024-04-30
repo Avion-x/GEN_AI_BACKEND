@@ -286,14 +286,13 @@ class GitConfigStatusView(generics.ListAPIView):
             if not instance:
                 return JsonResponse({"error": "No Record found", "status": 400})
             for i, item in enumerate(instance.data['github']):
-                print(i)
                 if item['id'] == request.data['id']:
                     if request.data['status'] == "ACTIVE":
                         instance.data['github'][i]['status'] = "ACTIVE"
                     else:
                         instance.data['github'][i]['status'] = "INACTIVE"
                         instance.save()
-                        return JsonResponse({"success": "Github configuration status is deactivated", "status": 200})
+                        return JsonResponse({"success": "Github configuration status is Inactivated", "status": 200})
                 elif request.data['status'] == "ACTIVE":
                     instance.data['github'][i]['status'] = "INACTIVE"
             instance.last_updated_by = self.request.user.username
