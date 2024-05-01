@@ -117,44 +117,56 @@ class GenerateTests:
                 "created_by": request.user
             }
 
-            # similarity = self.check_semantic_similarity(name=name, test_names=test_names)
-            similarity = True
+            similarity = self.check_semantic_similarity(name=name, test_names=test_names)
+            #similarity = True
             if similarity:
                 StructuredTestCases.objects.create(**_test_case)
                 StructuredTestCases.objects.create(**_test_script)
                 return True
             return False
     
-    def check_semantic_similarity(self, name, test_names, threshold=95):
+    def check_semantic_similarity(self, name, test_names, threshold=90):
         try:
+            print(name)
+            print(test_names)
             model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
             embedding1 = model.encode(name, convert_to_tensor=True)
+            test_names = list(StructuredTestCases.objects.filter(type='TESTCASE').values_list('test_name', flat = True))
+
 
             # Print current heading1 being compared
             logger.log(level='INFO', message="Checking '{}' for similarities:".format(name.strip()))
-            # print("Checking '{}' for similarities:".format(name.strip()))        
+            print("Checking '{}' for similarities:".format(name.strip()))        
 
             embedding1 = model.encode(name.strip(), convert_to_tensor=True)
-
+            percentage=[]
             for heading2 in test_names:
                 embedding2 = model.encode(heading2.strip(), convert_to_tensor=True)
 
                 cosine_score = util.pytorch_cos_sim(embedding1, embedding2).item()
                 similarity_percentage = cosine_score * 100
+                percentage.append(similarity_percentage)
+                #print(similarity_percentage,type(similarity_percentage))
 
                 logger.log(level='INFO', message="Similarity between '{}' and '{}': {:.2f}%".format(name.strip(), heading2.strip(), similarity_percentage))
 
                 # Print similarity percentage for current combination
-                # print("Similarity between '{}' and '{}': {:.2f}%".format(name.strip(), heading2.strip(), similarity_percentage))
+                print("Similarity between '{}' and '{}': {:.2f}%".format(name.strip(), heading2.strip(), similarity_percentage))
 
                 if similarity_percentage >= threshold:
-                    logger.log(level='INFO', message="Above similarity is greater than 95% so no need to add that value".format(name.strip()))
+                    logger.log(level='INFO', message="Above similarity is greater than 90% so no need to add that value".format(name.strip()))
                     return False
             else:
+                if any(x >= 90 for x in percentage):
+                    pass
+                else:
+
+                    StructuredTestCases.objects.create(test_name=name, type='TESTCASE')
+                    logger.log(level='INFO', message="Added '{}' to database".format(name.strip()))
                 return True
         except Exception as e:
-            logger.log(level="ERROR", message=f"Error while checking similarity,{e}")
-            return False
+            logger.log(level="ERROR", message=f"Error while checking similarity:{e}")
+            return True
 
     def get_file_path(self, request, test_type, test_category, test_code):
         try:
