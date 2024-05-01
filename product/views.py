@@ -426,6 +426,8 @@ class GenerateTestCases(generics.ListAPIView):
             data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
             prompts_data = get_prompts_for_device(**data)
             test_names = list(StructuredTestCases.objects.filter(type='TESTCASE').values_list('test_name', flat = True))
+            git = CustomGithub(request.user.customer)
+            git_config = git.get_git_cofig(request.user.customer)
 
             job_data = {
                 "body" : data,
@@ -450,6 +452,7 @@ class GenerateTestCases(generics.ListAPIView):
             response = {
                 "request_id": request.request_id,
                 "Message": "Processing request will take some time Please come here in 5 mins",
+                "git_details": f"Pushing into branch - {git_config['branch']} of Repository - {git_config['repository']}"
             }
             logger.log(level='INFO', message="Generated test cases successfully.")
             return Response({
