@@ -4,7 +4,7 @@ djangorestframework
 djangorestframework-simplejwt
 mysqlclient
 sqlparse
-django-filter @ git+https://github.com/carltongibson/django-filter.git@00e88652d9308c4c6c4e707c3e0d735dd6843dca
+django-filter  
 langchain
 langchain-openai
 llama-index

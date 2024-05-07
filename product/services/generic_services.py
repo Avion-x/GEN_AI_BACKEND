@@ -418,3 +418,11 @@ def rebuild_request(request_id):
     request.request_tracking = stored_request
     return request
 
+
+
+def test_response(request):
+    try:
+        body = request.form.get('Body').lower()
+        return f"You have sent me a message : {body}"
+    except Exception as e:
+        raise e

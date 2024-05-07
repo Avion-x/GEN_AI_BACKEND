@@ -8,7 +8,7 @@ from user.models import CustomerConfig, User
 from product.services.custom_logger import logger
 from product.services.github_service import CustomGithub, push_to_github, get_commits_for_file, get_changes_in_file, \
     get_files_in_commit
-from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, parseModelDataToList, \
+from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, parseModelDataToList, test_response, \
     validate_mandatory_checks
 from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
@@ -1385,3 +1385,15 @@ class TestSubCategoriesView(generics.ListAPIView):
         except Exception as e:
             logger.log(level="ERROR", message=f"Error while retriving TestSubCategories,{e}")
             return JsonResponse({'data': "Something went wrong"})
+        
+
+class TestResponse(generics.ListAPIView):
+    def get(self, request, *args, **kwargs):
+        return Response("You are in get method")
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            met = test_response(request)
+            return Response(met)
+        except Exception as e:
+            return Response(f"{e}")
