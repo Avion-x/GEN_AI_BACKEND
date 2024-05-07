@@ -19,3 +19,4 @@ boto3
 sentence-transformers==2.7.0
 django-crontab
 llama-index-embeddings-azure-openai
+twilio==9.0.5

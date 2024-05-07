@@ -422,7 +422,12 @@ def rebuild_request(request_id):
 
 def test_response(request):
     try:
+        from twilio.twiml.messaging_response import Body, Message, Redirect, MessagingResponse
         body = request.form.get('Body').lower()
-        return f"You have sent me a message : {body}"
+        response = MessagingResponse()
+        message = Message()
+        message.body(f"You have sent me a message : {body}")
+        response.append(message)
+        return response
     except Exception as e:
         raise e
