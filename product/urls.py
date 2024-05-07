@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib import admin
-from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestTypeView, ProductCategoryView, \
+from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestResponse, TestTypeView, ProductCategoryView, \
     ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, \
     GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, \
     PendingApprovalTestCategoryView, ApproveTestCategoryView, DashboardChart, ExtractTextFromPDFView, \
@@ -33,7 +33,8 @@ urlpatterns = [
     path('extract_pdf/', ExtractTextFromPDFView.as_view(), name='extract_pdf'),
     path('category_details/', CategoryDetailsView.as_view(), name='category_details'),
     path('embed_uploaded_docs/', EmbedUploadedDocs.as_view(), name='embed_uploaded_docs'),
-    path('test_sub_categories/', TestSubCategoriesView.as_view(), name='test_sub_categories')
+    path('test_sub_categories/', TestSubCategoriesView.as_view(), name='test_sub_categories'),
+    path('demo_reply', TestResponse.as_view(), name='demo_reply'),
 
 ]
 
