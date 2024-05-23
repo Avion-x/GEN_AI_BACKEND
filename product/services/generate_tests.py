@@ -16,7 +16,9 @@ _thread_locals = threading.local()
 
 class GenerateTests:
     AiModels = {
-        "open_ai": CustomOpenAI,
+        "gpt_35": CustomOpenAI,
+        "gpt_40": CustomOpenAI,
+        # "gpt_assistant": ChatGPTAssistantManager,
         "anthropic.claude-v2:1": AwsBedrock,
         "anthropic.claude-v2": AwsBedrock,
         'amazon.titan-text-express-v1': AwsBedrock,
