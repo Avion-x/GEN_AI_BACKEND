@@ -5,7 +5,7 @@ from product.services.aws_bedrock import AwsBedrock
 from product.services.generic_services import parseModelDataToList, rebuild_request
 from product.services.github_service import push_to_github, CustomGithub
 from product.services.langchain_ import Langchain_
-from product.services.open_ai import CustomOpenAI
+from product.services.open_ai import ChatGPTAssistantManager, CustomOpenAI
 from user.models import CustomerConfig
 from sentence_transformers import SentenceTransformer, util
 from product.services.custom_logger import logger
@@ -18,7 +18,7 @@ class GenerateTests:
     AiModels = {
         "gpt_35": CustomOpenAI,
         "gpt_40": CustomOpenAI,
-        # "gpt_assistant": ChatGPTAssistantManager,
+        "gpt_assistant": ChatGPTAssistantManager,
         "anthropic.claude-v2:1": AwsBedrock,
         "anthropic.claude-v2": AwsBedrock,
         'amazon.titan-text-express-v1': AwsBedrock,
