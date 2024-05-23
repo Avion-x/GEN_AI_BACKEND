@@ -128,6 +128,7 @@ class Product(DefaultModel, models.Model):
     vector_name_space = models.CharField(max_length = 100, blank=True, null=True)
     created_by = models.ForeignKey(User, related_name = "create_product", on_delete=models.CASCADE, null = True)
     pinecone_name_space = models.CharField(max_length=100, default="")
+    data = models.JSONField(default=dict())
 
     objects = CustomManager()
 
