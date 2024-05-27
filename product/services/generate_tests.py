@@ -90,7 +90,8 @@ class GenerateTests:
 
     def store_parsed_tests(self, request, data, test_type, test_category, test_category_id, test_names):
         for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
-            name = test_case.get('testname', test_case.get('name', "")).replace(" ", "_").lower()
+            name = test_case.get('testname', test_case.get('name', "")).replace(" ", "_").lower() or test_script.get('testname', test_script.get('name', "")).replace(" ", "_").lower()
+
             test_id = f"{request.user.customer.name}_{test_type}_{test_category}_{self.device.product_code}_{name}".replace(
                 " ", "_").lower()
             _test_case = {

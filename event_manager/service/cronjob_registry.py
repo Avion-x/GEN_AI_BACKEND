@@ -42,7 +42,7 @@ class CronJobRegistry():
                     raise Exception(f"The product is not assosiated with any assistants and you are requesting for assistant.")
                 job_data['body']['assistant_id'] = assistant_id
 
-            job_data['body']['thread_id'] = product.data.get('thread_id', 'thread_5i95Y6SzLdqhk1P9eWk5akpI')
+            job_data['body']['thread_id'] = product.data.get('thread_id', 'thread_EgNWrQZDj6iyOEMzQyPj0wnV')
 
             generate_test = GenerateTests(request, **job_data)
             result = generate_test.process_request()

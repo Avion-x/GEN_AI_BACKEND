@@ -75,7 +75,7 @@ class ChatGPTAssistantManager:
         # """
 
         self.default_prompt_suffix = """
-            . Each test case and test script should be encapsulated within its own separate JSON object, and it should be an object under the "testname" key. All these JSON objects should be assembled within a Python list, resulting in a list like this: [{ "testname": "", "testcase": {}, "testscript": {} }]. Each test case should include a testname, objective, steps (list of expected results), and relevant test data. Make sure each test script JSON object includes the following fields: 'testname', 'objective', 'file_name', 'init_scripts'. The 'init_scripts' field should contain pip install commands for all required packages, 'script' (given in triple quotes), 'run_command' (a command to execute the python file), and 'expected_result'. The Python list with the JSON objects should not include any unrelated context or information. Find the starting delimiter as ###STARTLIST### and the ending delimiter as ###ENDLIST### and the python list should be very accurate that i should not get any error while converting into python list object.
+            . Each test case and test script should be encapsulated within its own separate JSON object, and it should be an object under the "testname" key. All these JSON objects should be assembled within a Python list, resulting in a list like this: [{ "testname": "", "testcase": {}, "testscript": {} }]. Each test case should include a testname, objective, steps (list of expected results), and relevant test data. Make sure each test script JSON object includes the following fields: 'testname', 'objective', 'file_name', 'init_scripts'. The 'init_scripts' field should contain pip install commands for all required packages, 'script' (given in triple quotes), 'run_command' (a command to execute the python file), and 'expected_result'. The Python list with the JSON objects should not include any unrelated context or information. Find the starting delimiter as ###STARTLIST### and the ending delimiter as ###ENDLIST### and the list should be compatible to python list i should not get any error while converting into python list object.
         """
         
     def set_default_values(self):
@@ -187,9 +187,10 @@ class ChatGPTAssistantManager:
             self.kwargs = kwargs
             self.set_default_values()
             print(self.prompt)
+            print("thread_id: " + self.thread.id)
             message, run = self.run_thread()
             llm_response = self.get_response(run_id=run.id, get_only_current_run=True)
-            return "\n".join(llm_response)
+            return "".join(llm_response)
         except Exception as e:
             message = f"Error sending prompt to chatgpt :: ERROR: {e}"
             raise message
