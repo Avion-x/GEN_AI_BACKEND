@@ -119,8 +119,8 @@ class GenerateTests:
                 "created_by": request.user
             }
 
-            similarity = self.check_semantic_similarity(name=name, test_names=test_names)
-            #similarity = True
+            # similarity = self.check_semantic_similarity(name=name, test_names=test_names)
+            similarity = True
             if similarity:
                 StructuredTestCases.objects.create(**_test_case)
                 StructuredTestCases.objects.create(**_test_script)
@@ -188,6 +188,7 @@ class GenerateTests:
             for prompt in prompts:
                 kwargs['prompt'] = prompt
                 kwargs['context'] = context
+                kwargs.update(self.body)
                 prompt_data = self.ai_obj.send_prompt(**kwargs)
                 response_text += prompt_data
             return self.get_test_data(response_text)

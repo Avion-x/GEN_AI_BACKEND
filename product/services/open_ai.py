@@ -81,7 +81,7 @@ class ChatGPTAssistantManager:
                 message = "Please pass an assistant_id to the ChatGPTAssistantManager"
                 raise Exception(message)
             self.assistant = self.get_assistant(assistant_id=assistant_id)
-            self.thread = self.get_or_create_thread()
+            self.thread = self.get_or_create_thread(self.kwargs.get('thread_id', None))
             self.context = self.kwargs.get("context", None)
             self.prompt = self.kwargs.get("prompt", "")
             if self.context:
@@ -114,9 +114,9 @@ class ChatGPTAssistantManager:
     def delete_assistant(self, assistant_id: str) -> None:
         client.beta.assistants.delete(assistant_id=assistant_id)
     
-    def get_or_create_thread(self):
+    def get_or_create_thread(self, thread_id:None):
         try:
-            thread_id = self.kwargs.get('thread_id',None)
+            # thread_id = self.kwargs.get('thread_id',None)
             if thread_id:
                 self.thread = client.beta.threads.retrieve(thread_id=thread_id)
             if not self.thread: 
@@ -164,14 +164,18 @@ class ChatGPTAssistantManager:
             run = client.beta.threads.runs.retrieve(thread_id=self.thread.id, run_id=run.id)
         return message, run
     
-    def get_response(self) -> list:
+    def get_response(self, run_id, get_only_current_run=True) -> list:
         messages = client.beta.threads.messages.list(thread_id=self.thread.id, order="asc")
         response = []
         for ind, m in enumerate(messages):
-            if ind==0:
-                continue
-            content = m.content[0].text.value
-            response.append(content)
+            if m.role == 'assistant':
+                if (get_only_current_run):
+                    if m.run_id == run_id:
+                        content = m.content[0].text.value
+                        response.append(content)
+                else:
+                    content = m.content[0].text.value
+                    response.append(content)
         return response
 
     def send_prompt(self, **kwargs):
@@ -179,7 +183,7 @@ class ChatGPTAssistantManager:
             self.kwargs = kwargs
             self.set_default_values()
             message, run = self.run_thread()
-            llm_response = self.get_response()
+            llm_response = self.get_response(run_id=run.id, get_only_current_run=True)
             return "\n".join(llm_response)
         except Exception as e:
             message = f"Error sending prompt to chatgpt :: ERROR: {e}"

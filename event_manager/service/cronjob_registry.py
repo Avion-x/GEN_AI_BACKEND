@@ -30,6 +30,20 @@ class CronJobRegistry():
 
     def generate_test_cases(self, job_data, request, *args, **kwargs):
         try:
+            product_id = job_data.get('device_id',None) or job_data.get('body', {}).get('device_id', None)
+            
+            product = Product.objects.filter(id=product_id).first()
+            if not product:
+                raise Exception(f"Please pass valid device_id in input_params. Passed {product_id}")
+            
+            if job_data.get('body', {}).get('ai_model', None) == 'gpt_assistant':
+                assistant_id = product.data.get('assistant_id',"asst_R7AJfXPPJnCjl0y0Xgo8cCYz")
+                if not assistant_id:
+                    raise Exception(f"The product is not assosiated with any assistants and you are requesting for assistant.")
+                job_data['body']['assistant_id'] = assistant_id
+
+            job_data['body']['thread_id'] = product.data.get('thread_id', 'thread_5i95Y6SzLdqhk1P9eWk5akpI')
+
             generate_test = GenerateTests(request, **job_data)
             result = generate_test.process_request()
             return {

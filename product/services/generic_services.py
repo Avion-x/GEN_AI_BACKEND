@@ -225,6 +225,8 @@ def delete_local_directory(local_directory):
 
 def parseModelDataToList(text):
     # text = re.search(r"###STARTLIST###(.+)###ENDLIST###", text, re.DOTALL).group(1)
+    text = re.sub(r'```python', '', text)
+    text = re.sub(r'```', '', text)
     list_occurences = re.findall(r"###STARTLIST###(.+?)###ENDLIST###", text, re.DOTALL)
     data = []
     for each_list in  list_occurences:

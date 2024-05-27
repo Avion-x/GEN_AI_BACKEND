@@ -428,7 +428,6 @@ class GenerateTestCases(generics.ListAPIView):
             test_names = list(StructuredTestCases.objects.filter(type='TESTCASE').values_list('test_name', flat = True))
             git = CustomGithub(request.user.customer)
             git_config = git.get_git_cofig(request.user.customer)
-            
 
             job_data = {
                 "body" : data,
