@@ -22,16 +22,17 @@ class TestType(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=500)
-    description = models.TextField(blank = True, null = True)
-    comments = models.TextField(blank = True, null = True)
+    description = models.TextField(blank=True, null=True)
+    comments = models.TextField(blank=True, null=True)
     last_updated_by = models.CharField(max_length=255)
-    executable_codes = models.JSONField(default=dict())
+    executable_codes = models.JSONField(default=dict)
+    type = models.CharField(max_length=255, default="TESTTYPE")
 
     objects = CustomManager()
 
     def __str__(self):
         return f"{self.code} - {self.description}"
-
+    
 
 class TestCategories(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
@@ -128,7 +129,7 @@ class Product(DefaultModel, models.Model):
     vector_name_space = models.CharField(max_length = 100, blank=True, null=True)
     created_by = models.ForeignKey(User, related_name = "create_product", on_delete=models.CASCADE, null = True)
     pinecone_name_space = models.CharField(max_length=100, default="")
-
+    test_type = models.ManyToManyField(TestType, related_name='product')
     objects = CustomManager()
 
     def __str__(self):

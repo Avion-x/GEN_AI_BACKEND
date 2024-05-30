@@ -84,6 +84,7 @@ class TestTypeView(generics.ListAPIView):
     serializer_class = TestTypeSerializer
     ordering_fields = ['id', 'created_at', 'last_updated_at']
     ordering = []  # for default orderings
+    ALLOWED_TYPES = ['TESTTYPE', 'TOPOLOGY', 'USECASE']
 
     def get_queryset(self, filters={}):
         try:
@@ -104,6 +105,12 @@ class TestTypeView(generics.ListAPIView):
     def post(self, request, *args, **kwargs):
         try:
             request.data['last_updated_by'] = self.request.user.username
+            type_value = request.data.get('type')
+            if not type_value:
+                return JsonResponse({"message": "Please Enter a Test Type", "status": 400})
+            if type_value not in self.ALLOWED_TYPES:
+                return JsonResponse({"message": f"Invalid Input. Allowed options are {', '.join(self.ALLOWED_TYPES)}", "status": 400})
+
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
