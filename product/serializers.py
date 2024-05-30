@@ -11,33 +11,13 @@ from product.services.custom_logger import logger
 
 class ISTTimestamp:
     def get_ist_timestamp(self, timestamp):
-        utc_timestamp = timestamp.astimezone(pytz.utc)
-        ist_timestamp = utc_timestamp.astimezone(pytz.timezone('Asia/Kolkata'))
-        formatted_timestamp = ist_timestamp.strftime("%Y-%m-%d %H:%M")
-        return formatted_timestamp
-
-
-class TestTypeSerializer(serializers.ModelSerializer, ISTTimestamp):
-    created_at = serializers.SerializerMethodField()
-    last_updated_at = serializers.SerializerMethodField()
-    test_categories_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = TestType
-        fields = '__all__'
-
-    def get_created_at(self, obj):
-        timestamp = obj.created_at
-        ist_timestamp = self.get_ist_timestamp(timestamp)
-        return ist_timestamp
-
-    def get_last_updated_at(self, obj):
-        timestamp = obj.last_updated_at
-        ist_timestamp = self.get_ist_timestamp(timestamp)
-        return ist_timestamp
-    
-    def get_test_categories_count(self, obj):
-        return obj.test_category.count()
+        try:
+            utc_timestamp = timestamp.astimezone(pytz.utc)
+            ist_timestamp = utc_timestamp.astimezone(pytz.timezone('Asia/Kolkata'))
+            formatted_timestamp = ist_timestamp.strftime("%Y-%m-%d %H:%M")
+            return formatted_timestamp
+        except Exception as e:
+            return "0000.00.00 00.00"
 
 
 class ProductSerializer(serializers.ModelSerializer, ISTTimestamp):
@@ -88,6 +68,37 @@ class ProductSerializer(serializers.ModelSerializer, ISTTimestamp):
 
     def get_last_updated_by_name(self, obj):
         return obj.last_updated_by.username
+
+
+class TestTypeSerializer(serializers.ModelSerializer, ISTTimestamp):
+    created_at = serializers.SerializerMethodField()
+    last_updated_at = serializers.SerializerMethodField()
+    test_categories_count = serializers.SerializerMethodField()
+    products = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TestType
+        fields = '__all__'
+
+    def get_products(self, obj):
+        products = obj.product.values('id', 'product_code')
+        return list(products)
+
+    def get_created_at(self, obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+
+    def get_last_updated_at(self, obj):
+        timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+    
+    def get_test_categories_count(self, obj):
+        return obj.test_category.count()
+
+
+
 
 
 class ProductSubCategorySerializer(serializers.ModelSerializer, ISTTimestamp):

@@ -8,10 +8,11 @@ from .models import StructuredTestCases, TestType, ProductCategory, Product, Pro
 class TestTypeFilter(django_filters.FilterSet):
     id = django_filters.NumberFilter(lookup_expr='exact')
     code = django_filters.CharFilter(lookup_expr='icontains')
+    type = django_filters.CharFilter(lookup_expr='icontains')
 
     class Meta:
         model = TestType
-        fields = ['id', 'code']
+        fields = ['id', 'code', 'type']
 
 
 class ProductCategoryFilter(django_filters.FilterSet):
