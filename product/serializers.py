@@ -31,11 +31,16 @@ class ProductSerializer(serializers.ModelSerializer, ISTTimestamp):
     created_by_name = serializers.SerializerMethodField()
     last_updated_at = serializers.SerializerMethodField()
     last_updated_by_name = serializers.SerializerMethodField()
+    usecases = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         # fields = '__all__'
         exclude = ['prompts']
+
+    def get_usecases(self, obj):
+        data = obj.test_type.values('id', 'name', 'code')
+        return list(data)
 
     def get_test_types(self, obj):
         data = obj.structured_test_cases.values("test_type_id", name=F("test_type__code")).distinct()
