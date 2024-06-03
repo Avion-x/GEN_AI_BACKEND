@@ -110,10 +110,21 @@ class TestTypeView(generics.ListAPIView):
                 return JsonResponse({"message": "Please Enter a Test Type", "status": 400})
             if type_value not in self.ALLOWED_TYPES:
                 return JsonResponse({"message": f"Invalid Input. Allowed options are {', '.join(self.ALLOWED_TYPES)}", "status": 400})
-
+            
+            product_ids = request.data.get('product_id', [])
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            test_type = serializer.save()
+
+            for product_id in product_ids:
+                try:
+                    product = Product.objects.get(id=product_id)
+                    test_type.product.add(product)
+                    logger.log(level='INFO', message=f"Product with ID: {product_id} added to Test Type")
+                except Product.DoesNotExist:
+                    logger.log(level='ERROR', message=f"Product with id {product_id} does not exist.")
+                    return JsonResponse({"message": f"Product with id {product_id} does not exist."})
+
             logger.log(level='INFO',message=f"Test Type created sucessfully.")
             return JsonResponse({"message": "Test Type created successfully", "data": serializer.data, "status": 200})
         except Exception as e:
@@ -130,9 +141,21 @@ class TestTypeView(generics.ListAPIView):
             instance = self.get_queryset({"id": id}).first()
             if not instance:
                 return JsonResponse({"message": "No Record found", "status": 400})
+            
+            product_ids = request.data.get('product_ids', [])
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            test_type = serializer.save()
+
+            for product_id in product_ids:
+                try:
+                    product = Product.objects.get(id=product_id)
+                    test_type.product.add(product)
+                    logger.log(level='INFO', message=f"Product with ID: {product_id} added to Test Type")
+                except Product.DoesNotExist:
+                    logger.log(level='ERROR', message=f"Product with id {product_id} does not exist.")
+                    return JsonResponse({"message": "Test Type updated successfully", "data": serializer.data, "status": 200})
+                    
             logger.log(level='INFO',message=f"Test Type updated sucessfully.")
             return JsonResponse({"message": "Test Type updated successfully", "data": serializer.data, "status": 200})
         except Exception as e:
@@ -358,9 +381,18 @@ class ProductView(generics.ListAPIView):
             request.data['customer'] = self.request.user.customer_id
             request.data['last_updated_by'] = self.request.user.id
             request.data['created_by'] = self.request.user.id
+            test_type_ids = request.data.get('test_type_id', [])
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            product = serializer.save()
+
+            for test_type_id in test_type_ids:
+                try:
+                    test_type = TestType.objects.get(id=test_type_id)
+                    product.test_type.add(test_type)
+                    logger.log(level='INFO', message=f"Test Type with ID: {test_type_id} added to Test Type")
+                except TestType.DoesNotExist:
+                    logger.log(level='ERROR', message=f"Test Type with id {test_type_id} does not exist.")
             logger.log(level='INFO',message=f"Product created sucessfully.")
             return JsonResponse({"message": "Product created successfully", "data": serializer.data, "status": 200})
         except Exception as e:
@@ -378,9 +410,18 @@ class ProductView(generics.ListAPIView):
                 return JsonResponse({"message": "No Record found", "status": 400})
             request.data['customer'] = self.request.user.customer_id
             request.data['last_updated_by'] = self.request.user.id
+            test_type_ids = request.data.get('test_type_id', [])
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            product = serializer.save()
+
+            for test_type_id in test_type_ids:
+                try:
+                    test_type = TestType.objects.get(id=test_type_id)
+                    product.test_type.add(test_type)
+                    logger.log(level='INFO', message=f"Test Type with ID: {test_type_id} added to Test Type")
+                except TestType.DoesNotExist:
+                    logger.log(level='ERROR', message=f"Test Type with id {test_type_id} does not exist.")
             logger.log(level='INFO',message=f"Product updated sucessfully.")
             return JsonResponse({"message": "Product updated successfully", "data": serializer.data, "status": 200})
         except Exception as e:
