@@ -74,6 +74,36 @@ class TestSubCategories(DefaultModel, models.Model):
         return f"{self.name}-{self.test_type.code}-{self.test_category.name}"
 
 
+class Paramters(DefaultModel, models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=250)
+    description = models.TextField(blank=True, null=True)
+    file_name = models.CharField(max_length=250)
+    conditions = models.JSONField(default=dict())
+    customer = models.ForeignKey(Customer, related_name = "parameters", on_delete=models.CASCADE)
+    test_sub_category = models.ForeignKey(TestSubCategories, related_name = "parameters", on_delete=models.CASCADE)    
+    last_updated_by = models.ForeignKey(User, related_name = "parameters_updated_by", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name = "parameters_created_by", on_delete=models.CASCADE, null = True)
+
+    objects = CustomManager()
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+class RuntimeParameterValues(DefaultModel, models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=250)
+    value = models.CharField(max_length=250)
+    request = models.ForeignKey(RequestTracking, related_name="runtime_parameter_values", on_delete=models.CASCADE, null=True)
+    paramters = models.ForeignKey(Paramters, related_name="runtime_parameter_values", on_delete=models.CASCADE, null = True)
+    last_updated_by = models.ForeignKey(User, related_name = "runtime_parameter_values_updated_by", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name = "runtime_parameter_values_created_by", on_delete=models.CASCADE, null = True)
+    objects = CustomManager()
+
+    def __str__(self) -> str:
+        return f"{self.name}-{self.value}"
+    
+
 class Prompt(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     provider = models.CharField(max_length=255)
@@ -118,35 +148,6 @@ class ProductSubCategory(DefaultModel, models.Model):
 
     def __str__(self):
         return f"{self.customer.code} - {self.product_category.category} - {self.sub_category}"
-
-class Paramters(DefaultModel, models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=250)
-    description = models.TextField(blank=True, null=True)
-    file_name = models.CharField(max_length=250)
-    conditions = models.JSONField(default=dict())
-    customer = models.ForeignKey(Customer, related_name = "parameters", on_delete=models.CASCADE)
-    product_sub_category = models.ForeignKey(ProductSubCategory, related_name = "parameters", on_delete=models.CASCADE)    
-    last_updated_by = models.ForeignKey(User, related_name = "parameters_updated_by", on_delete=models.CASCADE)
-    created_by = models.ForeignKey(User, related_name = "parameters_created_by", on_delete=models.CASCADE, null = True)
-
-    objects = CustomManager()
-
-    def __str__(self) -> str:
-        return f"{self.name}"
-
-class RuntimeParameterValues(DefaultModel, models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=250)
-    value = models.CharField(max_length=250)
-    request = models.ForeignKey(RequestTracking, related_name="runtime_parameter_values", on_delete=models.CASCADE, null=True)
-    paramters = models.ForeignKey(Paramters, related_name="runtime_parameter_values", on_delete=models.CASCADE, null = True)
-    last_updated_by = models.ForeignKey(User, related_name = "runtime_parameter_values_updated_by", on_delete=models.CASCADE)
-    created_by = models.ForeignKey(User, related_name = "runtime_parameter_values_created_by", on_delete=models.CASCADE, null = True)
-    objects = CustomManager()
-
-    def __str__(self) -> str:
-        return f"{self.name}-{self.value}"
 
 class ProductCategoryPromptCode(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
