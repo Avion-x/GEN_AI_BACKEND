@@ -10,7 +10,7 @@ class FoundationalModel(DefaultModel, models.Model):
     name = models.CharField(max_length=500)
     provider = models.CharField(max_length=255)
     description = models.TextField()
-    data = models.JSONField(default={})
+    data = models.JSONField(default=dict())
 
     objects = CustomManager()
 
@@ -51,6 +51,27 @@ class TestCategories(DefaultModel, models.Model):
 
     def __str__(self) -> str:
         return f"{self.name}-{self.test_type.code}"
+
+class TestSubCategories(DefaultModel, models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    number_of_test_cases = models.IntegerField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    is_approved = models.BooleanField(default=True)
+    approved_by = models.ForeignKey(User, related_name="test_sub_category", on_delete=models.CASCADE, null=True)
+    customer = models.ForeignKey(Customer, related_name="test_sub_category", on_delete=models.CASCADE)
+    test_type = models.ForeignKey(TestType, related_name="test_sub_category", on_delete=models.CASCADE)
+    test_category = models.ForeignKey(TestCategories, related_name="test_sub_category", on_delete=models.CASCADE)
+    last_updated_by = models.ForeignKey(User, related_name="test_category_sub_last_updated", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name="test_category_sub_created_at", on_delete=models.CASCADE)
+    executable_codes = models.JSONField(default=dict())
+    prompt = models.TextField(blank=True, null=True)
+    comments =  models.TextField()
+
+    objects = CustomManager()
+
+    def __str__(self) -> str:
+        return f"{self.name}-{self.test_type.code}-{self.test_category.name}"
 
 
 class Prompt(DefaultModel, models.Model):
@@ -93,12 +114,39 @@ class ProductSubCategory(DefaultModel, models.Model):
     comments = models.TextField(blank=True, null=True)
     last_updated_by = models.ForeignKey(User, on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, related_name = "create_product_sub_category", on_delete=models.CASCADE, null = True)
-
     objects = CustomManager()
 
     def __str__(self):
         return f"{self.customer.code} - {self.product_category.category} - {self.sub_category}"
 
+class Paramters(DefaultModel, models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=250)
+    description = models.TextField(blank=True, null=True)
+    file_name = models.CharField(max_length=250)
+    conditions = models.JSONField(default=dict())
+    customer = models.ForeignKey(Customer, related_name = "parameters", on_delete=models.CASCADE)
+    product_sub_category = models.ForeignKey(ProductSubCategory, related_name = "parameters", on_delete=models.CASCADE)    
+    last_updated_by = models.ForeignKey(User, related_name = "parameters_updated_by", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name = "parameters_created_by", on_delete=models.CASCADE, null = True)
+
+    objects = CustomManager()
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+class RuntimeParameterValues(DefaultModel, models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=250)
+    value = models.CharField(max_length=250)
+    request = models.ForeignKey(RequestTracking, related_name="runtime_parameter_values", on_delete=models.CASCADE, null=True)
+    paramters = models.ForeignKey(Paramters, related_name="runtime_parameter_values", on_delete=models.CASCADE, null = True)
+    last_updated_by = models.ForeignKey(User, related_name = "runtime_parameter_values_updated_by", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name = "runtime_parameter_values_created_by", on_delete=models.CASCADE, null = True)
+    objects = CustomManager()
+
+    def __str__(self) -> str:
+        return f"{self.name}-{self.value}"
 
 class ProductCategoryPromptCode(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
@@ -175,6 +223,7 @@ class TestCases(DefaultModel, models.Model):
     customer = models.ForeignKey(Customer, related_name = "test_cases",  on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name = "test_cases", on_delete=models.CASCADE)
     test_category = models.ForeignKey(TestCategories, related_name = "test_cases", on_delete=models.CASCADE)
+    test_sub_category = models.ForeignKey(TestSubCategories, related_name="test_cases", on_delete=models.CASCADE,)
     created_by = models.ForeignKey(User, related_name = 'test_cases', on_delete=models.CASCADE)
     data_url = models.URLField(blank=True, null=True)
     sha = models.CharField(max_length=255, null=True, blank=True)
@@ -215,8 +264,9 @@ class StructuredTestCases(DefaultModel, models.Model):
     customer = models.ForeignKey(Customer, related_name="structured_test_cases", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name="structured_test_cases", on_delete=models.CASCADE)
     data=models.JSONField()
-    test_category = models.ForeignKey(TestCategories, related_name="structured_test_cases", on_delete=models.CASCADE, db_index=True)
     test_type = models.ForeignKey(TestType, related_name="structured_test_cases", on_delete=models.CASCADE, db_index=True)
+    test_category = models.ForeignKey(TestCategories, related_name="structured_test_cases", on_delete=models.CASCADE, db_index=True)
+    test_sub_category = models.ForeignKey(TestSubCategories, related_name="structured_test_cases", on_delete=models.CASCADE,)
     type = models.CharField(max_length=20)
     request = models.ForeignKey(RequestTracking, to_field="request_id", on_delete=models.CASCADE, related_name="structured_test_cases", db_index=True)
     created_by = models.ForeignKey(User, related_name="structured_test_cases", on_delete=models.CASCADE)
@@ -329,25 +379,4 @@ class DocumentUploads(DefaultModel, models.Model):
     def __str__(self):
         return self.file_name
 
-
-
-class TestSubCategories(DefaultModel, models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    number_of_test_cases = models.IntegerField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    is_approved = models.BooleanField(default=True)
-    approved_by = models.ForeignKey(User, related_name="test_sub_category", on_delete=models.CASCADE, null=True)
-    customer = models.ForeignKey(Customer, related_name="test_sub_category", on_delete=models.CASCADE)
-    test_type = models.ForeignKey(TestType, related_name="test_sub_category", on_delete=models.CASCADE)
-    test_category = models.ForeignKey(TestCategories, related_name="test_sub_category", on_delete=models.CASCADE)
-    last_updated_by = models.ForeignKey(User, related_name="test_category_sub_last_updated", on_delete=models.CASCADE)
-    created_by = models.ForeignKey(User, related_name="test_category_sub_created_at", on_delete=models.CASCADE)
-    executable_codes = models.JSONField(default=dict())
-    comments =  models.TextField()
-
-    objects = CustomManager()
-
-    def __str__(self) -> str:
-        return f"{self.name}-{self.test_type.code}-{self.test_category.name}"
 

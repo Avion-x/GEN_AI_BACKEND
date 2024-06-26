@@ -51,48 +51,63 @@ class GenerateTests:
             return ai_model(modelId=model)
         except Exception as e:
             raise e
-
+        
     def process_request(self):
         try:
             response = {}
-            for test_type, tests in self.prompts_data.items():
-                for test_main in tests:
-                    response[test_type] = {}
-                    for test, test_data in test_main.items():
-                        response[test_type][test] = self.execute(self.request, test_type, test, test_data, self.test_names)
+            for each_test in self.prompts_data:
+                self.test_id = each_test.get('test_id')
+                self.test_type = each_test.get('test_name') 
+                category_data = each_test.get('category_data',[])
+                response[self.test_type] = self.process_category_prompts(category_data)
             return response
         except Exception as e:
             raise e
-
-    def execute(self, request, test_type, test_category, input_data, test_names):
-        try:
+        
+    def process_category_prompts(self, category_data=[]):
+        response_data = []
+        for category in category_data:
             response = {}
-            insert_data = {"test_category_id": input_data.pop("test_category_id", None), "device_id": self.device.id,
-                           "prompts": input_data}
-            from product.views import insert_test_case
-            for test_code, details in input_data.items():
-                kb_data = self.lang_chain.execute_kb_queries(details.get('kb_query', []))
-                print("\n\n kb data is :", kb_data)
-                prompts = details.get('prompts', [])
-                prompts = [prompts[0].replace('${a.content}', kb_data)]
-                file_path = self.get_file_path(request, test_type, test_category, test_code)
-                response[test_code] = self.generate_tests(prompts=prompts, context=kb_data)
+            self.category_id = category.get('category_id')
+            self.category_name = category.get('category_name')
+            self.kb_data = self.lang_chain.execute_kb_queries(category.get('kb_prompt', []))
+            sub_catgory_data = category.get('sub_category_data',[])
+            response[self.category_name] = self.process_sub_category_prompt(sub_catgory_data)
+            response_data.append(response)
+        return response_data  
 
-                result = self.store_parsed_tests(request=request, data = response[test_code], test_type=test_type, test_category=test_category, test_category_id=insert_data.get("test_category_id"), test_names=test_names)
-                if result:
-                    git = CustomGithub(request.user.customer)
-                    insert_data['git_data'] = git.push_to_github(data=response[test_code].pop('raw_text', ""), file_path=file_path)
-                    insert_test_case(request, data=insert_data.copy())
-            # response['test_category'] = test_category
-            return response
-        except Exception as e:
-            raise e
+    def process_sub_category_prompt(self, sub_category_data):
+        response_data = []
+        for sub_category in sub_category_data:
+            response = {}
+            self.sub_category_id = sub_category.get('sub_category_id')
+            self.sub_category_name = sub_category.get('sub_category_name')
+            prompt = sub_category.get('actual_prompt', None)
+            if not prompt:
+                raise Exception(f"Please send the prompt to generate test cases.")
+            prompt = prompt.replace('${a.content}', self.kb_data)
+            file_path = self.get_file_path(self.test_type, self.category_name, self.sub_category_name)
+            response[self.sub_category_name] = self.generate_tests(prompt, context=self.kb_data)
+            result = self.store_parsed_tests(data = response[self.sub_category_name])
+            if result:
+                git = CustomGithub(self.request.user.customer)
+                insert_data = {
+                    "device_id" : self.device.id,
+                    "test_category_id" : self.category_id,
+                    "test_sub_category_id" : self.sub_category_id,
+                    "prompts" : sub_category_data
+                }
+                insert_data['git_data'] = git.push_to_github(data=response[self.sub_category_name].pop('raw_text', ""), file_path=file_path)
+                from product.views import insert_test_case
+                insert_test_case(self.request, data=insert_data.copy())
+            response_data.append(response)
+        return response_data
 
-    def store_parsed_tests(self, request, data, test_type, test_category, test_category_id, test_names):
+    def store_parsed_tests(self, data):
         for test_case, test_script in zip(data.get('test_cases', []), data.get('test_scripts', [])):
             name = test_case.get('testname', test_case.get('name', "")).replace(" ", "_").lower() or test_script.get('testname', test_script.get('name', "")).replace(" ", "_").lower()
 
-            test_id = f"{request.user.customer.name}_{test_type}_{test_category}_{self.device.product_code}_{name}".replace(
+            test_id = f"{self.request.user.customer.name}_{self.test_type}_{self.category_name}_{self.device.product_code}_{name}".replace(
                 " ", "_").lower()
             _test_case = {
                 "test_id": test_id,
@@ -100,11 +115,12 @@ class GenerateTests:
                 "objective": test_case.get("objective", ""),
                 "data": test_case,
                 "type": "TESTCASE",
-                "test_category_id": test_category_id,
+                "test_category_id": self.category_id,
+                "test_sub_category_id" : self.sub_category_id,
                 "product": self.device,
-                "customer": request.user.customer,
+                "customer": self.request.user.customer,
                 "request_id": self.request.request_id,
-                "created_by": request.user
+                "created_by": self.request.user
             }
 
             _test_script = {
@@ -113,11 +129,12 @@ class GenerateTests:
                 "objective": test_script.get("objective", ""),
                 "data": test_script,
                 "type": "TESTSCRIPT",
-                "test_category_id": test_category_id,
+                "test_category_id": self.category_id,
+                "test_sub_category_id" : self.sub_category_id,
                 "product": self.device,
-                "customer": request.user.customer,
+                "customer": self.request.user.customer,
                 "request_id": self.request.request_id,
-                "created_by": request.user
+                "created_by": self.request.user
             }
 
             # similarity = self.check_semantic_similarity(name=name, test_names=test_names)
@@ -171,27 +188,26 @@ class GenerateTests:
             logger.log(level="ERROR", message=f"Error while checking similarity:{e}")
             return True
 
-    def get_file_path(self, request, test_type, test_category, test_code):
+    def get_file_path(self, test_type, test_category, test_code):
         try:
             device_code = self.device.product_code
             path = CustomerConfig.objects.filter(config_type='repo_folder_path',
-                                                 customer=request.user.customer).first().config_value
+                                                 customer=self.request.user.customer).first().config_value
             return path.replace("${device_code}", device_code) \
                 .replace("${test_type}", test_type) \
                 .replace("${test_category}", test_category) \
                 .replace("${test_code}", test_code)
         except Exception as e:
-            return f"data/{request.user.customer.code}/{test_type}/{test_code}"
+            return f"data/{self.request.user.customer.code}/{test_type}/{test_code}"
 
-    def generate_tests(self, prompts, context, **kwargs):
+    def generate_tests(self, prompt, context, **kwargs):
         try:
             response_text = ""
-            for prompt in prompts:
-                kwargs['prompt'] = prompt
-                kwargs['context'] = context
-                kwargs.update(self.body)
-                prompt_data = self.ai_obj.send_prompt(**kwargs)
-                response_text += prompt_data
+            kwargs['prompt'] = prompt
+            kwargs['context'] = context
+            kwargs.update(self.body)
+            prompt_data = self.ai_obj.send_prompt(**kwargs)
+            response_text += prompt_data
             return self.get_test_data(response_text)
         except Exception as e:
             raise e
@@ -204,7 +220,7 @@ class GenerateTests:
             test_scripts = _test.get('testscript', None)
             if test_case and test_scripts:
                 if isinstance(test_case, list):
-                    result['test_cases'] += test_case
+                     result['test_cases'] += test_case
                 else:
                     result['test_cases'].append(test_case)
 

@@ -8,7 +8,7 @@ from user.models import CustomerConfig, User
 from product.services.custom_logger import logger
 from product.services.github_service import CustomGithub, push_to_github, get_commits_for_file, get_changes_in_file, \
     get_files_in_commit
-from product.services.generic_services import get_prompts_for_device, get_string_from_datetime, parseModelDataToList, test_response, \
+from product.services.generic_services import DevicePrompts, get_prompts_for_device, get_string_from_datetime, parseModelDataToList, test_response, \
     validate_mandatory_checks
 from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
@@ -472,7 +472,10 @@ class GenerateTestCases(generics.ListAPIView):
     def post(self, request):
         try:
             data = validate_mandatory_checks(input_data=request.data, checks=self.validation_checks)
-            prompts_data = get_prompts_for_device(**data)
+            device_prompts = DevicePrompts(request = request, **data)
+            prompts_data = device_prompts.get_prompts()
+            # prompts_data = get_prompts_for_device(**data)
+            print(prompts_data)
             test_names = list(StructuredTestCases.objects.filter(type='TESTCASE').values_list('test_name', flat = True))
             git = CustomGithub(request.user.customer)
             git_config = git.get_git_cofig(request.user.customer)
@@ -565,6 +568,7 @@ def insert_test_case(request, data):
             "data_url": data.get('git_data').get("url"),
             "sha": data.get('git_data').get("sha"),
             "test_category_id": data.pop("test_category_id"),
+            "test_sub_category_id" : data.pop("test_sub_category_id"),
             "data": data,
             "request_id": request.request_id
         }
