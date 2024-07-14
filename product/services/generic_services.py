@@ -7,7 +7,7 @@ import os, re, json
 from user.models import RequestTracking
 from user.settings import BASE_DIR
 import boto3, pdfplumber
-from io import BytesIO
+from io import BytesIO, StringIO
 from django.http import HttpRequest
 
 
@@ -302,6 +302,18 @@ def download_files_from_s3(bucket_name, key_prefix, local_directory):
     except Exception as e:
         raise e
 
+def read_csv_from_s3(bucket_name, s3_key):
+    try:
+        # Get the object from S3
+        obj = s3.get_object(Bucket=bucket_name, Key=s3_key)        
+        csv_content = obj['Body'].read().decode('utf-8')
+        
+        # Use StringIO to create a file-like object from the string content
+        csv_buffer = StringIO(csv_content)
+        return csv_buffer
+    except Exception as e:
+        print(f"Error reading CSV file from S3: {e}")
+        return None
 
 def delete_local_directory(local_directory):
     # Delete the local directory along with all its contents
