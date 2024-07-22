@@ -1671,8 +1671,8 @@ class TestSubCategoryParameters(generics.ListAPIView):
                 data = self.get_parameter_value(df, param)
                 result[param.name] = data
                 self.store_result(data = data, param = param)
-                self.write_to_file(data = json.dumps(result, indent=4), file_name = f"paramters_{ind}.json")
-                self.upload_to_s3(data = data, bucket=f"genaidev", file_name=f"parameters/{current_time}/paramters_{ind}.json")
+                # self.write_to_file(data = json.dumps(result, indent=4), file_name = f"paramters_{ind}.json")
+                self.upload_to_s3(data = data, bucket=f"genaidev", file_name=f"parameters/{current_time}/paramters_{ind}.csv")
             return Response(result)
         except Exception as e:
             print(f"Error in get method: {e}")
