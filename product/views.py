@@ -1446,3 +1446,70 @@ class TestResponse(generics.ListAPIView):
             return Response(met)
         except Exception as e:
             return Response(f"{e}")
+
+
+class FilterStructuredTestScriptView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            request_id = request.GET.get("request_id")
+            type_param = request.GET.get("type")
+
+            if request_id and type_param:
+                data = self.get_test_cases_by_request_id_and_type(request_id, type_param)
+            elif request_id:
+                data = self.get_test_cases_by_request_id(request_id)
+            elif type_param:
+                data = self.get_request_ids_by_type(type_param)
+            else:
+                data = self.get_filtered_groups()
+
+            return JsonResponse({"data": data})
+        except StructuredTestCases.DoesNotExist:
+            logger.log(level='ERROR', message="StructuredTestCases not found.")
+            return JsonResponse({'data': "StructuredTestCases not found"}, status=404)
+        except Exception as e:
+            logger.log(level='ERROR', message=f"Failed to generate FilteredTestCasesView data: {e}")
+            return JsonResponse({'data': "Something went wrong"}, status=500)
+
+    def get_test_cases_by_request_id_and_type(self, request_id, type_param):
+        test_cases = StructuredTestCases.objects.filter(request_id=request_id).exclude(type=type_param).values('test_name')
+        self.check_exists(test_cases)
+        data = list(test_cases)
+        logger.log(level='SUCCESS', message=f"Data fetched successfully with request_id: {request_id} and type: {type_param}.")
+        return data
+
+    def get_test_cases_by_request_id(self, request_id):
+        test_cases = StructuredTestCases.objects.filter(request_id=request_id, type='TESTCASE').exclude(
+            test_name__in=StructuredTestCases.objects.filter(request_id=request_id, type='TESTSCRIPT').values('test_name')
+        ).values('id', 'test_name')
+        self.check_exists(test_cases)
+        data = list(test_cases)
+        logger.log(level='SUCCESS', message=f"Data fetched successfully with request_id: {request_id}.")
+        return data
+
+    def get_request_ids_by_type(self, type_param):
+        request_ids = StructuredTestCases.objects.exclude(type=type_param).values('request_id').distinct()
+        self.check_exists(request_ids)
+        data = list(request_ids)
+        logger.log(level='SUCCESS', message=f"Data fetched successfully with type parameter: {type_param}.")
+        return data
+
+    def get_filtered_groups(self):
+        grouped = StructuredTestCases.objects.values('request_id', 'test_name').annotate(
+            type_count=Count('type', distinct=True),
+            has_testcase=Count('type', filter=Q(type='TESTCASE')),
+            has_testscript=Count('type', filter=Q(type='TESTSCRIPT'))
+        )
+        filtered_groups = grouped.filter(type_count=1, has_testcase=1, has_testscript=0)
+        self.check_exists(filtered_groups)
+        valid_request_ids = filtered_groups.values_list('request_id', flat=True).distinct()
+        data = [{"request_id": rid} for rid in valid_request_ids]
+        logger.log(level='SUCCESS', message="Data fetched successfully without parameters.")
+        return data
+
+    def check_exists(self, queryset):
+        if not queryset.exists():
+            raise StructuredTestCases.DoesNotExist
