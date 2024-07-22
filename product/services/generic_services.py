@@ -1,13 +1,13 @@
 
 import shutil
-from product.models import ProductPrompt, TestType, ProductSubCategory, Customer, ProductCategoryPromptCode, Prompt, ProductCategoryPrompt, TestSubCategories
+from product.models import Product, ProductPrompt, TestCategories, TestType, ProductSubCategory, Customer, ProductCategoryPromptCode, Prompt, ProductCategoryPrompt, TestSubCategories
 from product.serializers import ProductSubCategorySerializer, CustomerSerializer, PromptSerializer
 import datetime
 import os, re, json
 from user.models import RequestTracking
 from user.settings import BASE_DIR
 import boto3, pdfplumber
-from io import BytesIO
+from io import BytesIO, StringIO
 from django.http import HttpRequest
 
 
@@ -126,9 +126,110 @@ def get_prompts_for_device(device_id=None, device_name=None, test_type_data=[], 
                         response[test_type.code].append(temp_response)
         if not response:
             raise Exception(f"Incorrect configuration of test types, Please verify once")
+        print(response)
         return response
     except Exception as e:
         raise e
+
+
+
+class DevicePrompts():
+
+    def __init__(self, request,*args, **kwargs):
+        try:
+            device_id = kwargs.get('device_id')
+            device_name = kwargs.get('device_name')
+            test_type_data = kwargs.get('test_type_data')
+            filters = {}
+            if not device_id and not device_name:
+                raise Exception(f"send device id or device name to get prompts")
+            if device_id:
+                filters['id'] = device_id
+            elif device_name:
+                filters['product_code'] = device_name
+
+            device = Product.objects.filter(**filters).first()
+            if not device:
+                raise Exception(f"No device found with id '{device_id}'")
+            self.device = device
+            self.test_type_data = test_type_data
+            self.request = request
+        except Exception as e:
+            raise e
+        
+    def get_prompts(self):
+        prompts = self.get_test_type_promtps(self.test_type_data)
+        return prompts
+           
+    def get_test_type_promtps(self,test_type_data):
+        try:
+            prompt_data = []
+            for each_test in test_type_data:
+                test_id = each_test.get('test_type_id')
+                self.test = TestType.objects.filter(id=test_id).first()
+                if not self.test:
+                    raise Exception(f"No test type found with id '{test_id}'")
+                test_category_input_data = each_test.get('test_category_data', {})
+                test_category_result = self.get_category_prompts(test_category_input_data)
+                test_data = {
+                    "test_id" : self.test.id,
+                    "test_name" : self.test.code,
+                    "category_data" : test_category_result,
+                }
+                prompt_data.append(test_data)
+            return prompt_data
+        except Exception as e:
+            raise e
+
+
+    def get_category_prompts(self, category_data=[]):
+        try:
+            data = []
+            for each_category in category_data:
+                category_id = each_category.get('category_id', None)
+                self.category = TestCategories.objects.filter(id=category_id).first()
+                if not (category_id or self.category):
+                    raise Exception(f"No category with id '{category_id}'")
+                test_sub_category_input =  each_category.get('test_sub_category_data', [])
+                #each_category.get('test_sub_category_id', [])
+                test_sub_category_result = self.get_test_sub_category_prompts(test_sub_category_input)
+                category_data = {
+                    "category_id" : self.category.id,
+                    "category_name" : self.category.name,
+                    "kb_prompt" : get_knowledge_base_query(self.category),
+                    "sub_category_data" : test_sub_category_result,
+                }
+                data.append(category_data)
+            return data
+
+        except Exception as e:
+            raise e
+        
+    def get_test_sub_category_prompts(self, test_sub_category_data={}):
+        try:
+            data = []
+            for sub_category_id in test_sub_category_data:
+                sub_category = TestSubCategories.objects.filter(id=sub_category_id).first()
+                if not (sub_category_id or sub_category):
+                    raise Exception(f"No Sub category found with id '{sub_category_id}'")
+                actual_prompt = self.device.product_prompt.all().first().executable_prompt
+                actual_prompt = actual_prompt.replace('${USECASE}', self.test.code)\
+                    .replace("${TESTCASE}", sub_category.name)\
+                    .replace('${CUSTOMER}',self.request.user.customer.name)\
+                    .replace('${PRODUCTCATEGORY}', self.device.product_sub_category.product_category.category)\
+                    .replace('${PRODUCT}', self.device.product_code)\
+                    .replace('${TESTCATEGORY}', self.category.name)
+                sub_category_data = {
+                    "sub_category_id" : sub_category.id,
+                    "sub_category_name" : sub_category.name,
+                    # "sub_category_prompt" : sub_category.prompt,
+                    "actual_prompt" : actual_prompt
+                }
+                data.append(sub_category_data)
+            return data
+        except Exception as e:
+            raise e
+
 
 def get_knowledge_base_query(test_category):
     kb_queries = test_category.knowledge_base_prompts.all()
@@ -201,6 +302,18 @@ def download_files_from_s3(bucket_name, key_prefix, local_directory):
     except Exception as e:
         raise e
 
+def read_csv_from_s3(bucket_name, s3_key):
+    try:
+        # Get the object from S3
+        obj = s3.get_object(Bucket=bucket_name, Key=s3_key)        
+        csv_content = obj['Body'].read().decode('utf-8')
+        
+        # Use StringIO to create a file-like object from the string content
+        csv_buffer = StringIO(csv_content)
+        return csv_buffer
+    except Exception as e:
+        print(f"Error reading CSV file from S3: {e}")
+        return None
 
 def delete_local_directory(local_directory):
     # Delete the local directory along with all its contents
