@@ -97,16 +97,15 @@ class Paramters(DefaultModel, models.Model):
 
 class RuntimeParameterValues(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=250)
-    value = models.CharField(max_length=250)
-    request = models.ForeignKey(RequestTracking, related_name="runtime_parameter_values", on_delete=models.CASCADE, null=True)
-    paramters = models.ForeignKey(Paramters, related_name="runtime_parameter_values", on_delete=models.CASCADE, null = True)
+    data = models.JSONField(default=dict())
+    request = models.ForeignKey(RequestTracking, to_field="request_id", related_name="runtime_parameter_values", on_delete=models.CASCADE, null=True)
+    parameters = models.ForeignKey(Paramters, related_name="runtime_parameter_values", on_delete=models.CASCADE, null = True)
     last_updated_by = models.ForeignKey(User, related_name = "runtime_parameter_values_updated_by", on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, related_name = "runtime_parameter_values_created_by", on_delete=models.CASCADE, null = True)
     objects = CustomManager()
 
     def __str__(self) -> str:
-        return f"{self.name}-{self.value}"
+        return f"{self.paramters.name}"
     
 
 class Prompt(DefaultModel, models.Model):

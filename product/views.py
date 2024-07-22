@@ -1,7 +1,9 @@
 import asyncio
 from collections import defaultdict
 from datetime import date, datetime, timedelta
+import io
 import threading
+import time
 
 import numpy as np
 import pandas as pd
@@ -17,7 +19,7 @@ from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
-from .models import Paramters, StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
+from .models import Paramters, RuntimeParameterValues, StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
     TestScriptExecResults, UserCreatedTestCases, TestSubCategories
 from .serializers import GenereateTestCaseJobDataSerializer, TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, \
@@ -1593,22 +1595,61 @@ class TestSubCategoryParameters(generics.ListAPIView):
                 raise Exception(f"No Parameters found with test_sub_category_id {test_sub_category_id}")
 
             result = {}
-            for param in parameters:
+            current_time = int(time.time())
+            for ind, param in enumerate(parameters):
                 self.combined_columns = self.process_combine_dataframes_input(param.join_keys.get("merge_columns_info", {})) 
                 df_list = self.get_dataframes(param)
                 self.join_keys = param.join_keys.get("join_info", [])
                 df = self.get_final_dataframes(df_list)
-                result[param.name] = self.get_parameter_value(df, param)
+                data = self.get_parameter_value(df, param)
+                result[param.name] = data
+                self.store_result(data = data, param = param)
+                self.write_to_file(data = json.dumps(result, indent=4), file_name = f"paramters_{ind}.json")
+                self.upload_to_s3(data = data, bucket=f"genaidev", file_name=f"parameters/{current_time}/paramters_{ind}.json")
             return Response(result)
         except Exception as e:
             print(f"Error in get method: {e}")
             raise e
+        
+    def write_to_file(self, data, file_name):
+        try:
+            with open(file_name, 'w') as file:
+                file.write(data)
+        except Exception as e:
+            message = f""
+            raise Exception(message)
+    
+    def upload_to_s3(self, file_name, bucket, data):
+        try:
+            dataframe = pd.DataFrame(data)
+            csv_buffer = io.StringIO()
+            dataframe.to_csv(csv_buffer, index=False)
+            response = s3.put_object(Bucket=bucket, Key=file_name, Body=csv_buffer.getvalue())
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return False
+        return True
+        
+    def store_result(self, data, param):
+        try:
+            runtime_params = RuntimeParameterValues(
+                data = data,
+                parameters = param,
+                request_id = self.request.request_id,
+                last_updated_by = self.request.user,
+                created_by = self.request.user
+            )
+            runtime_params.save()
+            return True
+        except Exception as e:
+            mesage = f"Error in storing parameter data for parameter {param.name} ::: ERROR: {e}"
+            raise Exception(mesage)
 
     def get_parameter_value(self, df, parameter):
         try:
             final_mask = self.apply_conditions(df, parameter.conditions)
             df = df[final_mask]
-            req_params = parameter.req_params or ['r0_protocols_protocols.multicast_group_increment', 'r0_protocols_protocols.unit', 'r0_protocols_protocols.vlan_tag', 'r0_protocols_protocols.protocol', 'r0_protocols_protocols.group_name']
+            req_params = parameter.req_params
             df = df[req_params]
             df.replace([np.inf, np.nan, -np.inf], '', inplace=True) 
             data = df.to_dict('records')
@@ -1617,11 +1658,13 @@ class TestSubCategoryParameters(generics.ListAPIView):
             print(f"Error in get_parameter_value: {e}")
             raise e
 
-    def get_file_dataframe(self, bucket, s3_key):
+    def get_file_dataframe(self, bucket, s3_key, file_name):
         try:
             file = read_csv_from_s3(bucket, s3_key)
             df = pd.read_csv(file)
             df = self.convert_floats_to_int(df)
+            df_renames = {column: f"{file_name}.{column}" for column in df.columns}
+            df.rename(columns=df_renames, inplace=True)
             return df
         except Exception as e:
             print(f"Error in get_file_dataframe: {e}")
@@ -1643,9 +1686,10 @@ class TestSubCategoryParameters(generics.ListAPIView):
             df_list = []
             files_info = parameter.files_info  # Assuming `files_info` is a list of dicts with keys `bucket`, `s3_key`
             for file_info in files_info:
+                file_name = self.get_file_name(file_info['s3_key'])
                 df_list.append({
-                    "df" : self.get_file_dataframe(file_info['bucket'], file_info['s3_key']),
-                    "file_name" : self.get_file_name(file_info['s3_key'])
+                    "df" : self.get_file_dataframe(file_info['bucket'], file_info['s3_key'], file_name = file_name),
+                    "file_name" : file_name,
                 })
             return df_list
         except Exception as e:
@@ -1678,10 +1722,10 @@ class TestSubCategoryParameters(generics.ListAPIView):
             if df_1.empty or df_2.empty:
                 raise Exception("One of the DataFrames is empty and cannot be joined")
             condition = self.join_keys.pop(0)
-            df1_renames = {column: f"{file1_name}.{column}" for column in df_1.columns}
-            df2_renames = {column: f"{file2_name}.{column}" for column in df_2.columns}
-            df_1.rename(columns=df1_renames, inplace=True)
-            df_2.rename(columns=df2_renames, inplace=True)
+            # df1_renames = {column: f"{file1_name}.{column}" for column in df_1.columns}
+            # df2_renames = {column: f"{file2_name}.{column}" for column in df_2.columns}
+            # df_1.rename(columns=df1_renames, inplace=True)
+            # df_2.rename(columns=df2_renames, inplace=True)
 
             if (self.combined_columns.get(file1_name, None)):
                 df_1 = self.merge_columns(df_1, self.combined_columns[file1_name])
