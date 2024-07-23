@@ -52,7 +52,7 @@ from rest_framework.authentication import BasicAuthentication, TokenAuthenticati
 from product.services.open_ai import CustomOpenAI
 from product.services.langchain_ import Langchain_
 import pdfplumber, boto3
-from io import BytesIO
+from io import BytesIO, StringIO
 from product.services.generic_services import extract_pdf
 from event_manager.models import CronExecution
 from event_manager.service.cronjob import CronJob
@@ -1537,3 +1537,35 @@ class TestSubCategoryParametersView(generics.ListAPIView):
             print(f"Error in get method: {e}")
             raise e
 
+class CsvFilesandItsColumnsView(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
+
+    def get(self, request):
+        try:
+            pass
+            topology_id = request.GET.get('topology_id', "")
+            bucket_name, prefix= "genaidev", "CSVFiles/"
+            result = self.get_s3_csv_columns(bucket_name, prefix)
+            return Response(result)
+        except Exception as e:
+            message = f"Error while getting the csv files and its columns. ERROR: {e}"
+            raise Exception(message)
+        
+    def get_s3_csv_columns(self, bucket_name, prefix):
+        result = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+        files_info = []
+
+        for obj in result.get('Contents', []):
+            if obj['Key'].endswith('.csv'):
+                csv_obj = s3.get_object(Bucket=bucket_name, Key=obj['Key'])
+                body = csv_obj['Body'].read().decode('utf-8')
+                df = pd.read_csv(StringIO(body))
+                file_info = {
+                    'file_name': obj['Key'].split('/')[-1],
+                    's3_location': obj['Key'],
+                    'bucket_name': bucket_name,
+                    'columns': list(df.columns)
+                }
+                files_info.append(file_info)
+        return files_info

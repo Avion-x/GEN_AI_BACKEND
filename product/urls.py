@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib import admin
-from .views import LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestResponse, TestSubCategoryParametersView, TestTypeView, ProductCategoryView, \
+from .views import CsvFilesandItsColumnsView, LatestTestTypesWithCategoriesOfProduct, TestCasesAndScripts, TestResponse, TestSubCategoryParametersView, TestTypeView, ProductCategoryView, \
     ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, \
     GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, \
     PendingApprovalTestCategoryView, ApproveTestCategoryView, DashboardChart, ExtractTextFromPDFView, \
@@ -36,7 +36,8 @@ urlpatterns = [
     path('test_sub_categories/', TestSubCategoriesView.as_view(), name='test_sub_categories'),
     path('demo_reply', TestResponse.as_view(), name='demo_reply'),
     path('filter_test_cases/', FilterStructuredTestScriptView.as_view(), name='filter-test-cases'),
-    path('get_test_sub_category_params/', TestSubCategoryParametersView.as_view(), name='get_test_sub_category_params')
+    path('get_test_sub_category_params/', TestSubCategoryParametersView.as_view(), name='get_test_sub_category_params'),
+    path('get_csv_files_and_its_columns/', CsvFilesandItsColumnsView.as_view(), name="get_csv_files_and_its_columns")
 
 ]
 
