@@ -243,9 +243,14 @@ class TestSubCategoryParameters():
         for new_col, merge_info in combine_columns.items():
             cols_to_merge = merge_info['columns_to_merge']
             seperator = merge_info.get('seperator', '-')
-            df[new_col] = df[cols_to_merge[0]].astype(str)
-            for col in cols_to_merge[1:]:
-                df[new_col] += seperator + df[col].astype(str)
+            if seperator in ['or', 'OR', 'Or', 'oR']:
+                df[new_col] = df[cols_to_merge[0]]
+                for col in cols_to_merge[1:]:
+                    df[new_col] = df[new_col].fillna(df[col])
+            else:
+                df[new_col] = df[cols_to_merge[0]].astype(str)
+                for col in cols_to_merge[1:]:
+                    df[new_col] += seperator + df[col].astype(str)
         return df
         
     def resolve_column_names(self, df, check_keys):
