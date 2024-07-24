@@ -1,7 +1,7 @@
 # .gitignore for Django projects
 
 ### Django ###
-*.log
+*log_file.log
 *.pot
 *.pyc
 __pycache__/
@@ -13,7 +13,7 @@ media
 settings.py
 !.env
 *.md
-*.log
+# *.log
 
 # Ignore unwanted text files
 *engineering_req.txt
