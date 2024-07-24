@@ -13,7 +13,7 @@ media
 settings.py
 !.env
 *.md
-# *.log
+*.log
 
 # Ignore unwanted text files
 *engineering_req.txt
