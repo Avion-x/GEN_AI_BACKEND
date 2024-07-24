@@ -22,7 +22,7 @@ from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from .models import Paramters, RuntimeParameterValues, StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
     TestScriptExecResults, UserCreatedTestCases, TestSubCategories
-from .serializers import GenereateTestCaseJobDataSerializer, TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
+from .serializers import GenereateTestCaseJobDataSerializer, TestSubCategoryParamtersSerializer, TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, \
     LatestTestTypesWithCategoriesOfProductFilter, TestSubCategoriesFilter
 # import git
@@ -1530,12 +1530,41 @@ class TestSubCategoryParametersView(generics.ListAPIView):
 
     def get(self, request):
         try:
+            get_parameters = request.GET.get('get_parameters', False)
+            if get_parameters:
+                return self.get_paramters(request)
             test_sub_category_parameters = TestSubCategoryParameters()
             result = test_sub_category_parameters.get(request)
             return Response(result)
         except Exception as e:
             print(f"Error in get method: {e}")
             raise e
+        
+    def get_paramters(self, request):
+        sub_category_id = request.GET.get('test_sub_category_id',None)
+        if not sub_category_id:
+            return Response({
+                "errorMessage": "Please pass sub_category_id to get the parameters",
+                "result" : {}
+            })
+        
+        paramters = Paramters.objects.filter(test_sub_category_id = sub_category_id)
+        if not paramters:
+            return Response({
+                "errorMessage": "No paramters found with the test_sub_category_id {}".format(sub_category_id),
+                "result": {}
+            }, status=401)
+        
+        try:
+            serializer = TestSubCategoryParamtersSerializer(paramters, many=True)
+            data = serializer.data
+            return Response({
+                "errorMessage" : "",
+                "result" : data
+            }, status=200)
+        except Exception as e:
+            message = f"Error while getting the paramters for test sub category {paramters[0].test_sub_category.name}. ERROR:{e}"
+            raise Exception(message)
 
 class CsvFilesandItsColumnsView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
@@ -1547,7 +1576,11 @@ class CsvFilesandItsColumnsView(generics.ListAPIView):
             topology_id = request.GET.get('topology_id', "")
             bucket_name, prefix= "genaidev", "CSVFiles/"
             result = self.get_s3_csv_columns(bucket_name, prefix)
-            return Response(result)
+            return Response({
+                "status": 200,
+                "errorMessage":"",
+                "result": result
+            })
         except Exception as e:
             message = f"Error while getting the csv files and its columns. ERROR: {e}"
             raise Exception(message)
@@ -1569,3 +1602,4 @@ class CsvFilesandItsColumnsView(generics.ListAPIView):
                 }
                 files_info.append(file_info)
         return files_info
+

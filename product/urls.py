@@ -37,7 +37,8 @@ urlpatterns = [
     path('demo_reply', TestResponse.as_view(), name='demo_reply'),
     path('filter_test_cases/', FilterStructuredTestScriptView.as_view(), name='filter-test-cases'),
     path('get_test_sub_category_params/', TestSubCategoryParametersView.as_view(), name='get_test_sub_category_params'),
-    path('get_csv_files_and_its_columns/', CsvFilesandItsColumnsView.as_view(), name="get_csv_files_and_its_columns")
+    path('get_csv_files_and_its_columns/', CsvFilesandItsColumnsView.as_view(), name="get_csv_files_and_its_columns"),
+    # path("test_sub_category_parameters/", TestSubCategoryParametersView.as_view(), "test_sub_category_parameters")
 
 ]
 

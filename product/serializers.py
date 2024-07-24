@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from event_manager.models import CronExecution
-from .models import TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, \
+from .models import Paramters, TestType, ProductCategory, Product, ProductCategoryPrompt, ProductCategoryPromptCode, ProductPrompt, \
     ProductSubCategory, Prompt, TestCases, TestCategories, Customer, TestScriptExecResults, UserCreatedTestCases, TestSubCategories
 from django.contrib.auth.hashers import make_password
 from django.db.models import F
@@ -467,3 +467,40 @@ class TestSubCategoriesSerializer(serializers.ModelSerializer, ISTTimestamp):
 
     def get_test_category_name(self, obj):
         return obj.test_category.name
+    
+class TestSubCategoryParamtersSerializer(serializers.ModelSerializer, ISTTimestamp):
+    # created_at = serializers.SerializerMethodField()
+    # last_updated_at = serializers.SerializerMethodField()
+    created_by_name = serializers.SerializerMethodField()
+    last_updated_by_name = serializers.SerializerMethodField()
+    test_sub_category_name = serializers.SerializerMethodField()
+    customer_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Paramters
+        fields = '__all__'
+
+    def get_created_at(self, obj):
+        timestamp = obj.created_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+
+    def get_last_updated_at(self, obj):
+        timestamp = obj.last_updated_at
+        ist_timestamp = self.get_ist_timestamp(timestamp)
+        return ist_timestamp
+
+    def get_last_updated_by_name(self, obj):
+        return obj.last_updated_by.username
+
+    def get_created_by_name(self, obj):
+        if obj.created_by:
+            return obj.created_by.username
+        else:
+            return obj.created_by
+
+    def get_test_sub_category_name(self, obj):
+        return obj.test_sub_category.name
+    
+    def get_customer_name(self, obj):
+        return obj.customer.name
