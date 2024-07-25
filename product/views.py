@@ -1541,14 +1541,15 @@ class TestSubCategoryParametersView(generics.ListAPIView):
             raise e
         
     def get_paramters(self, request):
+        filters = {}
         sub_category_id = request.GET.get('test_sub_category_id',None)
-        if not sub_category_id:
-            return Response({
-                "errorMessage": "Please pass sub_category_id to get the parameters",
-                "result" : {}
-            })
-        
-        paramters = Paramters.objects.filter(test_sub_category_id = sub_category_id)
+        # if not sub_category_id:
+        #     return Response({
+        #         "errorMessage": "Please pass sub_category_id to get the parameters",
+        #         "result" : {}
+        #     })
+        filters['test_sub_category_id'] = sub_category_id
+        paramters = Paramters.objects.filter(**filters)
         if not paramters:
             return Response({
                 "errorMessage": "No paramters found with the test_sub_category_id {}".format(sub_category_id),
