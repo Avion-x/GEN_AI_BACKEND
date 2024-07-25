@@ -1579,7 +1579,7 @@ class CsvFilesandItsColumnsView(generics.ListAPIView):
     def get(self, request):
         try:
             pass
-            topology_id = request.GET.get('topology_id', "")
+            # topology_id = request.GET.get('topology_id', "")
             bucket_name, prefix= "genaidev", "CSVFiles/"
             result = self.get_s3_csv_columns(bucket_name, prefix)
             return Response({
