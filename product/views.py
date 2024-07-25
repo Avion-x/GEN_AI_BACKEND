@@ -1533,8 +1533,13 @@ class TestSubCategoryParametersView(generics.ListAPIView):
             get_parameters = request.GET.get('get_parameters', False)
             if get_parameters:
                 return self.get_paramters(request)
+            
+            test_sub_category_id = request.GET.get("test_sub_category_id", None)
+            if not test_sub_category_id:
+                raise Exception("Please pass test_sub_category_id")
+            
             test_sub_category_parameters = TestSubCategoryParameters()
-            result = test_sub_category_parameters.get(request)
+            result = test_sub_category_parameters.get(request, test_sub_category_id)
             return Response(result)
         except Exception as e:
             print(f"Error in get method: {e}")

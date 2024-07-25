@@ -2,6 +2,7 @@
 
 from product.models import Product, StructuredTestCases
 from product.services.aws_bedrock import AwsBedrock
+from product.services.dynamic_paramters_fetch import TestSubCategoryParameters
 from product.services.generic_services import parseModelDataToList, rebuild_request
 from product.services.github_service import push_to_github, CustomGithub
 from product.services.langchain_ import Langchain_
@@ -86,7 +87,7 @@ class GenerateTests:
             if not prompt:
                 raise Exception(f"Please send the prompt to generate test cases.")
             prompt = prompt.replace('${a.content}', self.kb_data)
-            file_path = self.get_file_path(self.test_type, self.category_name, self.sub_category_name)
+            self.file_path = self.get_file_path(self.test_type, self.category_name, self.sub_category_name)
             response[self.sub_category_name] = self.generate_tests(prompt, context=self.kb_data)
             result = self.store_parsed_tests(data = response[self.sub_category_name])
             if result:
@@ -97,9 +98,11 @@ class GenerateTests:
                     "test_sub_category_id" : self.sub_category_id,
                     "prompts" : sub_category_data
                 }
-                insert_data['git_data'] = git.push_to_github(data=response[self.sub_category_name].pop('raw_text', ""), file_path=file_path)
+                insert_data['git_data'] = git.push_to_github(data=response[self.sub_category_name].pop('raw_text', ""), file_path=self.file_path)
                 from product.views import insert_test_case
                 insert_test_case(self.request, data=insert_data.copy())
+                parameters = TestSubCategoryParameters()
+                result = parameters.get(self.request, self.sub_category_id, self.file_path)
             response_data.append(response)
         return response_data
 
