@@ -1610,210 +1610,210 @@ class CsvFilesandItsColumnsView(generics.ListAPIView):
                 files_info.append(file_info)
         return files_info
 
-    def get_file_dataframe(self, bucket, s3_key, file_name):
-        try:
-            file = read_csv_from_s3(bucket, s3_key)
-            df = pd.read_csv(file)
-            df = self.convert_floats_to_int(df)
-            df_renames = {column: f"{file_name}.{column}" for column in df.columns}
-            df.rename(columns=df_renames, inplace=True)
-            return df
-        except Exception as e:
-            print(f"Error in get_file_dataframe: {e}")
-            raise e
+    # def get_file_dataframe(self, bucket, s3_key, file_name):
+    #     try:
+    #         file = read_csv_from_s3(bucket, s3_key)
+    #         df = pd.read_csv(file)
+    #         df = self.convert_floats_to_int(df)
+    #         df_renames = {column: f"{file_name}.{column}" for column in df.columns}
+    #         df.rename(columns=df_renames, inplace=True)
+    #         return df
+    #     except Exception as e:
+    #         print(f"Error in get_file_dataframe: {e}")
+    #         raise e
         
-    def convert_floats_to_int(self, df):
-        for col in df.columns:
-            if pd.api.types.is_float_dtype(df[col]):
-                df[col].replace([np.inf, -np.inf, np.nan], 0, inplace=True)
-                # if all(df[col] == df[col].astype(int)):
-                if (df[col] % 1 == 0).all():
-                    df[col] = df[col].astype(int)
+    # def convert_floats_to_int(self, df):
+    #     for col in df.columns:
+    #         if pd.api.types.is_float_dtype(df[col]):
+    #             df[col].replace([np.inf, -np.inf, np.nan], 0, inplace=True)
+    #             # if all(df[col] == df[col].astype(int)):
+    #             if (df[col] % 1 == 0).all():
+    #                 df[col] = df[col].astype(int)
 
-            df.replace([np.inf, -np.inf, np.nan], '', inplace=True) 
-        return df
+    #         df.replace([np.inf, -np.inf, np.nan], '', inplace=True) 
+    #     return df
 
-    def get_dataframes(self, parameter):
-        try:
-            df_list = []
-            files_info = parameter.files_info  # Assuming `files_info` is a list of dicts with keys `bucket`, `s3_key`
-            for file_info in files_info:
-                file_name = self.get_file_name(file_info['s3_key'])
-                df_list.append({
-                    "df" : self.get_file_dataframe(file_info['bucket'], file_info['s3_key'], file_name = file_name),
-                    "file_name" : file_name,
-                })
-            return df_list
-        except Exception as e:
-            print(f"Error in get_dataframes: {e}")
-            raise e
+    # def get_dataframes(self, parameter):
+    #     try:
+    #         df_list = []
+    #         files_info = parameter.files_info  # Assuming `files_info` is a list of dicts with keys `bucket`, `s3_key`
+    #         for file_info in files_info:
+    #             file_name = self.get_file_name(file_info['s3_key'])
+    #             df_list.append({
+    #                 "df" : self.get_file_dataframe(file_info['bucket'], file_info['s3_key'], file_name = file_name),
+    #                 "file_name" : file_name,
+    #             })
+    #         return df_list
+    #     except Exception as e:
+    #         print(f"Error in get_dataframes: {e}")
+    #         raise e
         
-    def get_file_name(self, s3_key):
-        try:
-            return s3_key.split(".")[0].split('/')[-1]
-        except Exception as e:
-            print(f"Error in get_file_name: {e}")
-            raise e
+    # def get_file_name(self, s3_key):
+    #     try:
+    #         return s3_key.split(".")[0].split('/')[-1]
+    #     except Exception as e:
+    #         print(f"Error in get_file_name: {e}")
+    #         raise e
         
-    def get_final_dataframes(self, df_list):
-        try:
-            if len(df_list) == 0:
-                return pd.DataFrame([])
-            df, file_name = df_list.pop(0).values()
-            for next_df_details in df_list:
-                df_2 = next_df_details['df']
-                file_name2 = next_df_details['file_name']
-                df = self.join_dataframes(df, df_2, file_name, file_name2)
-            return df
-        except Exception as e:
-            print(f"Error in get_final_dataframes: {e}")
-            raise e
+    # def get_final_dataframes(self, df_list):
+    #     try:
+    #         if len(df_list) == 0:
+    #             return pd.DataFrame([])
+    #         df, file_name = df_list.pop(0).values()
+    #         for next_df_details in df_list:
+    #             df_2 = next_df_details['df']
+    #             file_name2 = next_df_details['file_name']
+    #             df = self.join_dataframes(df, df_2, file_name, file_name2)
+    #         return df
+    #     except Exception as e:
+    #         print(f"Error in get_final_dataframes: {e}")
+    #         raise e
 
-    def join_dataframes(self, df_1, df_2, file1_name, file2_name, join_type="inner"):
-        try:
-            if df_1.empty or df_2.empty:
-                raise Exception("One of the DataFrames is empty and cannot be joined")
-            condition = self.join_keys.pop(0)
-            # df1_renames = {column: f"{file1_name}.{column}" for column in df_1.columns}
-            # df2_renames = {column: f"{file2_name}.{column}" for column in df_2.columns}
-            # df_1.rename(columns=df1_renames, inplace=True)
-            # df_2.rename(columns=df2_renames, inplace=True)
+    # def join_dataframes(self, df_1, df_2, file1_name, file2_name, join_type="inner"):
+    #     try:
+    #         if df_1.empty or df_2.empty:
+    #             raise Exception("One of the DataFrames is empty and cannot be joined")
+    #         condition = self.join_keys.pop(0)
+    #         # df1_renames = {column: f"{file1_name}.{column}" for column in df_1.columns}
+    #         # df2_renames = {column: f"{file2_name}.{column}" for column in df_2.columns}
+    #         # df_1.rename(columns=df1_renames, inplace=True)
+    #         # df_2.rename(columns=df2_renames, inplace=True)
 
-            if (self.combined_columns.get(file1_name, None)):
-                df_1 = self.merge_columns(df_1, self.combined_columns[file1_name])
-            if (self.combined_columns.get(file2_name,None)):
-                df_2 = self.merge_columns(df_2, self.combined_columns[file2_name])
+    #         if (self.combined_columns.get(file1_name, None)):
+    #             df_1 = self.merge_columns(df_1, self.combined_columns[file1_name])
+    #         if (self.combined_columns.get(file2_name,None)):
+    #             df_2 = self.merge_columns(df_2, self.combined_columns[file2_name])
 
-            print(list(df_1[list(df_1.columns)[-1]]))
+    #         print(list(df_1[list(df_1.columns)[-1]]))
 
-            if "==" in condition:
-                key1, key2 = condition.split("==")
-            elif '=' in condition:
-                key1, key2 = condition.split("=")
-            else:
-                message = f"unable to split the condition to join csv files [{file1_name}, {file2_name}] with condition '{condition}'"
-                raise Exception(message)
+    #         if "==" in condition:
+    #             key1, key2 = condition.split("==")
+    #         elif '=' in condition:
+    #             key1, key2 = condition.split("=")
+    #         else:
+    #             message = f"unable to split the condition to join csv files [{file1_name}, {file2_name}] with condition '{condition}'"
+    #             raise Exception(message)
 
-            key1, key2 = key1.strip(), key2.strip()
+    #         key1, key2 = key1.strip(), key2.strip()
             
-            try:
-                df = df_1.merge(df_2, left_on=key2, right_on=key1, how=join_type)
-            except Exception as e:
-                try:
-                    df = df_1.merge(df_2, left_on=key1, right_on=key2, how=join_type)
-                except Exception as e:
-                    raise e
-            return df
-        except Exception as e:
-            print(f"Error in join_dataframes: {e}")
-            raise e
+    #         try:
+    #             df = df_1.merge(df_2, left_on=key2, right_on=key1, how=join_type)
+    #         except Exception as e:
+    #             try:
+    #                 df = df_1.merge(df_2, left_on=key1, right_on=key2, how=join_type)
+    #             except Exception as e:
+    #                 raise e
+    #         return df
+    #     except Exception as e:
+    #         print(f"Error in join_dataframes: {e}")
+    #         raise e
         
-    def process_combine_dataframes_input(self, data={} ):
-        _data = {}
-        for file_name, file_data in data.items():
-            file_name = file_name.split('.')[0]
-            _data[file_name] = {}
-            for column, column_data in file_data.items():
-                new_column_name = f"{file_name}.{column}"
-                _data[file_name][new_column_name] = column_data
-        return _data
+    # def process_combine_dataframes_input(self, data={} ):
+    #     _data = {}
+    #     for file_name, file_data in data.items():
+    #         file_name = file_name.split('.')[0]
+    #         _data[file_name] = {}
+    #         for column, column_data in file_data.items():
+    #             new_column_name = f"{file_name}.{column}"
+    #             _data[file_name][new_column_name] = column_data
+    #     return _data
 
-    def merge_columns(self, df, combine_columns):
-        for new_col, merge_info in combine_columns.items():
-            cols_to_merge = merge_info['columns_to_merge']
-            seperator = merge_info.get('seperator', '-')
-            df[new_col] = df[cols_to_merge[0]].astype(str)
-            for col in cols_to_merge[1:]:
-                df[new_col] += seperator + df[col].astype(str)
-        return df
+    # def merge_columns(self, df, combine_columns):
+    #     for new_col, merge_info in combine_columns.items():
+    #         cols_to_merge = merge_info['columns_to_merge']
+    #         seperator = merge_info.get('seperator', '-')
+    #         df[new_col] = df[cols_to_merge[0]].astype(str)
+    #         for col in cols_to_merge[1:]:
+    #             df[new_col] += seperator + df[col].astype(str)
+    #     return df
         
-    def resolve_column_names(self, df, check_keys):
-        try:
-            if isinstance(check_keys, list):
-                columns = []
-                for check_key in check_keys:
-                    columns.append(self.get_column_name(df, check_key))
-                return columns
-            return self.get_column_name(df, check_keys)
-        except Exception as e:
-            print(f"Error in resolve_column_names: {e}")
-            raise e
+    # def resolve_column_names(self, df, check_keys):
+    #     try:
+    #         if isinstance(check_keys, list):
+    #             columns = []
+    #             for check_key in check_keys:
+    #                 columns.append(self.get_column_name(df, check_key))
+    #             return columns
+    #         return self.get_column_name(df, check_keys)
+    #     except Exception as e:
+    #         print(f"Error in resolve_column_names: {e}")
+    #         raise e
 
-    def get_column_name(self, df, check_key):
-        try:
-            if check_key in df.columns:
-                return check_key
-            for col in df.columns:
-                if col.endswith(f".{check_key}"):
-                    return col
-            return check_key
-        except Exception as e:
-            print(f"Error in get_column_name: {e}")
-            raise e
+    # def get_column_name(self, df, check_key):
+    #     try:
+    #         if check_key in df.columns:
+    #             return check_key
+    #         for col in df.columns:
+    #             if col.endswith(f".{check_key}"):
+    #                 return col
+    #         return check_key
+    #     except Exception as e:
+    #         print(f"Error in get_column_name: {e}")
+    #         raise e
 
-    def safe_str_accessor(self, series, method, *args, **kwargs):
-        try:
-            return getattr(series.astype(str).str, method)(*args, **kwargs)
-        except Exception as e:
-            print(f"Error in safe_str_accessor: {e}")
-            raise e
+    # def safe_str_accessor(self, series, method, *args, **kwargs):
+    #     try:
+    #         return getattr(series.astype(str).str, method)(*args, **kwargs)
+    #     except Exception as e:
+    #         print(f"Error in safe_str_accessor: {e}")
+    #         raise e
 
-    def apply_conditions(self, df, conditions_dict):
-        try:
-            conditions = self.parse_conditions(conditions_dict['conditions'])
-            final_mask = self.evaluate_conditions(df, conditions)
-            return final_mask
-        except Exception as e:
-            print(f"Error in apply_conditions: {e}")
-            raise e
+    # def apply_conditions(self, df, conditions_dict):
+    #     try:
+    #         conditions = self.parse_conditions(conditions_dict['conditions'])
+    #         final_mask = self.evaluate_conditions(df, conditions)
+    #         return final_mask
+    #     except Exception as e:
+    #         print(f"Error in apply_conditions: {e}")
+    #         raise e
 
-    def parse_conditions(self, conditions_dict):
-        try:
-            conditions = []
-            for cond in conditions_dict.get('and', []):
-                if 'conditions' in cond:
-                    sub_conditions = self.parse_conditions(cond['conditions'])
-                    conditions.append((list(cond['conditions'].keys())[0], sub_conditions))
-                else:
-                    conditions.append(Condition(cond['check_key'], cond['check_type'], cond['check_value'], cond.get('is_mandatory', True), cond.get('skip_if_no_column', False)))
+    # def parse_conditions(self, conditions_dict):
+    #     try:
+    #         conditions = []
+    #         for cond in conditions_dict.get('and', []):
+    #             if 'conditions' in cond:
+    #                 sub_conditions = self.parse_conditions(cond['conditions'])
+    #                 conditions.append((list(cond['conditions'].keys())[0], sub_conditions))
+    #             else:
+    #                 conditions.append(Condition(cond['check_key'], cond['check_type'], cond['check_value'], cond.get('is_mandatory', True), cond.get('skip_if_no_column', False)))
 
-            for cond in conditions_dict.get('or', []):
-                if 'conditions' in cond:
-                    sub_conditions = self.parse_conditions(cond['conditions'])
-                    conditions.append((list(cond['conditions'].keys())[0], sub_conditions))
-                else:
-                    conditions.append(Condition(cond['check_key'], cond['check_type'], cond['check_value'], cond.get('is_mandatory', True), cond.get('skip_if_no_column', False)))
+    #         for cond in conditions_dict.get('or', []):
+    #             if 'conditions' in cond:
+    #                 sub_conditions = self.parse_conditions(cond['conditions'])
+    #                 conditions.append((list(cond['conditions'].keys())[0], sub_conditions))
+    #             else:
+    #                 conditions.append(Condition(cond['check_key'], cond['check_type'], cond['check_value'], cond.get('is_mandatory', True), cond.get('skip_if_no_column', False)))
 
-            return conditions
-        except Exception as e:
-            print(f"Error in parse_conditions: {e}")
-            raise e
+    #         return conditions
+    #     except Exception as e:
+    #         print(f"Error in parse_conditions: {e}")
+    #         raise e
 
-    def evaluate_conditions(self, df, conditions):
-        try:
-            if not conditions:
-                return pd.Series([True] * len(df))
+    # def evaluate_conditions(self, df, conditions):
+    #     try:
+    #         if not conditions:
+    #             return pd.Series([True] * len(df))
 
-            results = []
-            for condition in conditions:
-                if isinstance(condition, tuple):
-                    cond_type, conds = condition
-                    if cond_type == 'and':
-                        masks = [cond.apply(df, self.safe_str_accessor) for cond in conds]
-                        results.append(pd.concat(masks, axis=1).all(axis=1))
-                    elif cond_type == 'or':
-                        masks = [cond.apply(df, self.safe_str_accessor) for cond in conds]
-                        results.append(pd.concat(masks, axis=1).any(axis=1))
-                else:
-                    results.append(condition.apply(df, self.safe_str_accessor))
+    #         results = []
+    #         for condition in conditions:
+    #             if isinstance(condition, tuple):
+    #                 cond_type, conds = condition
+    #                 if cond_type == 'and':
+    #                     masks = [cond.apply(df, self.safe_str_accessor) for cond in conds]
+    #                     results.append(pd.concat(masks, axis=1).all(axis=1))
+    #                 elif cond_type == 'or':
+    #                     masks = [cond.apply(df, self.safe_str_accessor) for cond in conds]
+    #                     results.append(pd.concat(masks, axis=1).any(axis=1))
+    #             else:
+    #                 results.append(condition.apply(df, self.safe_str_accessor))
 
-            if len(results) == 1:
-                return results[0]
-            else:
-                return pd.concat(results, axis=1).all(axis=1)
-        except Exception as e:
-            print(f"Error in evaluate_conditions: {e}")
-            raise e
+    #         if len(results) == 1:
+    #             return results[0]
+    #         else:
+    #             return pd.concat(results, axis=1).all(axis=1)
+    #     except Exception as e:
+    #         print(f"Error in evaluate_conditions: {e}")
+    #         raise e
 
 class UpdateParametersAPI(generics.ListAPIView):
 
