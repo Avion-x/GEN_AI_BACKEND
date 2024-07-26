@@ -4,7 +4,7 @@ from .views import CsvFilesandItsColumnsView, LatestTestTypesWithCategoriesOfPro
     ProductSubCategoryView, ProductView, GenerateTestCases, TestCasesView, GetFileCommitsView, GetFileChangesView, \
     GetFilesInCommitView, TestCategoriesView, TestScriptExecResultsView, GeneratedTestCategoriesView, DashboardKpi, \
     PendingApprovalTestCategoryView, ApproveTestCategoryView, DashboardChart, ExtractTextFromPDFView, \
-    CategoryDetailsView, UploadDeviceDocsView, EmbedUploadedDocs, UserCreatedTestCasesAndScripts, TestSubCategoriesView, FilterStructuredTestScriptView
+    CategoryDetailsView, UploadDeviceDocsView, EmbedUploadedDocs, UserCreatedTestCasesAndScripts, TestSubCategoriesView, FilterStructuredTestScriptView, UpdateParametersAPI
     
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -39,7 +39,7 @@ urlpatterns = [
     path('get_test_sub_category_params/', TestSubCategoryParametersView.as_view(), name='get_test_sub_category_params'),
     path('get_csv_files_and_its_columns/', CsvFilesandItsColumnsView.as_view(), name="get_csv_files_and_its_columns"),
     # path("test_sub_category_parameters/", TestSubCategoryParametersView.as_view(), "test_sub_category_parameters")
-
+    path('update_parameters/', UpdateParametersAPI.as_view(), name='update-parameters')
 ]
 
 

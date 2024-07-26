@@ -16,12 +16,13 @@ from product.services.github_service import CustomGithub, push_to_github, get_co
     get_files_in_commit
 from product.services.generic_services import DevicePrompts, get_prompts_for_device, get_string_from_datetime, parseModelDataToList, read_csv_from_s3, test_response, \
     validate_mandatory_checks
+from product.services.juniper_config_parser import process_network_config
 from product.filters import TestTypeFilter, ProductCategoryFilter
 from rest_framework import generics, viewsets, filters as rest_filters
 from django_filters import rest_framework as django_filters
 from rest_framework.response import Response
 from .models import Paramters, RuntimeParameterValues, StructuredTestCases, TestCases, TestType, ProductCategory, ProductSubCategory, Product, \
-    TestScriptExecResults, UserCreatedTestCases, TestSubCategories
+    TestScriptExecResults, UserCreatedTestCases, TestSubCategories, Customer
 from .serializers import GenereateTestCaseJobDataSerializer, TestSubCategoryParamtersSerializer, TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, UserCreatedTestCasesSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, \
     LatestTestTypesWithCategoriesOfProductFilter, TestSubCategoriesFilter
@@ -31,7 +32,7 @@ from django.db.models import F, Q, Value, Count, Max, Min, JSONField, BooleanFie
     When, Sum, CharField, IntegerField
 from django.db.models.functions import Cast
 
-from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories, DocumentUploads
+from .models import TestCases, TestType, ProductCategory, ProductSubCategory, Product, TestCategories, DocumentUploads, Paramters
 from .serializers import TestTypeSerializer, ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, \
     TestCasesSerializer, TestCategoriesSerializer, TestScriptExecResultsSerializer, TestSubCategoriesSerializer
 from .filters import TestTypeFilter, ProductCategoryFilter, ProductSubCategoryFilter, ProductFilter, TestCasesFilter, \
@@ -1603,3 +1604,429 @@ class CsvFilesandItsColumnsView(generics.ListAPIView):
                 files_info.append(file_info)
         return files_info
 
+    def get_file_dataframe(self, bucket, s3_key, file_name):
+        try:
+            file = read_csv_from_s3(bucket, s3_key)
+            df = pd.read_csv(file)
+            df = self.convert_floats_to_int(df)
+            df_renames = {column: f"{file_name}.{column}" for column in df.columns}
+            df.rename(columns=df_renames, inplace=True)
+            return df
+        except Exception as e:
+            print(f"Error in get_file_dataframe: {e}")
+            raise e
+        
+    def convert_floats_to_int(self, df):
+        for col in df.columns:
+            if pd.api.types.is_float_dtype(df[col]):
+                df[col].replace([np.inf, -np.inf, np.nan], 0, inplace=True)
+                # if all(df[col] == df[col].astype(int)):
+                if (df[col] % 1 == 0).all():
+                    df[col] = df[col].astype(int)
+
+            df.replace([np.inf, -np.inf, np.nan], '', inplace=True) 
+        return df
+
+    def get_dataframes(self, parameter):
+        try:
+            df_list = []
+            files_info = parameter.files_info  # Assuming `files_info` is a list of dicts with keys `bucket`, `s3_key`
+            for file_info in files_info:
+                file_name = self.get_file_name(file_info['s3_key'])
+                df_list.append({
+                    "df" : self.get_file_dataframe(file_info['bucket'], file_info['s3_key'], file_name = file_name),
+                    "file_name" : file_name,
+                })
+            return df_list
+        except Exception as e:
+            print(f"Error in get_dataframes: {e}")
+            raise e
+        
+    def get_file_name(self, s3_key):
+        try:
+            return s3_key.split(".")[0].split('/')[-1]
+        except Exception as e:
+            print(f"Error in get_file_name: {e}")
+            raise e
+        
+    def get_final_dataframes(self, df_list):
+        try:
+            if len(df_list) == 0:
+                return pd.DataFrame([])
+            df, file_name = df_list.pop(0).values()
+            for next_df_details in df_list:
+                df_2 = next_df_details['df']
+                file_name2 = next_df_details['file_name']
+                df = self.join_dataframes(df, df_2, file_name, file_name2)
+            return df
+        except Exception as e:
+            print(f"Error in get_final_dataframes: {e}")
+            raise e
+
+    def join_dataframes(self, df_1, df_2, file1_name, file2_name, join_type="inner"):
+        try:
+            if df_1.empty or df_2.empty:
+                raise Exception("One of the DataFrames is empty and cannot be joined")
+            condition = self.join_keys.pop(0)
+            # df1_renames = {column: f"{file1_name}.{column}" for column in df_1.columns}
+            # df2_renames = {column: f"{file2_name}.{column}" for column in df_2.columns}
+            # df_1.rename(columns=df1_renames, inplace=True)
+            # df_2.rename(columns=df2_renames, inplace=True)
+
+            if (self.combined_columns.get(file1_name, None)):
+                df_1 = self.merge_columns(df_1, self.combined_columns[file1_name])
+            if (self.combined_columns.get(file2_name,None)):
+                df_2 = self.merge_columns(df_2, self.combined_columns[file2_name])
+
+            print(list(df_1[list(df_1.columns)[-1]]))
+
+            if "==" in condition:
+                key1, key2 = condition.split("==")
+            elif '=' in condition:
+                key1, key2 = condition.split("=")
+            else:
+                message = f"unable to split the condition to join csv files [{file1_name}, {file2_name}] with condition '{condition}'"
+                raise Exception(message)
+
+            key1, key2 = key1.strip(), key2.strip()
+            
+            try:
+                df = df_1.merge(df_2, left_on=key2, right_on=key1, how=join_type)
+            except Exception as e:
+                try:
+                    df = df_1.merge(df_2, left_on=key1, right_on=key2, how=join_type)
+                except Exception as e:
+                    raise e
+            return df
+        except Exception as e:
+            print(f"Error in join_dataframes: {e}")
+            raise e
+        
+    def process_combine_dataframes_input(self, data={} ):
+        _data = {}
+        for file_name, file_data in data.items():
+            file_name = file_name.split('.')[0]
+            _data[file_name] = {}
+            for column, column_data in file_data.items():
+                new_column_name = f"{file_name}.{column}"
+                _data[file_name][new_column_name] = column_data
+        return _data
+
+    def merge_columns(self, df, combine_columns):
+        for new_col, merge_info in combine_columns.items():
+            cols_to_merge = merge_info['columns_to_merge']
+            seperator = merge_info.get('seperator', '-')
+            df[new_col] = df[cols_to_merge[0]].astype(str)
+            for col in cols_to_merge[1:]:
+                df[new_col] += seperator + df[col].astype(str)
+        return df
+        
+    def resolve_column_names(self, df, check_keys):
+        try:
+            if isinstance(check_keys, list):
+                columns = []
+                for check_key in check_keys:
+                    columns.append(self.get_column_name(df, check_key))
+                return columns
+            return self.get_column_name(df, check_keys)
+        except Exception as e:
+            print(f"Error in resolve_column_names: {e}")
+            raise e
+
+    def get_column_name(self, df, check_key):
+        try:
+            if check_key in df.columns:
+                return check_key
+            for col in df.columns:
+                if col.endswith(f".{check_key}"):
+                    return col
+            return check_key
+        except Exception as e:
+            print(f"Error in get_column_name: {e}")
+            raise e
+
+    def safe_str_accessor(self, series, method, *args, **kwargs):
+        try:
+            return getattr(series.astype(str).str, method)(*args, **kwargs)
+        except Exception as e:
+            print(f"Error in safe_str_accessor: {e}")
+            raise e
+
+    def apply_conditions(self, df, conditions_dict):
+        try:
+            conditions = self.parse_conditions(conditions_dict['conditions'])
+            final_mask = self.evaluate_conditions(df, conditions)
+            return final_mask
+        except Exception as e:
+            print(f"Error in apply_conditions: {e}")
+            raise e
+
+    def parse_conditions(self, conditions_dict):
+        try:
+            conditions = []
+            for cond in conditions_dict.get('and', []):
+                if 'conditions' in cond:
+                    sub_conditions = self.parse_conditions(cond['conditions'])
+                    conditions.append((list(cond['conditions'].keys())[0], sub_conditions))
+                else:
+                    conditions.append(Condition(cond['check_key'], cond['check_type'], cond['check_value'], cond.get('is_mandatory', True), cond.get('skip_if_no_column', False)))
+
+            for cond in conditions_dict.get('or', []):
+                if 'conditions' in cond:
+                    sub_conditions = self.parse_conditions(cond['conditions'])
+                    conditions.append((list(cond['conditions'].keys())[0], sub_conditions))
+                else:
+                    conditions.append(Condition(cond['check_key'], cond['check_type'], cond['check_value'], cond.get('is_mandatory', True), cond.get('skip_if_no_column', False)))
+
+            return conditions
+        except Exception as e:
+            print(f"Error in parse_conditions: {e}")
+            raise e
+
+    def evaluate_conditions(self, df, conditions):
+        try:
+            if not conditions:
+                return pd.Series([True] * len(df))
+
+            results = []
+            for condition in conditions:
+                if isinstance(condition, tuple):
+                    cond_type, conds = condition
+                    if cond_type == 'and':
+                        masks = [cond.apply(df, self.safe_str_accessor) for cond in conds]
+                        results.append(pd.concat(masks, axis=1).all(axis=1))
+                    elif cond_type == 'or':
+                        masks = [cond.apply(df, self.safe_str_accessor) for cond in conds]
+                        results.append(pd.concat(masks, axis=1).any(axis=1))
+                else:
+                    results.append(condition.apply(df, self.safe_str_accessor))
+
+            if len(results) == 1:
+                return results[0]
+            else:
+                return pd.concat(results, axis=1).all(axis=1)
+        except Exception as e:
+            print(f"Error in evaluate_conditions: {e}")
+            raise e
+
+class UpdateParametersAPI(generics.ListAPIView):
+
+    def transform_join_keys_and_merge_columns(self, joinFilesItems, mergeColumnsItems):
+        try:
+            join_info = []
+            merge_columns_info = {}
+
+            for item in joinFilesItems:
+                file_one_base = item['fileOne']['file_name'].split('.')[0]
+                file_two_base = item['fileTwo']['file_name'].split('.')[0]
+                
+                join_condition = f"{file_one_base}.{item['fieldOne']}{item['condition']}{file_two_base}.{item['fieldTwo']}"
+                join_info.append(join_condition)
+
+            for item in mergeColumnsItems:
+                file_base_name = item['fileName']['file_name'].split('.')[0]
+                
+                merge_columns_info[file_base_name] = {
+                    item["newColumnHeader"]: {
+                        "separator": item['separator'],
+                        "columns_to_merge": [f"{file_base_name}.{col}" for col in item['mergeColumns']]
+                    }
+                }
+
+            logger.log("Join keys and merge columns transformed successfully.")
+            return {"join_info": join_info, "merge_columns_info": merge_columns_info}
+        except Exception as e:
+            logger.log(f"Error transforming join keys and merge columns: {e}")
+            raise
+
+    def transform_condition(self, condition):
+        try:
+            file_name = condition['fileName']['file_name'].split('.')[0]
+            transformed_condition = {
+                "check_key": f"{file_name}.{condition['columnTitle']}",
+                "check_type": condition['condition'],
+                "check_value": condition['columnValue'],
+                "is_mandatory": condition['is_mandatory'],
+                "skip_if_no_column": condition['skip_if_no_column']
+            }
+            logger.log(f"Condition transformed: {transformed_condition}")
+            return transformed_condition
+        except KeyError as e:
+            logger.log(f"KeyError in condition: {e}, condition: {condition}")
+            raise
+        except Exception as e:
+            logger.log(f"Unexpected error transforming condition: {e}, condition: {condition}")
+            raise
+
+    def transform_conditions(self, conditions, is_mandatory=True, skip_if_no_column=False):
+        try:
+            output = {"conditions": {}}
+            for condition in conditions:
+                main_condition_key = condition.get("mainCondition", "").lower()
+                if "conditions" in condition:
+                    nested_conditions = self.transform_conditions(condition["conditions"])["conditions"]
+                    condition_data = {
+                        "conditions": nested_conditions,
+                        "is_mandatory": condition.get("is_mandatory", is_mandatory),
+                        "skip_if_no_column": condition.get("skip_if_no_column", skip_if_no_column)
+                    }
+                else:
+                    condition_data = self.transform_condition(condition)
+
+                if main_condition_key not in output["conditions"]:
+                    output["conditions"][main_condition_key] = []
+
+                output["conditions"][main_condition_key].append(condition_data)
+
+            output["is_mandatory"] = is_mandatory
+            output["skip_if_no_column"] = skip_if_no_column
+            
+            logger.log("Conditions transformed successfully.")
+            return output
+        except KeyError as e:
+            logger.log(f"KeyError in conditions: {e}, conditions: {conditions}")
+            raise
+        except Exception as e:
+            logger.log(f"Unexpected error transforming conditions: {e}, conditions: {conditions}")
+            raise
+    
+    def convert_requested_param_items(self, requested_param_items):
+        required_params = []
+
+        for item in requested_param_items:
+            try:
+                # Extract file base name and requested columns
+                file_name = item['fileName']['file_name']
+                file_base_name = file_name.split('.')[0]
+                requested_columns = item['requestedColumns']
+
+                # Extend the list with formatted columns
+                required_params.extend([f"{file_base_name}.{column}" for column in requested_columns])
+            
+            except KeyError as e:
+                logger.log(f"KeyError: {e} - Missing key in item: {item}")
+                raise e
+            except Exception as e:
+                logger.log(f"An error occurred while processing item {item}: {e}")
+                raise e
+
+        return required_params
+    
+    def extract_from_joinFilesItems(self, data):
+        def extract_file_keys(data):
+            file_keys = []
+            for item in data:
+                for key in item.keys():
+                    if key.startswith("file"):
+                        file_keys.append(key)
+            return file_keys
+        
+        file_info = set()
+        keys_startswith_file = extract_file_keys(data)
+        for item in data:
+            for key in keys_startswith_file:
+                bucket_name = item[key].get('bucket_name')
+                s3_location = item[key].get('s3_location')
+                if bucket_name and s3_location:
+                    file_info.add((bucket_name, s3_location))
+        return file_info
+
+    def extract_from_mergeColumnsItems(self, data):
+        file_info = set()
+        for item in data:
+            if 'fileName' in item and isinstance(item['fileName'], dict):
+                bucket_name = item['fileName'].get('bucket_name')
+                s3_location = item['fileName'].get('s3_location')
+                if bucket_name and s3_location:
+                    file_info.add((bucket_name, s3_location))
+        return file_info
+
+    def extract_files_info(self, filterConditionItems):
+        s3_info_set = set()
+
+        def add_s3_info(item):
+            try:
+                bucket_name = item['fileName'].get('bucket_name')
+                s3_location = item['fileName'].get('s3_location')
+                if bucket_name and s3_location:
+                    s3_info_set.add((bucket_name, s3_location))
+            except Exception as e:
+                print(f"An error occurred while processing item {item}: {e}")
+
+        for item in filterConditionItems:
+            try:
+                if 'conditions' in item:
+                    for condition in item['conditions']:
+                        add_s3_info(condition)
+                else:
+                    add_s3_info(item)
+            except Exception as e:
+                print(f"An error occurred while processing filterConditionItems item {item}: {e}")
+
+        return s3_info_set
+
+
+    def combine_file_info(self, join_files_items, merge_columns_items, filter_main_condition_items, requested_param_items):
+        file_info = set()
+        file_info.update(self.extract_from_joinFilesItems(join_files_items))
+        file_info.update(self.extract_from_mergeColumnsItems(merge_columns_items))
+        file_info.update(self.extract_files_info(filter_main_condition_items))
+        file_info.update(self.extract_from_mergeColumnsItems(requested_param_items))
+        return [{"bucket": bucket, "s3_key": s3_key} for bucket, s3_key in file_info]
+    
+    def post(self, request):
+        try:
+            join_files_items = request.data.get('joinFilesItems', [])
+            merge_columns_items = request.data.get('mergeColumnsItems', [])
+            filter_main_condition_items = request.data.get('filterConditionItems', [])
+            requested_param_items = request.data.get('requestedParamItems', [])
+            # name = request.data.get('name', 'test')
+            # description = request.data.get('description', '')
+            customer_id = self.request.user.customer_id
+            test_sub_category_id = request.data.get('subCategoryId',6)
+            created_by_id = self.request.user.id
+            last_updated_by_id = self.request.user.id
+            logger.log("Received request data.")
+
+            join_keys_and_merge_columns = self.transform_join_keys_and_merge_columns(
+                join_files_items,
+                merge_columns_items
+            )
+            filter_conditions = self.transform_conditions(
+                filter_main_condition_items
+            )
+            required_params = self.convert_requested_param_items(requested_param_items)
+            files_info_items = self.combine_file_info(join_files_items, merge_columns_items, filter_main_condition_items, requested_param_items)
+
+            # print("join_keys_and_merge_columns : ",join_keys_and_merge_columns)
+            # print("\nfilter_conditions : ",filter_conditions)
+            # print("\nrequired_params : ",required_params)
+            # print("\files_info_items : ",files_info_items)
+            # print(f"\ncustomer_id : {customer_id}\ncreated_by_id : {created_by_id}\ntest_sub_category_id : {test_sub_category_id}")
+
+            parameters = Paramters(
+                # name=name,
+                # description=description,
+                join_keys=join_keys_and_merge_columns,
+                conditions=filter_conditions,
+                req_params = required_params,
+                customer_id=customer_id,
+                test_sub_category_id=test_sub_category_id,
+                created_by_id=created_by_id,
+                last_updated_by_id = last_updated_by_id,
+                files_info = files_info_items
+            )
+
+            parameters.save()
+
+            logger.log("Parameters saved successfully.")
+            return Response({'status': 'success'}, status=201)
+
+        except Exception as e:
+            logger.log(f"Error in processing request: {e}")
+            return Response({'status': 'error', 'message': str(e)}, status=400)
+
+class ProcessConfigView(generics.ListAPIView):
+    def get(self, request, *args, **kwargs):
+        process_network_config()
+        return JsonResponse({'status': 'Processing started'})

@@ -78,7 +78,10 @@ class Paramters(DefaultModel, models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=250)
     description = models.TextField(blank=True, null=True)
+    # file_name = models.CharField(max_length=250)
+    # bucket_name = models.CharField(max_length=250, default="")
     req_params = models.JSONField(default=list())
+    # s3_location = models.CharField(max_length=250, default="")
     conditions = models.JSONField(default=dict())
     files_info = models.JSONField(default=list())  # List of dicts with keys `bucket`, `s3_key`
     join_keys = models.JSONField(default=dict()) 
