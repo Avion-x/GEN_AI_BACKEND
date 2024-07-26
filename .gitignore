@@ -1,7 +1,7 @@
 # .gitignore for Django projects
 
 ### Django ###
-*.log
+*log_file.log
 *.pot
 *.pyc
 __pycache__/

@@ -61,10 +61,9 @@ class Condition:
 
 class TestSubCategoryParameters():
 
-    def get(self, request):
+    def get(self, request, test_sub_category_id, file_path=None):
         try:
             self.request = request
-            test_sub_category_id = request.GET.get("test_sub_category_id", None)
             if not test_sub_category_id:
                 raise Exception("Please pass test_sub_category_id")
             parameters = Paramters.objects.filter(test_sub_category_id=test_sub_category_id)
@@ -74,6 +73,7 @@ class TestSubCategoryParameters():
             result = {}
             current_time = int(time.time())
             for ind, param in enumerate(parameters):
+                # param_name = param.name.lower().replace(" ", "_")
                 self.combined_columns = self.process_combine_dataframes_input(param.join_keys.get("merge_columns_info", {})) 
                 df_list = self.get_dataframes(param)
                 self.join_keys = param.join_keys.get("join_info", [])
@@ -81,20 +81,11 @@ class TestSubCategoryParameters():
                 data = self.get_parameter_value(df, param)
                 result[param.name] = data
                 self.store_result(data = data, param = param)
-                # self.write_to_file(data = json.dumps(result, indent=4), file_name = f"paramters_{ind}.json")
-                self.upload_to_s3(data = data, bucket=f"genaidev", file_name=f"parameters/{current_time}/paramters_{ind}.csv")
+                self.upload_to_s3(data = data, bucket=f"genaidev", file_name=f"{file_path}/{param.name}.csv")
             return result
         except Exception as e:
             print(f"Error in get method: {e}")
             raise e
-        
-    def write_to_file(self, data, file_name):
-        try:
-            with open(file_name, 'w') as file:
-                file.write(data)
-        except Exception as e:
-            message = f""
-            raise Exception(message)
     
     def upload_to_s3(self, file_name, bucket, data):
         try:
@@ -243,9 +234,14 @@ class TestSubCategoryParameters():
         for new_col, merge_info in combine_columns.items():
             cols_to_merge = merge_info['columns_to_merge']
             seperator = merge_info.get('seperator', '-')
-            df[new_col] = df[cols_to_merge[0]].astype(str)
-            for col in cols_to_merge[1:]:
-                df[new_col] += seperator + df[col].astype(str)
+            if seperator in ['or', 'OR', 'Or', 'oR']:
+                df[new_col] = df[cols_to_merge[0]]
+                for col in cols_to_merge[1:]:
+                    df[new_col] = df[new_col].fillna(df[col])
+            else:
+                df[new_col] = df[cols_to_merge[0]].astype(str)
+                for col in cols_to_merge[1:]:
+                    df[new_col] += seperator + df[col].astype(str)
         return df
         
     def resolve_column_names(self, df, check_keys):

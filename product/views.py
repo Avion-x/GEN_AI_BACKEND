@@ -1534,22 +1534,28 @@ class TestSubCategoryParametersView(generics.ListAPIView):
             get_parameters = request.GET.get('get_parameters', False)
             if get_parameters:
                 return self.get_paramters(request)
+            
+            test_sub_category_id = request.GET.get("test_sub_category_id", None)
+            if not test_sub_category_id:
+                raise Exception("Please pass test_sub_category_id")
+            
             test_sub_category_parameters = TestSubCategoryParameters()
-            result = test_sub_category_parameters.get(request)
+            result = test_sub_category_parameters.get(request, test_sub_category_id)
             return Response(result)
         except Exception as e:
             print(f"Error in get method: {e}")
             raise e
         
     def get_paramters(self, request):
+        filters = {}
         sub_category_id = request.GET.get('test_sub_category_id',None)
-        if not sub_category_id:
-            return Response({
-                "errorMessage": "Please pass sub_category_id to get the parameters",
-                "result" : {}
-            })
-        
-        paramters = Paramters.objects.filter(test_sub_category_id = sub_category_id)
+        # if not sub_category_id:
+        #     return Response({
+        #         "errorMessage": "Please pass sub_category_id to get the parameters",
+        #         "result" : {}
+        #     })
+        filters['test_sub_category_id'] = sub_category_id
+        paramters = Paramters.objects.filter(**filters)
         if not paramters:
             return Response({
                 "errorMessage": "No paramters found with the test_sub_category_id {}".format(sub_category_id),
@@ -1574,7 +1580,7 @@ class CsvFilesandItsColumnsView(generics.ListAPIView):
     def get(self, request):
         try:
             pass
-            topology_id = request.GET.get('topology_id', "")
+            # topology_id = request.GET.get('topology_id', "")
             bucket_name, prefix= "genaidev", "CSVFiles/"
             result = self.get_s3_csv_columns(bucket_name, prefix)
             return Response({
