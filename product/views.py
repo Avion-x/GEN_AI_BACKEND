@@ -1574,6 +1574,7 @@ class TestSubCategoryParametersView(generics.ListAPIView):
             message = f"Error while getting the paramters for test sub category {paramters[0].test_sub_category.name}. ERROR:{e}"
             raise Exception(message)
 
+
 class CsvFilesandItsColumnsView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (BasicAuthentication, TokenAuthentication)
