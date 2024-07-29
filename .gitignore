@@ -1,7 +1,7 @@
 # .gitignore for Django projects
 
 ### Django ###
-*log_file.log
+*.log
 *.pot
 *.pyc
 __pycache__/
@@ -12,6 +12,7 @@ db.sqlite3-journal
 media
 settings.py
 !.env
+*.env
 *.md
 *.log
 

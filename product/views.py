@@ -1554,7 +1554,8 @@ class TestSubCategoryParametersView(generics.ListAPIView):
         #         "errorMessage": "Please pass sub_category_id to get the parameters",
         #         "result" : {}
         #     })
-        filters['test_sub_category_id'] = sub_category_id
+        if sub_category_id:
+            filters['test_sub_category_id'] = sub_category_id
         paramters = Paramters.objects.filter(**filters)
         if not paramters:
             return Response({
