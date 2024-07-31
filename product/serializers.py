@@ -475,10 +475,18 @@ class TestSubCategoryParamtersSerializer(serializers.ModelSerializer, ISTTimesta
     last_updated_by_name = serializers.SerializerMethodField()
     test_sub_category_name = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
+    test_type_id = serializers.SerializerMethodField()
+    test_type_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Paramters
         fields = '__all__'
+
+    def get_test_type_id(self,obj):
+        return obj.test_sub_category.test_type_id
+    
+    def get_test_type_name(self, obj):
+        return obj.test_sub_category.test_type.code
 
     def get_created_at(self, obj):
         timestamp = obj.created_at

@@ -90,7 +90,7 @@ class Paramters(DefaultModel, models.Model):
     last_updated_by = models.ForeignKey(User, related_name = "parameters_updated_by", on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, related_name = "parameters_created_by", on_delete=models.CASCADE, null = True)
 
-    objects = CustomManager()
+    # objects = CustomManager()
 
     def __str__(self) -> str:
         return f"{self.name}"
