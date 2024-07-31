@@ -14,7 +14,7 @@ settings.py
 !.env
 *.env
 *.md
-*.log
+*.vscode/*
 
 # Ignore unwanted text files
 *engineering_req.txt
