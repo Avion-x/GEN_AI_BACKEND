@@ -167,6 +167,10 @@ Run the test suite using the following command:
 ❯ pytest
 ```
 
+---
+## GENAI Usage Diagram
+
+<img width="1085" alt="Screenshot 2025-02-14 at 2 31 21 AM" src="https://github.com/user-attachments/assets/3e86adef-e2ef-4172-b9d6-08fc425034fc" />
 
 ---
 ##  Project Roadmap
